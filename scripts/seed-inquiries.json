@@ -1,0 +1,98 @@
+{
+  "pitfal-inquiries": [
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "INQUIRY#inq-001" },
+          "SK": { "S": "METADATA" },
+          "type": { "S": "booking" },
+          "name": { "S": "Sarah Thompson" },
+          "email": { "S": "sarah.thompson@example.com" },
+          "phone": { "S": "(303) 555-0123" },
+          "sessionType": { "S": "Portrait" },
+          "preferredDate": { "S": "Sometime in late February or early March" },
+          "message": { "S": "Hi! I'm interested in booking a family portrait session for my family of 4. We have two kids ages 5 and 8. Looking for something outdoors with natural lighting. Do you have any recommendations for locations in the Aurora area?" },
+          "status": { "S": "new" },
+          "notes": { "S": "" },
+          "createdAt": { "N": "1704412800000" },
+          "updatedAt": { "N": "1704412800000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "INQUIRY#inq-002" },
+          "SK": { "S": "METADATA" },
+          "type": { "S": "booking" },
+          "name": { "S": "Michael Chen" },
+          "email": { "S": "m.chen@techstartup.io" },
+          "phone": { "S": "(720) 555-0456" },
+          "sessionType": { "S": "Brand" },
+          "preferredDate": { "S": "ASAP - we launch our product in 3 weeks" },
+          "message": { "S": "We're a tech startup launching our new product and need professional team photos and product shots for our website and marketing materials. Team of 12 people. Can you accommodate a half-day session at our office downtown?" },
+          "status": { "S": "contacted" },
+          "notes": { "S": "Called 1/5 - scheduled consultation for 1/8. Interested in Brand Premium package." },
+          "createdAt": { "N": "1704326400000" },
+          "updatedAt": { "N": "1704499200000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "INQUIRY#inq-003" },
+          "SK": { "S": "METADATA" },
+          "type": { "S": "contact" },
+          "name": { "S": "Jennifer Martinez" },
+          "email": { "S": "jenny.m@email.com" },
+          "sessionType": { "S": "" },
+          "preferredDate": { "S": "" },
+          "message": { "S": "I saw your work on Instagram and love your style! I'm getting married in October 2026 and wanted to know if you offer wedding photography packages. Also curious about engagement session options." },
+          "status": { "S": "booked" },
+          "notes": { "S": "Booked for October 15, 2026 wedding at Arrowhead Golf Club. Engagement session scheduled for June. Deposit received." },
+          "createdAt": { "N": "1704240000000" },
+          "updatedAt": { "N": "1704585600000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "INQUIRY#inq-004" },
+          "SK": { "S": "METADATA" },
+          "type": { "S": "booking" },
+          "name": { "S": "David Park" },
+          "email": { "S": "dpark@gmail.com" },
+          "phone": { "S": "(303) 555-0789" },
+          "sessionType": { "S": "Portrait" },
+          "preferredDate": { "S": "This weekend if possible" },
+          "message": { "S": "Need professional headshots for LinkedIn and my company website. How quickly can you turn around the edited photos?" },
+          "status": { "S": "new" },
+          "notes": { "S": "" },
+          "createdAt": { "N": "1704499200000" },
+          "updatedAt": { "N": "1704499200000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "INQUIRY#inq-005" },
+          "SK": { "S": "METADATA" },
+          "type": { "S": "booking" },
+          "name": { "S": "Aurora Chamber of Commerce" },
+          "email": { "S": "events@aurorachamber.org" },
+          "phone": { "S": "(303) 555-1000" },
+          "sessionType": { "S": "Event" },
+          "preferredDate": { "S": "March 15, 2026 - 6PM to 10PM" },
+          "message": { "S": "We are hosting our annual business awards gala and need event photography coverage. Approximately 200 attendees expected. Would like coverage of award presentations, networking moments, and formal group shots of award winners." },
+          "status": { "S": "contacted" },
+          "notes": { "S": "Sent quote for full evening coverage. Following up next week." },
+          "createdAt": { "N": "1704153600000" },
+          "updatedAt": { "N": "1704412800000" }
+        }
+      }
+    }
+  ]
+}

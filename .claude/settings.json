@@ -1,0 +1,61 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'File modification detected'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd $CLAUDE_PROJECT_DIR && pnpm lint --fix --quiet 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Session: $CLAUDE_SESSION_ID - $(date)\" >> $CLAUDE_PROJECT_DIR/.claude/session.log",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npm *)",
+      "Bash(git *)",
+      "Bash(aws s3 *)",
+      "Bash(aws cloudfront *)",
+      "Bash(aws dynamodb *)",
+      "Bash(aws logs *)",
+      "Bash(aws sts *)",
+      "Bash(terraform *)",
+      "Bash(docker *)",
+      "Bash(stripe *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf ~)",
+      "Bash(* --force)",
+      "Bash(aws * --no-verify-ssl)",
+      "Bash(git push * --force)"
+    ]
+  }
+}

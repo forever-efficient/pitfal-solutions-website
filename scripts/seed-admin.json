@@ -1,0 +1,204 @@
+{
+  "pitfal-admin": [
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "ADMIN#admin" },
+          "SK": { "S": "METADATA" },
+          "passwordHash": { "S": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X0d8bZv8zWqJZ8ZHK" },
+          "email": { "S": "admin@pitfal.solutions" },
+          "role": { "S": "owner" },
+          "createdAt": { "N": "1704067200000" },
+          "lastLogin": { "N": "1704499200000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "SETTINGS" },
+          "SK": { "S": "site-info" },
+          "value": { "M": {
+            "businessName": { "S": "Pitfal Solutions" },
+            "tagline": { "S": "Swing the Gap" },
+            "email": { "S": "info@pitfal.solutions" },
+            "phone": { "S": "(970) 703-6336" },
+            "address": { "S": "Aurora, CO" },
+            "businessHours": { "S": "7am-10pm daily" },
+            "socialLinks": { "M": {
+              "instagram": { "S": "https://instagram.com/pitfalsolutions" },
+              "facebook": { "S": "https://facebook.com/pitfalsolutions" },
+              "linkedin": { "S": "https://linkedin.com/company/pitfalsolutions" }
+            }}
+          }}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "SETTINGS" },
+          "SK": { "S": "services" },
+          "value": { "L": [
+            { "M": {
+              "id": { "S": "portrait-basic" },
+              "name": { "S": "Portrait Essential" },
+              "description": { "S": "Perfect for professional headshots and personal branding" },
+              "duration": { "S": "30 minutes" },
+              "startingPrice": { "N": "199" },
+              "deposit": { "N": "50" },
+              "includes": { "L": [
+                { "S": "30-minute session" },
+                { "S": "5 edited digital images" },
+                { "S": "Online gallery" },
+                { "S": "1 outfit" }
+              ]}
+            }},
+            { "M": {
+              "id": { "S": "portrait-standard" },
+              "name": { "S": "Portrait Plus" },
+              "description": { "S": "Great for families, seniors, and lifestyle portraits" },
+              "duration": { "S": "1 hour" },
+              "startingPrice": { "N": "349" },
+              "deposit": { "N": "100" },
+              "includes": { "L": [
+                { "S": "1-hour session" },
+                { "S": "15 edited digital images" },
+                { "S": "Online gallery (90 days)" },
+                { "S": "2 outfits" },
+                { "S": "Location of choice" }
+              ]}
+            }},
+            { "M": {
+              "id": { "S": "portrait-premium" },
+              "name": { "S": "Portrait Premium" },
+              "description": { "S": "The full experience for those who want it all" },
+              "duration": { "S": "2 hours" },
+              "startingPrice": { "N": "599" },
+              "deposit": { "N": "150" },
+              "includes": { "L": [
+                { "S": "2-hour session" },
+                { "S": "30 edited digital images" },
+                { "S": "Online gallery (1 year)" },
+                { "S": "3+ outfits" },
+                { "S": "Multiple locations" },
+                { "S": "Print credit ($50)" }
+              ]}
+            }},
+            { "M": {
+              "id": { "S": "brand-half" },
+              "name": { "S": "Brand Half-Day" },
+              "description": { "S": "Ideal for small teams and product launches" },
+              "duration": { "S": "4 hours" },
+              "startingPrice": { "N": "1200" },
+              "deposit": { "N": "300" },
+              "includes": { "L": [
+                { "S": "4-hour coverage" },
+                { "S": "50 edited images" },
+                { "S": "Team headshots (up to 10)" },
+                { "S": "Product/workspace photos" },
+                { "S": "Commercial usage rights" }
+              ]}
+            }},
+            { "M": {
+              "id": { "S": "event-half" },
+              "name": { "S": "Event Half-Day" },
+              "description": { "S": "Coverage for corporate events and celebrations" },
+              "duration": { "S": "4 hours" },
+              "startingPrice": { "N": "800" },
+              "deposit": { "N": "200" },
+              "includes": { "L": [
+                { "S": "4-hour coverage" },
+                { "S": "100+ edited images" },
+                { "S": "Online gallery" },
+                { "S": "Same-week delivery" }
+              ]}
+            }}
+          ]}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "SETTINGS" },
+          "SK": { "S": "testimonials" },
+          "value": { "L": [
+            { "M": {
+              "id": { "S": "test-001" },
+              "clientName": { "S": "Sarah & James" },
+              "quote": { "S": "We couldn't be happier with our engagement photos! The attention to detail and ability to capture genuine moments was incredible. Highly recommend!" },
+              "rating": { "N": "5" },
+              "sessionType": { "S": "Portrait" },
+              "sessionDate": { "S": "2025-09-15" },
+              "featured": { "BOOL": true }
+            }},
+            { "M": {
+              "id": { "S": "test-002" },
+              "clientName": { "S": "TechStart Inc." },
+              "quote": { "S": "Professional, creative, and easy to work with. Our new team photos have elevated our brand image significantly." },
+              "rating": { "N": "5" },
+              "sessionType": { "S": "Brand" },
+              "sessionDate": { "S": "2025-10-20" },
+              "featured": { "BOOL": true }
+            }},
+            { "M": {
+              "id": { "S": "test-003" },
+              "clientName": { "S": "The Martinez Family" },
+              "quote": { "S": "Such a fun experience! Great with kids and really captured our family's personality." },
+              "rating": { "N": "5" },
+              "sessionType": { "S": "Portrait" },
+              "sessionDate": { "S": "2025-11-05" },
+              "featured": { "BOOL": true }
+            }}
+          ]}
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "SETTINGS" },
+          "SK": { "S": "faqs" },
+          "value": { "L": [
+            { "M": {
+              "id": { "S": "faq-001" },
+              "category": { "S": "Booking" },
+              "question": { "S": "How do I book a session?" },
+              "answer": { "S": "Simply fill out the contact form or send an email to info@pitfal.solutions. We'll get back to you within 24 hours to discuss your needs and schedule a session." },
+              "order": { "N": "1" }
+            }},
+            { "M": {
+              "id": { "S": "faq-002" },
+              "category": { "S": "Booking" },
+              "question": { "S": "What is your cancellation policy?" },
+              "answer": { "S": "Sessions can be rescheduled up to 48 hours before the scheduled time. Cancellations within 48 hours may forfeit the deposit. Weather-related reschedules are always free." },
+              "order": { "N": "2" }
+            }},
+            { "M": {
+              "id": { "S": "faq-003" },
+              "category": { "S": "Sessions" },
+              "question": { "S": "What should I wear to my session?" },
+              "answer": { "S": "Check out our Style Guide page for detailed recommendations! In general, solid colors work best, and it's a good idea to bring 2-3 outfit options." },
+              "order": { "N": "3" }
+            }},
+            { "M": {
+              "id": { "S": "faq-004" },
+              "category": { "S": "Delivery" },
+              "question": { "S": "How long until I receive my photos?" },
+              "answer": { "S": "Turnaround time is typically 2 weeks for portrait sessions and 3-4 weeks for events. Rush delivery is available for an additional fee." },
+              "order": { "N": "4" }
+            }},
+            { "M": {
+              "id": { "S": "faq-005" },
+              "category": { "S": "Delivery" },
+              "question": { "S": "What format will my photos be in?" },
+              "answer": { "S": "You'll receive high-resolution JPEG files suitable for printing, plus web-optimized versions perfect for social media." },
+              "order": { "N": "5" }
+            }}
+          ]}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "pitfal-galleries": [
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#brand-001" },
+          "SK": { "S": "METADATA" },
+          "title": { "S": "Aurora Tech Startup Branding" },
+          "category": { "S": "brands" },
+          "description": { "S": "Professional branding photography session for Aurora-based tech startup, featuring team headshots and product photography." },
+          "coverImage": { "S": "img-001" },
+          "isPublic": { "BOOL": true },
+          "isClientGallery": { "BOOL": false },
+          "createdAt": { "N": "1704067200000" },
+          "updatedAt": { "N": "1704067200000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#brand-001" },
+          "SK": { "S": "IMAGE#img-001" },
+          "filename": { "S": "team-hero.jpg" },
+          "title": { "S": "Team Hero Shot" },
+          "description": { "S": "Full team photograph in modern office setting" },
+          "s3Key": { "S": "originals/brand-001/img-001.jpg" },
+          "thumbnails": { "M": {
+            "sm": { "S": "thumbnails/brand-001/img-001/sm.webp" },
+            "md": { "S": "thumbnails/brand-001/img-001/md.webp" },
+            "lg": { "S": "thumbnails/brand-001/img-001/lg.webp" }
+          }},
+          "dimensions": { "M": { "width": { "N": "4000" }, "height": { "N": "2667" } }},
+          "order": { "N": "1" },
+          "isFeatured": { "BOOL": true },
+          "createdAt": { "N": "1704067200000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#portrait-001" },
+          "SK": { "S": "METADATA" },
+          "title": { "S": "Senior Portrait Session - Emma" },
+          "category": { "S": "portraits" },
+          "description": { "S": "High school senior portrait session at Cherry Creek State Park with golden hour lighting." },
+          "coverImage": { "S": "img-010" },
+          "isPublic": { "BOOL": true },
+          "isClientGallery": { "BOOL": false },
+          "createdAt": { "N": "1704153600000" },
+          "updatedAt": { "N": "1704153600000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#portrait-001" },
+          "SK": { "S": "IMAGE#img-010" },
+          "filename": { "S": "senior-golden-hour.jpg" },
+          "title": { "S": "Golden Hour Portrait" },
+          "description": { "S": "Senior portrait during golden hour" },
+          "s3Key": { "S": "originals/portrait-001/img-010.jpg" },
+          "thumbnails": { "M": {
+            "sm": { "S": "thumbnails/portrait-001/img-010/sm.webp" },
+            "md": { "S": "thumbnails/portrait-001/img-010/md.webp" },
+            "lg": { "S": "thumbnails/portrait-001/img-010/lg.webp" }
+          }},
+          "dimensions": { "M": { "width": { "N": "3000" }, "height": { "N": "4500" } }},
+          "order": { "N": "1" },
+          "isFeatured": { "BOOL": true },
+          "createdAt": { "N": "1704153600000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#event-001" },
+          "SK": { "S": "METADATA" },
+          "title": { "S": "Johnson-Martinez Wedding" },
+          "category": { "S": "events" },
+          "description": { "S": "Beautiful autumn wedding at Arrowhead Golf Club in Littleton, Colorado." },
+          "coverImage": { "S": "img-020" },
+          "isPublic": { "BOOL": true },
+          "isClientGallery": { "BOOL": false },
+          "createdAt": { "N": "1704240000000" },
+          "updatedAt": { "N": "1704240000000" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "PK": { "S": "GALLERY#client-001" },
+          "SK": { "S": "METADATA" },
+          "title": { "S": "Wilson Family Session - Proofing" },
+          "category": { "S": "portraits" },
+          "description": { "S": "Family portrait session for the Wilson family - awaiting client selections." },
+          "coverImage": { "S": "img-030" },
+          "isPublic": { "BOOL": false },
+          "isClientGallery": { "BOOL": true },
+          "password": { "S": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X0d8bZv8zWqJZ8ZHK" },
+          "expiresAt": { "N": "1735689600000" },
+          "selectionLimit": { "N": "25" },
+          "createdAt": { "N": "1704326400000" },
+          "updatedAt": { "N": "1704326400000" }
+        }
+      }
+    }
+  ]
+}
