@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.pitfal.solutions)",
+      "WebFetch(domain:m.academy)",
+      "WebFetch(domain:www.builder.io)",
+      "WebFetch(domain:docs.stripe.com)",
+      "WebFetch(domain:awslabs.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:claude.com)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:mcpservers.org)",
+      "Bash(claude mcp add *)",
+      "Bash(claude mcp list *)",
+      "Bash(uvx *)",
+      "Bash(curl *)",
+      "Bash(sh)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash(claude mcp enable *)",
+      "Bash(claude mcp reset-project-choices)",
+      "Bash(python3 *)",
+      "mcp__github__get_file_contents",
+      "mcp__filesystem__list_directory",
+      "mcp__filesystem__directory_tree",
+      "mcp__filesystem__create_directory",
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__read_multiple_files",
+      "Bash(wc *)",
+      "mcp__github__create_repository",
+      "Bash(gh auth:*)",
+      "Bash(brew install:*)",
+      "Bash(echo:*)",
+      "Bash(git commit:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}
