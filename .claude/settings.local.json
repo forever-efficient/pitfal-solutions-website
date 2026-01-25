@@ -36,7 +36,15 @@
       "Bash(claude /doctor)",
       "Bash(xxd:*)",
       "Bash(claude --version:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "mcp__filesystem__list_allowed_directories"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "terraform",
+    "aws-docs",
+    "aws-pricing",
+    "stripe",
+    "filesystem"
+  ]
 }

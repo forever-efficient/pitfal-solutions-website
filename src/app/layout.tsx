@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import '@/styles/globals.css';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -111,11 +113,11 @@ export default function RootLayout({
 
         {/* Main application */}
         <div className="flex min-h-screen flex-col">
-          {/* Header will go here */}
+          <Header />
           <main id="main-content" className="flex-1">
             {children}
           </main>
-          {/* Footer will go here */}
+          <Footer />
         </div>
       </body>
     </html>

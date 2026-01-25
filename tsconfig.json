@@ -45,6 +45,10 @@
     "out",
     "dist",
     "coverage",
-    "lambda"
+    "lambda",
+    "scripts",
+    "tests",
+    "vitest.config.ts",
+    "playwright.config.ts"
   ]
 }

@@ -1,0 +1,73 @@
+'use client';
+
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+interface FAQAccordionProps {
+  items: FAQItem[];
+}
+
+export function FAQAccordion({ items }: FAQAccordionProps) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleItem = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
+
+  return (
+    <div className="space-y-4">
+      {items.map((item, index) => (
+        <div
+          key={index}
+          className="border border-neutral-200 rounded-lg overflow-hidden"
+        >
+          <button
+            onClick={() => toggleItem(index)}
+            className="w-full flex items-center justify-between p-4 text-left bg-white hover:bg-neutral-50 transition-colors"
+            aria-expanded={openIndex === index}
+          >
+            <span className="font-medium text-neutral-900 pr-4">
+              {item.question}
+            </span>
+            <svg
+              className={cn(
+                'w-5 h-5 text-neutral-500 flex-shrink-0 transition-transform duration-200',
+                openIndex === index && 'rotate-180'
+              )}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          <div
+            className={cn(
+              'overflow-hidden transition-all duration-200',
+              openIndex === index ? 'max-h-96' : 'max-h-0'
+            )}
+          >
+            <div className="p-4 pt-0 text-neutral-600 prose prose-sm max-w-none">
+              {item.answer.split('\n').map((paragraph, i) => (
+                <p key={i} className={i > 0 ? 'mt-2' : ''}>
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
