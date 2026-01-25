@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_comment": "Client testimonials for Pitfal Solutions. Edit this file and redeploy to update testimonials on the website.",
+  "testimonials": [
+    {
+      "id": "sample-001",
+      "clientName": "Sample Client",
+      "clientPhoto": null,
+      "quote": "This is a sample testimonial. Replace with real client feedback.",
+      "rating": 5,
+      "eventType": "Portrait",
+      "date": "2025-01-01",
+      "featured": true
+    }
+  ]
+}

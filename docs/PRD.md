@@ -4,7 +4,7 @@
 | Field | Value |
 |-------|-------|
 | **Product Name** | Pitfal Solutions Website |
-| **Version** | 1.2 (MVP Scope Refined Based on User Decisions) |
+| **Version** | 1.3 (MVP Scope Refined Based on User Decisions) |
 | **Last Updated** | January 2026 |
 | **Status** | MVP Scope Finalized - Updated |
 | **Owner** | Thomas Archuleta |
@@ -157,7 +157,11 @@ Pitfal Solutions differentiates through:
 | **Gallery Layouts** | All 4 (Grid, Masonry, Slideshow, Stacked) | Maximum flexibility | MVP |
 | **Booking System** | Inquiry form only | No calendar integration | MVP |
 | **Service Packages** | 3-4 main types | Portrait, Event, Brand, Custom | MVP |
-| **Admin Dashboard** | Gallery management only | No inquiry tracking in MVP | MVP |
+| **Admin Dashboard** | Gallery management + view-only inquiries | Status updates deferred | MVP |
+| **Testimonials** | Static JSON file | No admin UI for MVP | MVP |
+| **FAQ** | Static JSON file | No admin UI for MVP | MVP |
+| **Style Guide** | Static MDX page | Managed via Git | MVP |
+| **Client Auth** | HttpOnly cookies | 7-day sessions | MVP |
 | **Admin 2FA** | Deferred | Password-only auth for MVP | Phase 2 |
 | **Portfolio Categories** | Admin-configurable | Not hardcoded | MVP |
 | **Client Selection Limits** | None | Full access to all images | MVP |
@@ -168,12 +172,15 @@ Pitfal Solutions differentiates through:
 | Feature Category | MVP (Phase 1) | Phase 2 |
 |------------------|---------------|---------|
 | Portfolio Gallery | All 4 layouts, lightbox, **admin-configurable categories** | - |
-| Client Proofing | Password auth, **full access**, commenting, download | ~~Selection limits~~ |
+| Client Proofing | HttpOnly cookie auth (7-day), **full access**, commenting, download | ~~Selection limits~~ |
 | Booking | Inquiry form with email notifications | Calendar integration, deposits |
 | E-Commerce | - | Print sales, Stripe checkout |
 | Blog | MDX files in Git (no web CMS) | - |
-| Admin | **Gallery management only** | Inquiry tracking, order management, 2FA |
-| Contact | Form with honeypot | - |
+| Testimonials | **Static JSON** (`/content/testimonials.json`) | Admin dashboard management |
+| FAQ | **Static JSON** (`/content/faq.json`) | Admin dashboard management |
+| Style Guide | **Static MDX** page | - |
+| Admin | Gallery management + **view-only inquiry list** | Inquiry management, order tracking, 2FA |
+| Contact | Form with honeypot + API Gateway throttling | - |
 
 ---
 
@@ -257,9 +264,10 @@ Pitfal Solutions differentiates through:
 
 | ID | Requirement | Priority | MVP Status |
 |----|-------------|----------|------------|
-| REQ-ADMIN-001 | Overview: recent inquiries, stats, quick actions | P1 | MVP |
-| REQ-ADMIN-010 | Content management: galleries, blog, services, client galleries | P1 | MVP |
-| REQ-ADMIN-011 | Inquiry management: view, status updates, respond | P1 | MVP |
+| REQ-ADMIN-001 | Overview: recent inquiries (view-only), stats, quick actions | P1 | MVP |
+| REQ-ADMIN-010 | Content management: galleries, client galleries (blog/testimonials/FAQ via Git) | P1 | MVP |
+| REQ-ADMIN-011 | Inquiry viewing: list, details (view-only, no status updates in MVP) | P1 | MVP |
+| REQ-ADMIN-012 | ~~Inquiry management: status updates, notes, respond~~ | - | Phase 2 |
 | REQ-ADMIN-020 | ~~Order management: pending orders, fulfillment, refunds, reports~~ | - | Phase 2 |
 
 ---
@@ -395,6 +403,7 @@ pitfal-media/
 |-------|---------|---------|
 | **Deploy** | `/deploy` | Full deployment: pre-checks → build → Terraform → S3 sync → CloudFront invalidation |
 | **Build** | `/build` | Run lint, type-check, tests, and build with detailed error reporting |
+| **Test** | `/test` | Run tests: unit, E2E, coverage (80% threshold) |
 | **Preview** | `/preview` | Start local Next.js dev server on port 3000 |
 | **Optimize Images** | `/optimize-images` | Batch convert to WebP, generate sizes, create blur placeholders |
 | **Sync Content** | `/sync-content` | Upload gallery content to S3 bucket |
@@ -684,6 +693,8 @@ The following integrations are planned for Phase 2:
 |---------|------|--------|---------|
 | 1.0 | January 2026 | Claude Code | First draft |
 | 1.1 | January 2026 | Claude Code | MVP scope refinement - 8-10 week timeline, deferred e-commerce, simplified booking |
+| 1.2 | January 2026 | Claude Code | Added detailed milestone breakdown, development workflow skills |
+| 1.3 | January 2026 | Claude Code | **Static content & security updates:** (1) Testimonials, FAQ, Style Guide now static content (JSON/MDX files); (2) Client auth uses HttpOnly cookies (7-day sessions); (3) Admin inquiry view is read-only for MVP; (4) Added API Gateway throttling for rate limiting |
 
 ---
 

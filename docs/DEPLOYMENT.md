@@ -1,7 +1,7 @@
 # Deployment Guide - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.1 (MVP Scope Refined)
+- **Version:** 1.2 (MVP Scope Refined)
 - **Last Updated:** January 2026
 - **Status:** MVP Deployment Guide
 
@@ -147,6 +147,82 @@ brew install node pnpm awscli terraform
 ---
 
 ## 2. Initial Infrastructure Setup
+
+### Terraform Modular Structure
+
+The infrastructure uses a modular Terraform design for maintainability and reusability:
+
+```
+infrastructure/terraform/
+├── main.tf                  # Provider config, backend, locals
+├── variables.tf             # Input variables
+├── outputs.tf               # Output values (bucket names, URLs, etc.)
+├── terraform.tfvars         # Environment-specific values
+│
+├── modules/
+│   ├── lambda/              # Reusable Lambda function module
+│   │   ├── main.tf          # Lambda resource, IAM role
+│   │   ├── variables.tf     # Function name, handler, env vars
+│   │   └── outputs.tf       # Function ARN, invoke URL
+│   ├── api-gateway/         # API Gateway REST API module
+│   │   ├── main.tf          # REST API, resources, methods
+│   │   ├── variables.tf     # API name, Lambda integrations
+│   │   └── outputs.tf       # API URL, stage
+│   └── dynamodb/            # DynamoDB table module
+│       ├── main.tf          # Table, GSIs, TTL settings
+│       ├── variables.tf     # Table name, keys, GSI config
+│       └── outputs.tf       # Table ARN, stream ARN
+│
+├── s3.tf                    # S3 buckets (static site, media)
+├── cloudfront.tf            # CloudFront distribution, OAC
+├── dynamodb.tf              # Table definitions (uses module)
+├── lambda.tf                # Function definitions (uses module)
+├── api-gateway.tf           # REST API (uses module)
+├── ses.tf                   # SES domain, email templates
+├── iam.tf                   # Shared IAM roles, policies
+├── route53.tf               # DNS records
+├── acm.tf                   # SSL certificates
+└── cloudwatch.tf            # Log groups, alarms, dashboards
+```
+
+**Key Design Decisions:**
+- **Modules for repeatability:** Lambda module used 6 times with different configs
+- **Consistent naming:** All resources prefixed with `pitfal-{env}-`
+- **Outputs for integration:** CloudFront ID, bucket names exposed for CI/CD
+- **Separate concerns:** Each `.tf` file handles one AWS service
+
+### Step 2.0: Pre-Deployment Checklist
+
+Before deploying infrastructure, verify all prerequisites:
+
+```bash
+# ✅ AWS credentials configured
+aws sts get-caller-identity --profile pitfal
+# Expected: Returns account ID and user ARN
+
+# ✅ Correct region set
+aws configure get region --profile pitfal
+# Expected: us-west-2
+
+# ✅ Terraform installed
+terraform --version
+# Expected: v1.6.x or higher
+
+# ✅ Project dependencies installed
+cd /path/to/website
+pnpm install
+# Expected: No errors
+
+# ✅ Environment variables file exists
+cat .env.local
+# Expected: Contains AWS_PROFILE, NEXT_PUBLIC_MEDIA_URL, etc.
+
+# ✅ Lambda code compiles
+cd lambda && pnpm build
+# Expected: dist/ directory created with compiled JS
+```
+
+**If any check fails, resolve before proceeding.**
 
 ### Step 2.1: Create Terraform State Backend
 
@@ -360,34 +436,85 @@ aws s3 sync out/ s3://$BUCKET \
 aws s3 ls s3://$BUCKET --profile pitfal
 ```
 
-### Step 4.3: Deploy Lambda Functions
+### Step 4.3: Deploy Lambda Functions (Terraform-Managed)
+
+Lambda functions are deployed via Terraform, not manual zip uploads. This ensures:
+- Consistent deployments across environments
+- Version tracking in Terraform state
+- Environment variables managed in code
+- IAM permissions defined alongside function
+
+**Lambda Layer for Shared Dependencies:**
+
+```hcl
+# infrastructure/terraform/lambda.tf
+
+# Shared layer with common dependencies (aws-sdk, zod, etc.)
+resource "aws_lambda_layer_version" "shared" {
+  filename            = "${path.module}/../../lambda/layers/shared.zip"
+  layer_name          = "pitfal-shared"
+  compatible_runtimes = ["nodejs20.x"]
+  source_code_hash    = filebase64sha256("${path.module}/../../lambda/layers/shared.zip")
+}
+
+# Example function using module
+module "contact_lambda" {
+  source = "./modules/lambda"
+
+  function_name = "pitfal-contact"
+  handler       = "index.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 10
+  memory_size   = 256
+
+  source_path = "${path.module}/../../lambda/contact"
+  layers      = [aws_lambda_layer_version.shared.arn]
+
+  environment_variables = {
+    TABLE_NAME     = module.inquiries_table.table_name
+    SES_FROM_EMAIL = var.ses_from_email
+    ENVIRONMENT    = var.environment
+  }
+
+  tags = local.common_tags
+}
+```
+
+**Deployment Process:**
 
 ```bash
-cd lambda
+cd infrastructure/terraform
 
-# Install dependencies
-pnpm install
+# Build Lambda code first
+cd ../../lambda && pnpm build && cd ../infrastructure/terraform
 
-# Build TypeScript
-pnpm build
+# Package shared layer (one-time or when dependencies change)
+cd ../../lambda/layers
+zip -r shared.zip nodejs/
+cd ../../infrastructure/terraform
 
-# Package each function
-for func in contact client-auth client-gallery admin process-image send-email; do
-  echo "Packaging $func..."
-  cd dist/$func
-  zip -r ../../$func.zip .
-  cd ../..
-done
+# Deploy via Terraform (handles all functions)
+terraform plan   # Review changes
+terraform apply  # Deploy
 
-# Deploy each function
-for func in contact client-auth client-gallery admin process-image send-email; do
-  echo "Deploying $func..."
-  aws lambda update-function-code \
-    --function-name pitfal-$func \
-    --zip-file fileb://$func.zip \
-    --profile pitfal
-done
+# Terraform automatically:
+# - Packages function code
+# - Creates/updates Lambda functions
+# - Sets environment variables
+# - Attaches IAM roles
+# - Configures API Gateway triggers
 ```
+
+**Environment Variables (per function):**
+
+| Function | Variables |
+|----------|-----------|
+| `contact` | TABLE_NAME, SES_FROM_EMAIL, NOTIFY_EMAIL |
+| `client-auth` | TABLE_NAME, JWT_SECRET, COOKIE_DOMAIN |
+| `client-gallery` | TABLE_NAME, S3_BUCKET, CLOUDFRONT_URL |
+| `admin` | TABLE_NAME, S3_BUCKET, JWT_SECRET |
+| `process-image` | S3_BUCKET, TABLE_NAME |
+| `send-email` | SES_FROM_EMAIL |
 
 ### Step 4.4: Invalidate CloudFront Cache
 
@@ -405,15 +532,91 @@ aws cloudfront create-invalidation \
 aws cloudfront list-invalidations --distribution-id $DIST_ID --profile pitfal
 ```
 
-### Step 4.5: Verify Deployment
+### Step 4.5: Post-Deployment Verification
 
+After deployment, verify all components are working:
+
+**1. Static Site Health Check:**
 ```bash
-# Check site is accessible
+# Check site is accessible (expect 200)
 curl -I https://www.pitfal.solutions
+# Expected: HTTP/2 200, content-type: text/html
 
-# Check API endpoint
-curl https://www.pitfal.solutions/api/health
+# Check CloudFront is serving (look for x-cache header)
+curl -I https://www.pitfal.solutions | grep -i x-cache
+# Expected: x-cache: Hit from cloudfront (after first request)
+
+# Verify SSL certificate
+echo | openssl s_client -connect www.pitfal.solutions:443 2>/dev/null | openssl x509 -noout -dates
+# Expected: notAfter date in the future
 ```
+
+**2. API Health Check:**
+```bash
+# Check API Gateway responds
+curl -s https://www.pitfal.solutions/api/health | jq
+# Expected: {"status": "ok", "timestamp": "..."}
+
+# Test contact endpoint (should validate but not submit)
+curl -s -X POST https://www.pitfal.solutions/api/contact \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}' | jq
+# Expected: {"success": false, "error": {"code": "VALIDATION_ERROR", ...}}
+```
+
+**3. Lambda Function Health:**
+```bash
+# Check each function is deployed and configured
+for func in contact client-auth client-gallery admin process-image send-email; do
+  echo "Checking pitfal-$func..."
+  aws lambda get-function --function-name pitfal-$func \
+    --query "Configuration.{State:State,Runtime:Runtime,Timeout:Timeout}" \
+    --profile pitfal
+done
+# Expected: All functions show State: Active, Runtime: nodejs20.x
+```
+
+**4. DynamoDB Tables:**
+```bash
+# Verify tables exist and have correct GSIs
+for table in pitfal-galleries pitfal-inquiries pitfal-admin; do
+  echo "Checking $table..."
+  aws dynamodb describe-table --table-name $table \
+    --query "Table.{Status:TableStatus,GSIs:GlobalSecondaryIndexes[*].IndexName}" \
+    --profile pitfal
+done
+# Expected: Status: ACTIVE, GSIs listed
+```
+
+**5. S3 Buckets:**
+```bash
+# Check static site bucket
+aws s3 ls s3://pitfal-static-site --profile pitfal | head -5
+# Expected: List of files including index.html
+
+# Check media bucket
+aws s3 ls s3://pitfal-media --profile pitfal
+# Expected: Bucket exists (may be empty initially)
+```
+
+**6. CloudWatch Alarms (if configured):**
+```bash
+aws cloudwatch describe-alarms \
+  --alarm-name-prefix pitfal \
+  --query "MetricAlarms[*].{Name:AlarmName,State:StateValue}" \
+  --profile pitfal
+# Expected: All alarms in OK state
+```
+
+**Verification Checklist:**
+- [ ] Homepage loads (https://www.pitfal.solutions)
+- [ ] API responds (https://www.pitfal.solutions/api/health)
+- [ ] SSL certificate valid
+- [ ] CloudFront caching working
+- [ ] All 6 Lambda functions active
+- [ ] All 3 DynamoDB tables accessible
+- [ ] CloudWatch logs streaming
+- [ ] No errors in recent logs
 
 ---
 
@@ -743,3 +946,4 @@ terraform destroy # Remove (careful!)
 |---------|------|--------|---------|
 | 1.0 | January 2026 | Claude Code | First draft |
 | 1.1 | January 2026 | Claude Code | Added beginner-friendly sections, prerequisites checklist, step-by-step verification, simplified deployment strategy for MVP |
+| 1.2 | January 2026 | Claude Code | **Infrastructure updates:** (1) Documented modular Terraform structure with modules for Lambda, API Gateway, DynamoDB; (2) Changed Lambda deployment from manual zip to Terraform-managed with shared layer; (3) Added comprehensive pre-deployment checklist (Step 2.0); (4) Expanded post-deployment verification with health checks for all components; (5) Added Lambda environment variables reference table |

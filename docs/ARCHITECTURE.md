@@ -219,7 +219,7 @@ The `process-image` Lambda is triggered **immediately** when an image is uploade
          ├── Extract EXIF metadata
          ├── Generate WebP variants (320w, 640w, 1280w, 1920w, 2560w)
          ├── Generate thumbnails (150x150, 300x300, 600x600)
-         ├── Generate blur placeholder (plaiceholder library)
+         ├── Generate blur placeholder (tiny 20x20 thumbnail)
          └── Update DynamoDB with processing status
          │
          ▼

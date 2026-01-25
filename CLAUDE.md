@@ -28,13 +28,13 @@ This file provides guidance to Claude Code when working with code in this reposi
 | **Frontend** | Next.js 14+ | TypeScript, Static Export |
 | **Styling** | Tailwind CSS | With custom design system |
 | **Backend** | AWS Lambda | Node.js runtime |
-| **API** | API Gateway | REST API |
-| **Database** | DynamoDB | Serverless, pay-per-use |
+| **API** | API Gateway | REST API, throttling for rate limiting |
+| **Database** | DynamoDB | Serverless, pay-per-use, 3 GSIs |
 | **Storage** | S3 + CloudFront | Images, videos, static assets |
-| **Auth** | Cognito or Auth.js | Client authentication |
-| **Payments** | Stripe | E-commerce transactions |
+| **Auth** | Custom (HttpOnly cookies) | 7-day sessions, client + admin |
+| **Payments** | Stripe | Phase 2 - E-commerce transactions |
 | **Email** | AWS SES | Transactional emails |
-| **IaC** | Terraform | Infrastructure management |
+| **IaC** | Terraform | Modular infrastructure |
 | **CI/CD** | GitHub Actions | Automated deployments |
 
 ---
@@ -46,10 +46,17 @@ website/
 ├── CLAUDE.md                    # This file
 ├── .mcp.json                    # MCP server configuration
 ├── docs/
-│   ├── REQUIREMENTS.md          # Functional requirements
-│   ├── ARCHITECTURE.md          # System design
-│   ├── DEPLOYMENT.md            # Deployment guide
+│   ├── REQUIREMENTS.md          # Functional requirements (v1.5)
+│   ├── ARCHITECTURE.md          # System design (v1.4)
+│   ├── DEPLOYMENT.md            # Deployment guide (v1.2)
+│   ├── PRD.md                   # Product requirements (v1.3)
 │   └── SKILL-WORKFLOWS.md       # How skills work together
+├── content/                     # Static content (managed via Git)
+│   ├── testimonials.json        # Client testimonials
+│   ├── faq.json                 # Frequently asked questions
+│   ├── blog/                    # MDX blog posts
+│   │   └── style-guide.mdx      # What to wear guide
+│   └── galleries/               # Local gallery staging
 ├── .claude/
 │   ├── settings.json            # Hooks and permissions
 │   └── skills/                  # Custom Claude skills
@@ -60,16 +67,24 @@ website/
 │       ├── sync-content/SKILL.md
 │       ├── logs/SKILL.md
 │       ├── db-seed/SKILL.md
-│       ├── stripe-setup/SKILL.md
+│       ├── stripe-setup/SKILL.md  # Phase 2
 │       └── gallery-manage/SKILL.md
 ├── infrastructure/
 │   └── terraform/
-│       ├── main.tf
-│       ├── variables.tf
-│       ├── s3.tf
-│       ├── cloudfront.tf
-│       ├── lambda.tf
-│       └── dynamodb.tf
+│       ├── main.tf              # Provider, backend config
+│       ├── variables.tf         # Input variables
+│       ├── outputs.tf           # Output values
+│       ├── modules/             # Reusable modules
+│       │   ├── lambda/          # Lambda function module
+│       │   ├── api-gateway/     # API Gateway module
+│       │   └── dynamodb/        # DynamoDB table module
+│       ├── s3.tf                # S3 buckets
+│       ├── cloudfront.tf        # CloudFront distribution
+│       ├── lambda.tf            # Function definitions
+│       ├── api-gateway.tf       # REST API
+│       ├── dynamodb.tf          # Table definitions + GSIs
+│       ├── ses.tf               # Email configuration
+│       └── iam.tf               # IAM roles/policies
 ├── src/
 │   ├── app/                     # Next.js App Router
 │   ├── components/              # React components
@@ -217,19 +232,22 @@ Run `/mcp` to check server status and authenticate.
 
 ## Custom Claude Skills
 
-| Skill | Purpose | Usage |
-|-------|---------|-------|
-| `/deploy` | Deploy to AWS | Pre-checks, build, Terraform, S3 sync, CloudFront invalidation |
-| `/build` | Build and test | Lint, type-check, test, build with detailed error reporting |
-| `/optimize-images` | Batch image optimization | WebP conversion, multiple sizes, blur placeholders |
-| `/preview` | Local development | Start Next.js dev server on port 3000 |
-| `/sync-content` | Sync to S3 | Upload gallery content to S3 bucket |
-| `/logs` | View CloudWatch logs | Fetch Lambda/API Gateway logs with error filtering |
-| `/db-seed` | Seed database | Populate DynamoDB with sample data (dev only) |
-| `/stripe-setup` | Configure Stripe | Create products, prices, webhooks |
-| `/gallery-manage` | Gallery organization | Create, validate, organize photo galleries |
+| Skill | Purpose | Usage | Phase |
+|-------|---------|-------|-------|
+| `/deploy` | Deploy to AWS | Pre-checks, build, Terraform, S3 sync, CloudFront invalidation | MVP |
+| `/build` | Build and test | Lint, type-check, test, build with detailed error reporting | MVP |
+| `/test` | Run tests | Unit tests, E2E tests, coverage reporting | MVP |
+| `/optimize-images` | Batch image optimization | WebP conversion, multiple sizes, CSS blur thumbnails | MVP |
+| `/preview` | Local development | Start Next.js dev server on port 3000 | MVP |
+| `/sync-content` | Sync to S3 | Upload gallery content to S3 bucket | MVP |
+| `/logs` | View CloudWatch logs | Fetch Lambda/API Gateway logs with error filtering | MVP |
+| `/db-seed` | Seed database | Populate DynamoDB with sample data (dev only) | MVP |
+| `/stripe-setup` | Configure Stripe | Create products, prices, webhooks | **Phase 2** |
+| `/gallery-manage` | Gallery organization | Create, validate, organize photo galleries | MVP |
 
 Skills are defined in `.claude/skills/*/SKILL.md`. See `docs/SKILL-WORKFLOWS.md` for workflow integration.
+
+**Static Content Note:** Testimonials, FAQ, and Style Guide are managed via Git (JSON/MDX files in `/content/`), not through admin dashboard. Edit files, commit, and deploy.
 
 ---
 

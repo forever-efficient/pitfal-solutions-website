@@ -1,7 +1,7 @@
 # Functional Requirements - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.4 (MVP Scope Refined)
+- **Version:** 1.5 (MVP Scope Refined)
 - **Last Updated:** January 2026
 - **Status:** MVP Scope Finalized - Updated based on user decisions
 
@@ -75,7 +75,7 @@
 **REQ-GAL-021:** System shall automatically generate: `[MVP]`
 - Multiple image sizes on upload
 - WebP versions
-- Blur placeholder hashes (using plaiceholder library)
+- Blur placeholders (CSS-only approach using tiny thumbnails)
 - EXIF data extraction
 
 **REQ-GAL-022:** System shall support the following image formats: `[MVP]`
@@ -150,7 +150,13 @@
 **REQ-PROOF-020:** System shall support: `[MVP]`
 - Individual image download (any image in gallery)
 - Bulk download (ZIP) of all images in gallery
-- Different download resolutions (web-optimized, high-resolution)
+- Download resolution options:
+  - **Web-optimized:** 1920px longest edge, WebP format (~200KB-500KB per image)
+  - **High-resolution:** Original dimensions, JPEG format (full quality)
+- Bulk download limits:
+  - Maximum 100 images per ZIP download
+  - Maximum 2GB total ZIP file size
+  - For larger galleries: multiple download batches required
 - ~~Download tracking/limits~~ `[Not Required - unlimited access model]`
 
 **REQ-PROOF-021:** ~~System shall apply configurable watermarks~~ `[Not Required]`
@@ -408,39 +414,68 @@
 
 ## 7.5 Testimonials Section
 
-**REQ-UI-040:** Site shall display client testimonials: `[MVP]`
+**REQ-UI-040:** Site shall display client testimonials: `[MVP - Static Content]`
 - Testimonial cards with client name, photo (optional), and quote
 - Star rating display (1-5 stars)
 - Session type and date
 - Rotating/carousel display on homepage
 - Full testimonials page with all reviews
-- Admin can add/edit/delete testimonials
+- **Content Management:** Static JSON file (`/content/testimonials.json`)
+- **No admin UI for MVP** - edit JSON file directly, redeploy
 
-**REQ-UI-041:** Testimonial data structure: `[MVP]`
-- Client name (required)
-- Client photo (optional, S3 stored)
-- Quote/testimonial text (required, max 500 characters)
-- Star rating (required, 1-5)
-- Session type (Portrait, Event, Brand, etc.)
-- Session date (for ordering)
-- Featured flag (for homepage display)
+**REQ-UI-041:** Testimonial data structure: `[MVP - Static Content]`
+- Stored in `/content/testimonials.json`
+- Schema:
+  ```json
+  {
+    "testimonials": [{
+      "id": "string",
+      "clientName": "string (required)",
+      "clientPhoto": "string (optional, path to image)",
+      "quote": "string (required, max 500 chars)",
+      "rating": "number (1-5)",
+      "eventType": "string (Portrait|Event|Brand)",
+      "date": "YYYY-MM-DD",
+      "featured": "boolean"
+    }]
+  }
+  ```
+- Phase 2: Admin dashboard for testimonial management
 
 ---
 
 ## 7.6 FAQ Section
 
-**REQ-UI-050:** Site shall include FAQ page: `[MVP]`
+**REQ-UI-050:** Site shall include FAQ page: `[MVP - Static Content]`
 - Accordion-style Q&A format
 - Organized by category (Booking, Sessions, Delivery, Pricing)
 - Search/filter functionality
-- Admin can add/edit/delete/reorder FAQs
+- **Content Management:** Static JSON file (`/content/faq.json`)
+- **No admin UI for MVP** - edit JSON file directly, redeploy
 
-**REQ-UI-051:** FAQ categories: `[MVP]`
-- **Booking:** How to book, deposits, cancellation policy
-- **Sessions:** What to wear, what to expect, locations
-- **Delivery:** Timeline, format, downloads
-- **Pricing:** Package details, additional purchases
-- **General:** Contact, service area, availability
+**REQ-UI-051:** FAQ categories and structure: `[MVP - Static Content]`
+- Stored in `/content/faq.json`
+- Schema:
+  ```json
+  {
+    "categories": [{
+      "name": "string (Booking|Sessions|Delivery|Pricing|General)",
+      "order": "number",
+      "questions": [{
+        "id": "string",
+        "question": "string",
+        "answer": "string (supports markdown)"
+      }]
+    }]
+  }
+  ```
+- **Categories:**
+  - **Booking:** How to book, deposits, cancellation policy
+  - **Sessions:** What to wear, what to expect, locations
+  - **Delivery:** Timeline, format, downloads
+  - **Pricing:** Package details, additional purchases
+  - **General:** Contact, service area, availability
+- Phase 2: Admin dashboard for FAQ management
 
 ---
 
@@ -468,20 +503,23 @@
 
 ## 7.8 Style Guide Page
 
-**REQ-UI-070:** Site shall include client style guide: `[MVP]`
+**REQ-UI-070:** Site shall include client style guide: `[MVP - Static MDX]`
 - "What to Wear" recommendations by session type
 - Color palette suggestions
 - Outfit examples with photos
 - Things to avoid
 - Preparation tips (hair, makeup, rest)
 - Location-specific advice
+- **Content Management:** Static MDX file (`/content/blog/style-guide.mdx`)
+- Managed via Git like other blog posts
 
-**REQ-UI-071:** Style guide sections: `[MVP]`
+**REQ-UI-071:** Style guide sections: `[MVP - Static MDX]`
 - **Portraits:** Individual and family styling tips
 - **Brand/Corporate:** Professional attire guidelines
 - **Events:** Dress code awareness, formal vs. casual
 - **General Tips:** Solid colors, textures, layers
 - **Pinterest Board Links:** Curated inspiration (optional)
+- Can embed gallery images using MDX components
 
 ---
 
@@ -507,10 +545,19 @@
 
 ### 8.3 Inquiry Management
 
-**REQ-ADMIN-011:** ~~Admin shall view/manage inquiries in dashboard~~ `[Phase 2]`
-- MVP: Inquiries handled via email notifications only
-- No inquiry tracking dashboard in MVP
-- Phase 2 will add: List view, status tracking, notes, history
+**REQ-ADMIN-011:** Admin shall view inquiries in dashboard: `[MVP - View Only]`
+- List view of all inquiries (sorted by date, newest first)
+- Display: name, email, session type, date submitted, status
+- Status indicator (New, Contacted, Booked, Declined, Closed)
+- Click to view full inquiry details
+- **MVP Limitations:**
+  - View-only (no status updates, no notes, no deletion)
+  - Status changes happen via email workflow
+- **Phase 2 additions:**
+  - Update inquiry status from dashboard
+  - Add/edit notes
+  - Archive/delete inquiries
+  - Bulk actions
 
 ### 8.4 Admin Authentication
 
@@ -657,11 +704,18 @@ pnpm build         # Build verification
 ### 10.1 Security
 
 **REQ-SEC-001:** Security requirements: `[MVP]`
-- HTTPS everywhere
-- Secure password storage (bcrypt)
-- CSRF protection
-- XSS prevention
-- Rate limiting on forms/APIs
+- HTTPS everywhere (TLS 1.3 via CloudFront)
+- Secure password storage (bcrypt, cost factor 12)
+- CSRF protection (double-submit cookie pattern for admin)
+- XSS prevention (HttpOnly cookies, CSP headers)
+- Rate limiting via API Gateway throttling (10 req/sec burst, 5 req/sec sustained)
+- Stricter auth endpoint limits (3 req/sec burst, 1 req/sec sustained)
+
+**REQ-SEC-002:** Session security: `[MVP]`
+- Client gallery sessions: HttpOnly cookies, 7-day expiry with sliding refresh
+- Admin sessions: HttpOnly cookies, 7-day expiry
+- SameSite=Strict on all session cookies
+- Secure flag (HTTPS only) on all cookies
 
 ### 10.2 Scalability
 
@@ -695,3 +749,4 @@ pnpm build         # Build verification
 | 1.2 | January 2026 | Claude Code | Added Section 9: Testing Requirements - test-driven workflow, coverage requirements, testing stack |
 | 1.3 | January 2026 | Claude Code | Added accepted image formats (REQ-GAL-022), cascade delete behavior (REQ-GAL-023/024), admin password reset (REQ-ADMIN-012/013), Testimonials (7.5), FAQ (7.6), Package Comparison (7.7), Style Guide (7.8) |
 | 1.4 | January 2026 | Claude Code | **MVP Scope Refinement:** Simplified client proofing (full access, no selection limits), admin-configurable categories (not hardcoded), Git-based blog (no web CMS), moved inquiry dashboard to Phase 2, added admin 2FA as Phase 2, added image processing error handling (REQ-GAL-025) |
+| 1.5 | January 2026 | Claude Code | **Static Content & Security Updates:** (1) Testimonials → static JSON (`/content/testimonials.json`), no admin UI for MVP; (2) FAQ → static JSON (`/content/faq.json`), no admin UI for MVP; (3) Style Guide → static MDX file; (4) Inquiry dashboard changed to view-only for MVP (no management actions); (5) Updated security to HttpOnly cookies for client sessions (7-day sliding expiry); (6) Added API Gateway throttling details; (7) Clarified bulk download limits (100 images, 2GB max) |

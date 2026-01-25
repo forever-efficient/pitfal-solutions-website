@@ -25,6 +25,7 @@
       }
     },
     "stripe": {
+      "_phase": "Phase 2 - E-commerce (not used in MVP)",
       "command": "npx",
       "args": ["-y", "@stripe/mcp", "--tools=all"],
       "env": {
