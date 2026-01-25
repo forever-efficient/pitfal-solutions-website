@@ -102,6 +102,6 @@ content/galleries/*/blur/
 # =============================================================================
 # Claude Code
 # =============================================================================
-.claude/settings.local.json
+# .claude/settings.local.json  # Tracked for single-developer cross-machine sync
 .claude/session.log
 .claude/*.jsonl
