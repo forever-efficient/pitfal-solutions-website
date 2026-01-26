@@ -37,7 +37,8 @@
       "Bash(xxd:*)",
       "Bash(claude --version:*)",
       "Bash(ls:*)",
-      "mcp__filesystem__list_allowed_directories"
+      "mcp__filesystem__list_allowed_directories",
+      "mcp__terraform__RunCheckovScan"
     ]
   },
   "enabledMcpjsonServers": [
