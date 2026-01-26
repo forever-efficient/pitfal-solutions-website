@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Business:** Pitfal Solutions - Photography & Videography (Aurora, CO)
+**Business:** Pitfal Solutions - Photography & Videography (Denver, CO)
 **Website:** https://www.pitfal.solutions/
 **Tagline:** "Swing the Gap"
 

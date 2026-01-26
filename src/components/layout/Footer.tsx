@@ -134,7 +134,7 @@ export function Footer() {
               Contact
             </h3>
             <ul className="space-y-3 text-sm text-neutral-400">
-              <li>Aurora, Colorado</li>
+              <li>Denver, Colorado</li>
               <li>
                 <a
                   href="mailto:info@pitfal.solutions"

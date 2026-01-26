@@ -61,10 +61,6 @@ export function TestimonialsSection() {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">
             What Our Clients Say
           </h2>
-          <p className="text-lg text-neutral-600">
-            Don&apos;t just take our word for it. Here&apos;s what our clients have to say
-            about working with us.
-          </p>
         </div>
 
         {/* Testimonials carousel */}

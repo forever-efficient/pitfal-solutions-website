@@ -23,7 +23,7 @@
             "tagline": { "S": "Swing the Gap" },
             "email": { "S": "info@pitfal.solutions" },
             "phone": { "S": "(970) 703-6336" },
-            "address": { "S": "Aurora, CO" },
+            "address": { "S": "Denver, CO" },
             "businessHours": { "S": "7am-10pm daily" },
             "socialLinks": { "M": {
               "instagram": { "S": "https://instagram.com/pitfalsolutions" },

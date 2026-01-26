@@ -130,7 +130,7 @@ export default function ServicesPage() {
         <Container>
           <div className="max-w-3xl">
             <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
-              Our Services
+              Services Provided
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
               Professional Photography & Videography
@@ -224,7 +224,7 @@ export default function ServicesPage() {
               Simple, Transparent Pricing
             </h2>
             <p className="text-lg text-neutral-600">
-              Choose a package that fits your needs, or contact us for a custom quote.
+              Choose a package that fits your needs, or reach out for a custom quote.
             </p>
           </div>
 
@@ -289,7 +289,7 @@ export default function ServicesPage() {
           <p className="text-center text-neutral-500 mt-8">
             Need something different?{' '}
             <Link href="/contact" className="text-primary-600 hover:underline">
-              Contact us for a custom quote
+              Reach out for a custom quote
             </Link>
           </p>
         </Container>

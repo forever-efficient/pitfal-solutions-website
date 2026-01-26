@@ -25,7 +25,7 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-neutral-600">
-              Find answers to common questions about our services, booking
+              Find answers to common questions about services offered, booking
               process, and what to expect during your session.
             </p>
           </div>
@@ -54,11 +54,11 @@ export default function FAQPage() {
               Still Have Questions?
             </h2>
             <p className="text-lg text-neutral-600 mb-6">
-              Can&apos;t find what you&apos;re looking for? We&apos;re here to help.
-              Reach out and we&apos;ll get back to you as soon as possible.
+              Can&apos;t find what you&apos;re looking for? Help is just a click away.
+              Reach out and you&apos;ll hear back as soon as possible.
             </p>
             <Button asChild>
-              <Link href="/contact">Contact Us</Link>
+              <Link href="/contact">Contact Info</Link>
             </Button>
           </div>
         </Container>

@@ -6,7 +6,7 @@ import { ContactCTA } from '@/components/sections';
 export const metadata: Metadata = {
   title: 'Portfolio',
   description:
-    'View our photography and videography portfolio featuring brand photography, portrait sessions, and event coverage. Based in Aurora, Colorado.',
+    'View our photography and videography portfolio featuring brand photography, portrait sessions, and event coverage. Based in Denver, Colorado.',
 };
 
 const categories = [
@@ -47,8 +47,8 @@ export default function PortfolioPage() {
               Our Work
             </h1>
             <p className="text-xl text-neutral-600">
-              Explore our collection of photography and videography projects.
-              Each gallery showcases our commitment to quality and creativity.
+              Explore past collection of photography and videography projects to see what the future can bring you.
+              Each gallery showcases the commitment to quality and creativity you will receive.
             </p>
           </div>
         </Container>

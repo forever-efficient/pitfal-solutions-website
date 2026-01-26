@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     template: '%s | Pitfal Solutions',
   },
   description:
-    'Professional photography and videography services in Aurora, CO. Specializing in brand photography, portraits, and event coverage. Swing the Gap.',
+    'Professional photography and videography services in Denver, CO. Specializing in brand photography, portraits, and event coverage. Swing the Gap.',
   keywords: [
     'photography',
     'videography',
-    'Aurora Colorado',
+    'Denver Colorado',
     'brand photography',
     'portrait photographer',
     'event photography',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     siteName: 'Pitfal Solutions',
     title: 'Pitfal Solutions | Photography & Videography',
     description:
-      'Professional photography and videography services in Aurora, CO.',
+      'Professional photography and videography services in Denver, CO.',
     images: [
       {
         url: '/og-image.jpg',
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Pitfal Solutions | Photography & Videography',
     description:
-      'Professional photography and videography services in Aurora, CO.',
+      'Professional photography and videography services in Denver, CO.',
     images: ['/og-image.jpg'],
   },
   robots: {

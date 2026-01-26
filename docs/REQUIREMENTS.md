@@ -355,7 +355,7 @@
 
 **REQ-CONTACT-010:** Site shall display: `[MVP]`
 - Business hours (7am-10pm daily)
-- Service area (Aurora, CO and surrounding)
+- Service area (Denver, CO and surrounding)
 - Contact email (info@pitfal.solutions)
 - Phone number ((970) 703-6336)
 - Social media links

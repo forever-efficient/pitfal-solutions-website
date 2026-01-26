@@ -61,7 +61,7 @@ The MVP (Minimum Viable Product) focuses on core portfolio, client proofing, and
 | Attribute | Details |
 |-----------|---------|
 | **Business Name** | Pitfal Solutions |
-| **Location** | Aurora, CO (serving Denver metro area) |
+| **Location** | Denver, CO (serving Denver metro area) |
 | **Services** | Photography & Videography |
 | **Contact** | (970) 703-6336 / info@pitfal.solutions |
 | **Hours** | 7am - 10pm daily |

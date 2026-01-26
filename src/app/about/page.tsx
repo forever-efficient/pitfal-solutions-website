@@ -60,7 +60,7 @@ export default function AboutPage() {
                   narratives that stand the test of time.
                 </p>
                 <p>
-                  Based in Aurora, Colorado, Pitfal Solutions brings a unique
+                  Based in Denver, Colorado, Pitfal Solutions brings a unique
                   perspective to every project. Our approach combines technical
                   excellence with creative vision, ensuring that every shot
                   captures the essence of the moment.

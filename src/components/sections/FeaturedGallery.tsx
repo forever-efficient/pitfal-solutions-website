@@ -39,8 +39,8 @@ export function FeaturedGallery() {
             Featured Projects
           </h2>
           <p className="text-lg text-neutral-600">
-            A selection of our recent work showcasing the quality and creativity
-            we bring to every project.
+            A selection of recent work showcasing the quality and creativity
+            brought to every project.
           </p>
         </div>
 

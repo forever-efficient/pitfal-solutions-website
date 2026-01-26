@@ -5,7 +5,7 @@ import { ContactForm } from '@/components/forms/ContactForm';
 export const metadata: Metadata = {
   title: 'Contact',
   description:
-    'Get in touch with Pitfal Solutions for photography and videography inquiries. Based in Aurora, Colorado, serving the Denver metro area.',
+    'Get in touch with Pitfal Solutions for photography and videography inquiries. Based in Denver, Colorado, serving the Denver metro area.',
 };
 
 export default function ContactPage() {
@@ -19,11 +19,11 @@ export default function ContactPage() {
               Get in Touch
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
-              Let&apos;s Create Something Beautiful
+              Let&apos;s Capture Your Story Together
             </h1>
             <p className="text-xl text-neutral-600">
-              Have a project in mind? We&apos;d love to hear from you. Fill out the
-              form below and we&apos;ll get back to you within 24-48 hours.
+              Have a project in mind? Need to know more? Fill out the
+              form below and you&apos;ll hear back within 24-48 hours.
             </p>
           </div>
         </Container>
@@ -46,7 +46,7 @@ export default function ContactPage() {
                   Location
                 </h3>
                 <p className="text-neutral-600">
-                  Aurora, Colorado
+                  Denver, Colorado
                   <br />
                   Serving the Denver Metro Area
                 </p>
@@ -135,7 +135,7 @@ export default function ContactPage() {
               {/* Response time */}
               <div className="bg-primary-50 rounded-lg p-4">
                 <p className="text-sm text-primary-800">
-                  <strong>Quick response:</strong> We typically respond to
+                  <strong>Quick response:</strong> Typical response to
                   inquiries within 24-48 hours during business days.
                 </p>
               </div>

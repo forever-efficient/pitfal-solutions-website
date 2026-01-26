@@ -1,6 +1,6 @@
 # Pitfal Solutions
 
-Photography & Videography website for Pitfal Solutions based in Aurora, CO.
+Photography & Videography website for Pitfal Solutions based in Denver, CO.
 
 **Website:** https://www.pitfal.solutions/
 

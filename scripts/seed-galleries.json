@@ -5,9 +5,9 @@
         "Item": {
           "PK": { "S": "GALLERY#brand-001" },
           "SK": { "S": "METADATA" },
-          "title": { "S": "Aurora Tech Startup Branding" },
+          "title": { "S": "Denver Tech Startup Branding" },
           "category": { "S": "brands" },
-          "description": { "S": "Professional branding photography session for Aurora-based tech startup, featuring team headshots and product photography." },
+          "description": { "S": "Professional branding photography session for Denver-based tech startup, featuring team headshots and product photography." },
           "coverImage": { "S": "img-001" },
           "isPublic": { "BOOL": true },
           "isClientGallery": { "BOOL": false },

@@ -66,7 +66,7 @@ export function ServicesOverview() {
             What We Offer
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">
-            Our Services
+            Services Provided
           </h2>
           <p className="text-lg text-neutral-600">
             Professional photography and videography tailored to your unique needs.

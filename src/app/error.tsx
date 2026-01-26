@@ -26,7 +26,7 @@ export default function Error({
       </h2>
       <p className="mt-4 max-w-md text-neutral-600">
         We apologize for the inconvenience. An unexpected error has occurred.
-        Please try again or contact us if the problem persists.
+        Please try again or reach out if the problem persists.
       </p>
       {error.digest && (
         <p className="mt-2 text-sm text-neutral-400">Error ID: {error.digest}</p>
