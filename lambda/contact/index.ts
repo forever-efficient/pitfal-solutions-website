@@ -1,8 +1,18 @@
-import { APIGatewayProxyHandler, APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
+import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { randomUUID } from 'crypto';
+import {
+  success,
+  error,
+  badRequest,
+  forbidden,
+  methodNotAllowed,
+  tooManyRequests,
+  serverError,
+  ErrorCode,
+} from '../shared/response';
 
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW_MINUTES = 15; // Time window for rate limiting
@@ -100,9 +110,9 @@ async function checkRateLimit(email: string, ctx: LogContext): Promise<{ allowed
     });
 
     return { allowed, recentCount };
-  } catch (error) {
+  } catch (rateLimitError) {
     // If rate limit check fails, allow the request but log the error
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = rateLimitError instanceof Error ? rateLimitError.message : 'Unknown error';
     log('ERROR', 'Rate limit check failed, allowing request', ctx, { error: errorMessage });
     return { allowed: true, recentCount: 0 };
   }
@@ -165,19 +175,6 @@ function validateForm(data: ContactFormData): ValidationError[] {
   return errors;
 }
 
-// Response helper
-function createResponse(statusCode: number, body: object): APIGatewayProxyResult {
-  return {
-    statusCode,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': 'https://www.pitfal.solutions',
-      'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    },
-    body: JSON.stringify(body),
-  };
-}
 
 // Send notification email to business owner
 async function sendNotificationEmail(inquiry: ContactFormData & { id: string }): Promise<void> {
@@ -281,7 +278,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     log('WARN', 'Method not allowed', ctx, { method: event.httpMethod });
-    return createResponse(405, { error: 'Method not allowed', code: 'ERR_METHOD_NOT_ALLOWED' });
+    return methodNotAllowed();
   }
 
   // CSRF protection: Verify X-Requested-With header
@@ -291,7 +288,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     log('WARN', 'Missing or invalid X-Requested-With header (CSRF protection)', ctx, {
       xRequestedWith: xRequestedWith || 'missing',
     });
-    return createResponse(403, { error: 'Forbidden', code: 'ERR_CSRF_VALIDATION' });
+    return forbidden('CSRF validation failed');
   }
 
   // Parse request body
@@ -302,7 +299,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     log('WARN', 'Invalid JSON in request body', ctx, {
       error: parseError instanceof Error ? parseError.message : 'Unknown parse error'
     });
-    return createResponse(400, { error: 'Invalid JSON in request body', code: 'ERR_INVALID_JSON' });
+    return error('Invalid JSON in request body', 400, { code: ErrorCode.INVALID_JSON });
   }
 
   // Validate form data
@@ -313,10 +310,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (publicErrors.length === 0) {
       // Silently reject spam but return success to not tip off bots
       log('WARN', 'Spam submission detected and rejected', ctx, { honeypot: true });
-      return createResponse(200, { success: true, message: 'Thank you for your message!' });
+      return success({ message: 'Thank you for your message!' });
     }
     log('INFO', 'Validation failed', ctx, { errors: publicErrors });
-    return createResponse(400, { error: 'Validation failed', code: 'ERR_VALIDATION_FAILED', errors: publicErrors });
+    return error('Validation failed', 400, { code: ErrorCode.VALIDATION_FAILED, fieldErrors: publicErrors });
   }
 
   // Check rate limit for this email
@@ -327,10 +324,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       recentCount,
       maxAllowed: MAX_SUBMISSIONS_PER_WINDOW,
     });
-    return createResponse(429, {
-      error: 'Too many submissions. Please wait before submitting again.',
-      code: 'ERR_RATE_LIMIT_EXCEEDED',
-    });
+    return tooManyRequests('Too many submissions. Please wait before submitting again.');
   }
 
   // Generate inquiry ID
@@ -357,14 +351,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       })
     );
     log('INFO', 'Inquiry stored successfully', ctxWithInquiry);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
+  } catch (dbError) {
+    const errorMessage = dbError instanceof Error ? dbError.message : 'Unknown database error';
+    const errorName = dbError instanceof Error ? dbError.name : 'UnknownError';
     log('ERROR', 'Failed to store inquiry', ctxWithInquiry, {
       error: errorMessage,
       errorType: errorName
     });
-    return createResponse(500, { error: 'Failed to submit inquiry. Please try again.', code: 'ERR_DATABASE_WRITE' });
+    return error('Failed to submit inquiry. Please try again.', 500, { code: ErrorCode.DATABASE_ERROR });
   }
 
   // Send emails (don't fail the request if emails fail)
@@ -374,10 +368,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       sendConfirmationEmail(formData),
     ]);
     log('INFO', 'Notification emails sent successfully', ctxWithInquiry);
-  } catch (error) {
+  } catch (emailError) {
     // Log but don't fail - the inquiry is already saved
-    const errorMessage = error instanceof Error ? error.message : 'Unknown email error';
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown email error';
+    const errorName = emailError instanceof Error ? emailError.name : 'UnknownError';
     log('ERROR', 'Failed to send notification emails', ctxWithInquiry, {
       error: errorMessage,
       errorType: errorName
@@ -385,8 +379,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
 
   log('INFO', 'Contact form submission completed', ctxWithInquiry);
-  return createResponse(200, {
-    success: true,
+  return success({
     message: 'Thank you for your message! We will get back to you soon.',
     inquiryId,
   });

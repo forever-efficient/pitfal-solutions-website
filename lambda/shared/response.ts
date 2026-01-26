@@ -1,12 +1,18 @@
 import { APIGatewayProxyResult } from 'aws-lambda';
 
-// Default CORS headers
+// Production CORS origin - default to production domain, allow override via environment variable
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://www.pitfal.solutions';
+
+// Default CORS headers for production use
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': CORS_ORIGIN,
   'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With,X-CSRF-Token',
   'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
   'Access-Control-Allow-Credentials': 'true',
 };
+
+// Export for use by other modules
+export { corsHeaders, CORS_ORIGIN };
 
 // Error codes for debugging and client handling
 export enum ErrorCode {

@@ -127,3 +127,22 @@ resource "aws_iam_role_policy_attachment" "api_gateway_cloudwatch" {
   role       = aws_iam_role.api_gateway_cloudwatch.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 }
+
+# SQS Dead Letter Queue policy for Lambda
+resource "aws_iam_role_policy" "lambda_dlq" {
+  name = "${local.name_prefix}-lambda-dlq"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = aws_sqs_queue.lambda_dlq.arn
+      }
+    ]
+  })
+}

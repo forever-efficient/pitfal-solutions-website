@@ -7,7 +7,7 @@ import { ContactCTA } from '@/components/sections';
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'Learn about Pitfal Solutions - Professional photography and videography services in Aurora, Colorado. Our story, philosophy, and approach to capturing moments.',
+    'Learn about Pitfal Solutions - Professional photography and videography services in Denver, Colorado. Our story, philosophy, and approach to capturing moments.',
 };
 
 export default function AboutPage() {

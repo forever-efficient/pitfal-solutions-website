@@ -13,6 +13,42 @@ data "archive_file" "shared" {
   output_path = "${path.module}/builds/shared.zip"
 }
 
+# Dead Letter Queue for failed Lambda invocations
+resource "aws_sqs_queue" "lambda_dlq" {
+  name                       = "${local.name_prefix}-lambda-dlq"
+  message_retention_seconds  = 1209600 # 14 days
+  visibility_timeout_seconds = 300
+
+  tags = {
+    Name = "${local.name_prefix}-lambda-dlq"
+  }
+}
+
+# DLQ policy to allow Lambda to send messages
+resource "aws_sqs_queue_policy" "lambda_dlq" {
+  queue_url = aws_sqs_queue.lambda_dlq.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowLambdaDLQ"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action   = "sqs:SendMessage"
+        Resource = aws_sqs_queue.lambda_dlq.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.name_prefix}-*"
+          }
+        }
+      }
+    ]
+  })
+}
+
 # Contact Lambda function
 resource "aws_lambda_function" "contact" {
   function_name    = "${local.name_prefix}-contact"
@@ -26,6 +62,11 @@ resource "aws_lambda_function" "contact" {
 
   # Limit concurrent executions to control costs and protect downstream services
   reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  # Dead letter queue for failed invocations
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
 
   environment {
     variables = {

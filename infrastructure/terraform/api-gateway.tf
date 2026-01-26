@@ -28,12 +28,69 @@ resource "aws_api_gateway_resource" "contact" {
   path_part   = "contact"
 }
 
+# Request validator for contact endpoint
+resource "aws_api_gateway_request_validator" "contact" {
+  name                        = "contact-validator"
+  rest_api_id                 = aws_api_gateway_rest_api.main.id
+  validate_request_body       = true
+  validate_request_parameters = false
+}
+
+# Request model for contact form
+resource "aws_api_gateway_model" "contact_request" {
+  rest_api_id  = aws_api_gateway_rest_api.main.id
+  name         = "ContactRequest"
+  description  = "Contact form submission request body"
+  content_type = "application/json"
+
+  schema = jsonencode({
+    "$schema" = "http://json-schema.org/draft-04/schema#"
+    title     = "ContactRequest"
+    type      = "object"
+    required  = ["name", "email", "message"]
+    properties = {
+      name = {
+        type      = "string"
+        minLength = 2
+        maxLength = 100
+      }
+      email = {
+        type      = "string"
+        format    = "email"
+        maxLength = 254
+      }
+      phone = {
+        type      = "string"
+        maxLength = 20
+      }
+      sessionType = {
+        type      = "string"
+        maxLength = 50
+      }
+      message = {
+        type      = "string"
+        minLength = 10
+        maxLength = 5000
+      }
+      honeypot = {
+        type = "string"
+      }
+    }
+    additionalProperties = false
+  })
+}
+
 # POST /api/contact
 resource "aws_api_gateway_method" "contact_post" {
-  rest_api_id   = aws_api_gateway_rest_api.main.id
-  resource_id   = aws_api_gateway_resource.contact.id
-  http_method   = "POST"
-  authorization = "NONE"
+  rest_api_id          = aws_api_gateway_rest_api.main.id
+  resource_id          = aws_api_gateway_resource.contact.id
+  http_method          = "POST"
+  authorization        = "NONE"
+  request_validator_id = aws_api_gateway_request_validator.contact.id
+
+  request_models = {
+    "application/json" = aws_api_gateway_model.contact_request.name
+  }
 }
 
 resource "aws_api_gateway_integration" "contact_post" {
@@ -94,6 +151,28 @@ resource "aws_api_gateway_integration_response" "contact_options" {
   }
 }
 
+# Gateway response for request validation failures
+resource "aws_api_gateway_gateway_response" "bad_request_body" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  response_type = "BAD_REQUEST_BODY"
+  status_code   = "400"
+
+  response_parameters = {
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'https://www.pitfal.solutions'"
+    "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+  }
+
+  response_templates = {
+    "application/json" = jsonencode({
+      success = false
+      error   = "Invalid request body"
+      code    = "ERR_VALIDATION_FAILED"
+      message = "$context.error.validationErrorString"
+    })
+  }
+}
+
 # API Gateway deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -106,6 +185,9 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_integration.contact_post.id,
       aws_api_gateway_method.contact_options.id,
       aws_api_gateway_integration.contact_options.id,
+      aws_api_gateway_request_validator.contact.id,
+      aws_api_gateway_model.contact_request.id,
+      aws_api_gateway_gateway_response.bad_request_body.id,
     ]))
   }
 

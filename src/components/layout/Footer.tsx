@@ -66,7 +66,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-neutral-400 text-sm">
-              Professional photography and videography services in Aurora, Colorado.
+              Professional photography and videography services in Denver, Colorado.
               Capturing moments that matter.
             </p>
             <p className="mt-2 text-accent-500 font-medium text-sm italic">

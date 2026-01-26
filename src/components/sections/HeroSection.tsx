@@ -13,7 +13,7 @@ export interface HeroSectionProps {
 
 export function HeroSection({
   title = 'Capturing Moments That Matter',
-  subtitle = 'Professional photography and videography services in Aurora, Colorado',
+  subtitle = 'Professional photography and videography services in Denver, Colorado',
   tagline = 'Swing the Gap',
   ctaText = 'Book a Session',
   ctaHref = '/contact',

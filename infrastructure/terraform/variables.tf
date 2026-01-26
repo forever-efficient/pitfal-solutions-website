@@ -132,3 +132,16 @@ variable "waf_rate_limit" {
   type        = number
   default     = 1000
 }
+
+# CloudWatch Alarms settings
+variable "enable_cloudwatch_alarms" {
+  description = "Enable CloudWatch alarms for monitoring"
+  type        = bool
+  default     = true
+}
+
+variable "alarm_email" {
+  description = "Email address for alarm notifications (leave empty to skip email subscription)"
+  type        = string
+  default     = ""
+}
