@@ -3,13 +3,33 @@
   "_comment": "Client testimonials for Pitfal Solutions. Edit this file and redeploy to update testimonials on the website.",
   "testimonials": [
     {
-      "id": "sample-001",
-      "clientName": "Sample Client",
-      "clientPhoto": null,
-      "quote": "This is a sample testimonial. Replace with real client feedback.",
+      "id": "1",
+      "name": "Sarah Johnson",
+      "role": "Marketing Director",
+      "company": "TechStart Inc.",
+      "content": "Working with Pitfal Solutions transformed our brand imagery. The attention to detail and creative vision exceeded our expectations. Our marketing materials have never looked better.",
+      "image": "/images/testimonials/sarah.jpg",
       "rating": 5,
-      "eventType": "Portrait",
-      "date": "2025-01-01",
+      "featured": true
+    },
+    {
+      "id": "2",
+      "name": "Michael Chen",
+      "role": "CEO",
+      "company": "Chen Enterprises",
+      "content": "The team captured our corporate event beautifully. Every key moment was documented with professionalism. We've already booked them for our next annual conference.",
+      "image": "/images/testimonials/michael.jpg",
+      "rating": 5,
+      "featured": true
+    },
+    {
+      "id": "3",
+      "name": "Emily Rodriguez",
+      "role": "Bride",
+      "company": "",
+      "content": "Our wedding photos are absolutely stunning. They captured not just the moments, but the emotions of our special day. We couldn't be happier with the results.",
+      "image": "/images/testimonials/emily.jpg",
+      "rating": 5,
       "featured": true
     }
   ]

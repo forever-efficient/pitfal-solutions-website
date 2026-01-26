@@ -15,7 +15,7 @@ export default function ContactPage() {
       <Section size="lg" className="pt-32 bg-neutral-50">
         <Container>
           <div className="max-w-3xl">
-            <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
               Get in Touch
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">

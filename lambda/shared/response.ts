@@ -8,11 +8,32 @@ const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
 };
 
+// Error codes for debugging and client handling
+export enum ErrorCode {
+  // 4xx Client errors
+  BAD_REQUEST = 'ERR_BAD_REQUEST',
+  UNAUTHORIZED = 'ERR_UNAUTHORIZED',
+  FORBIDDEN = 'ERR_FORBIDDEN',
+  NOT_FOUND = 'ERR_NOT_FOUND',
+  METHOD_NOT_ALLOWED = 'ERR_METHOD_NOT_ALLOWED',
+  CONFLICT = 'ERR_CONFLICT',
+  VALIDATION_FAILED = 'ERR_VALIDATION_FAILED',
+  RATE_LIMITED = 'ERR_RATE_LIMITED',
+  INVALID_JSON = 'ERR_INVALID_JSON',
+
+  // 5xx Server errors
+  INTERNAL_ERROR = 'ERR_INTERNAL',
+  DATABASE_ERROR = 'ERR_DATABASE',
+  EMAIL_ERROR = 'ERR_EMAIL',
+  EXTERNAL_SERVICE = 'ERR_EXTERNAL_SERVICE',
+}
+
 // Standard response types
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: ErrorCode | string;
   errors?: Array<{ field: string; message: string }>;
   meta?: {
     page?: number;
@@ -64,8 +85,12 @@ export function successWithMeta<T>(
 export function error(
   message: string,
   statusCode = 400,
-  fieldErrors?: Array<{ field: string; message: string }>
+  options?: {
+    code?: ErrorCode | string;
+    fieldErrors?: Array<{ field: string; message: string }>;
+  }
 ): APIGatewayProxyResult {
+  const { code, fieldErrors } = options || {};
   return {
     statusCode,
     headers: {
@@ -75,6 +100,7 @@ export function error(
     body: JSON.stringify({
       success: false,
       error: message,
+      ...(code && { code }),
       ...(fieldErrors && { errors: fieldErrors }),
     } satisfies ApiResponse),
   };
@@ -82,42 +108,42 @@ export function error(
 
 // Common error responses
 export function badRequest(message = 'Bad request'): APIGatewayProxyResult {
-  return error(message, 400);
+  return error(message, 400, { code: ErrorCode.BAD_REQUEST });
 }
 
 export function unauthorized(message = 'Unauthorized'): APIGatewayProxyResult {
-  return error(message, 401);
+  return error(message, 401, { code: ErrorCode.UNAUTHORIZED });
 }
 
 export function forbidden(message = 'Forbidden'): APIGatewayProxyResult {
-  return error(message, 403);
+  return error(message, 403, { code: ErrorCode.FORBIDDEN });
 }
 
 export function notFound(message = 'Not found'): APIGatewayProxyResult {
-  return error(message, 404);
+  return error(message, 404, { code: ErrorCode.NOT_FOUND });
 }
 
 export function methodNotAllowed(message = 'Method not allowed'): APIGatewayProxyResult {
-  return error(message, 405);
+  return error(message, 405, { code: ErrorCode.METHOD_NOT_ALLOWED });
 }
 
 export function conflict(message = 'Conflict'): APIGatewayProxyResult {
-  return error(message, 409);
+  return error(message, 409, { code: ErrorCode.CONFLICT });
 }
 
 export function unprocessableEntity(
   message = 'Validation failed',
   fieldErrors?: Array<{ field: string; message: string }>
 ): APIGatewayProxyResult {
-  return error(message, 422, fieldErrors);
+  return error(message, 422, { code: ErrorCode.VALIDATION_FAILED, fieldErrors });
 }
 
 export function tooManyRequests(message = 'Too many requests'): APIGatewayProxyResult {
-  return error(message, 429);
+  return error(message, 429, { code: ErrorCode.RATE_LIMITED });
 }
 
 export function serverError(message = 'Internal server error'): APIGatewayProxyResult {
-  return error(message, 500);
+  return error(message, 500, { code: ErrorCode.INTERNAL_ERROR });
 }
 
 // CORS preflight response

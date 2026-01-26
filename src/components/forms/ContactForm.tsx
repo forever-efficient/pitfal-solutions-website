@@ -85,6 +85,7 @@ export function ContactForm() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest', // CSRF protection via custom header
         },
         body: JSON.stringify(formData),
       });

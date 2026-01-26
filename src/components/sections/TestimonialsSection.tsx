@@ -3,41 +3,20 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Container, Section } from '@/components/ui/Container';
 import { cn } from '@/lib/utils';
+import testimonialsData from '@/../content/testimonials.json';
 
-// Import testimonials from content folder in production
-// For now, using inline data
-const testimonials = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    role: 'Marketing Director',
-    company: 'TechStart Inc.',
-    content:
-      "Working with Pitfal Solutions transformed our brand imagery. The attention to detail and creative vision exceeded our expectations. Our marketing materials have never looked better.",
-    image: '/images/testimonials/sarah.jpg',
-    rating: 5,
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    role: 'CEO',
-    company: 'Chen Enterprises',
-    content:
-      "The team captured our corporate event beautifully. Every key moment was documented with professionalism. We've already booked them for our next annual conference.",
-    image: '/images/testimonials/michael.jpg',
-    rating: 5,
-  },
-  {
-    id: '3',
-    name: 'Emily Rodriguez',
-    role: 'Bride',
-    company: '',
-    content:
-      "Our wedding photos are absolutely stunning. They captured not just the moments, but the emotions of our special day. We couldn't be happier with the results.",
-    image: '/images/testimonials/emily.jpg',
-    rating: 5,
-  },
-];
+interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  content: string;
+  image: string;
+  rating: number;
+  featured?: boolean;
+}
+
+const testimonials: Testimonial[] = testimonialsData.testimonials;
 
 export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -76,7 +55,7 @@ export function TestimonialsSection() {
       <Container>
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-          <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+          <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
             Testimonials
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">

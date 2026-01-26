@@ -1,8 +1,12 @@
-import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyHandler, APIGatewayProxyResult, APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { randomUUID } from 'crypto';
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MINUTES = 15; // Time window for rate limiting
+const MAX_SUBMISSIONS_PER_WINDOW = 3; // Max submissions per email per window
 
 // Initialize clients
 const dynamoClient = new DynamoDBClient({});
@@ -27,6 +31,36 @@ if (!INQUIRIES_TABLE || !FROM_EMAIL || !CONTACT_EMAIL) {
   );
 }
 
+// Structured logger for CloudWatch Logs Insights
+interface LogContext {
+  requestId: string;
+  sourceIp?: string;
+  userAgent?: string;
+  inquiryId?: string;
+}
+
+type LogLevel = 'INFO' | 'WARN' | 'ERROR';
+
+function log(level: LogLevel, message: string, context: LogContext, data?: Record<string, unknown>): void {
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    ...context,
+    ...(data && { data }),
+  };
+  // JSON format for CloudWatch Logs Insights queries
+  console.log(JSON.stringify(logEntry));
+}
+
+function getRequestContext(event: APIGatewayProxyEvent): LogContext {
+  return {
+    requestId: event.requestContext?.requestId || randomUUID(),
+    sourceIp: event.requestContext?.identity?.sourceIp,
+    userAgent: event.requestContext?.identity?.userAgent,
+  };
+}
+
 // Sanitize string to prevent email header injection
 function sanitizeForEmail(input: string): string {
   // Remove newlines, carriage returns, and other control characters
@@ -35,6 +69,43 @@ function sanitizeForEmail(input: string): string {
     .replace(/[\r\n\t]/g, ' ')
     .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '')
     .trim();
+}
+
+// Check for duplicate/rate-limited submissions
+async function checkRateLimit(email: string, ctx: LogContext): Promise<{ allowed: boolean; recentCount: number }> {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString();
+
+  try {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: INQUIRIES_TABLE,
+        IndexName: 'email-index',
+        KeyConditionExpression: 'email = :email AND createdAt > :windowStart',
+        ExpressionAttributeValues: {
+          ':email': email.toLowerCase().trim(),
+          ':windowStart': windowStart,
+        },
+        Select: 'COUNT',
+      })
+    );
+
+    const recentCount = result.Count || 0;
+    const allowed = recentCount < MAX_SUBMISSIONS_PER_WINDOW;
+
+    log('INFO', 'Rate limit check completed', ctx, {
+      email: email.substring(0, 3) + '***', // Log partial email for privacy
+      recentCount,
+      allowed,
+      windowMinutes: RATE_LIMIT_WINDOW_MINUTES,
+    });
+
+    return { allowed, recentCount };
+  } catch (error) {
+    // If rate limit check fails, allow the request but log the error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log('ERROR', 'Rate limit check failed, allowing request', ctx, { error: errorMessage });
+    return { allowed: true, recentCount: 0 };
+  }
 }
 
 // Types
@@ -204,19 +275,34 @@ This is an automated confirmation email. Please do not reply directly to this me
 
 // Main handler
 export const handler: APIGatewayProxyHandler = async (event) => {
-  console.log('Contact form submission received');
+  const ctx = getRequestContext(event);
+  log('INFO', 'Contact form submission received', ctx, { method: event.httpMethod });
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return createResponse(405, { error: 'Method not allowed' });
+    log('WARN', 'Method not allowed', ctx, { method: event.httpMethod });
+    return createResponse(405, { error: 'Method not allowed', code: 'ERR_METHOD_NOT_ALLOWED' });
+  }
+
+  // CSRF protection: Verify X-Requested-With header
+  // Browsers enforce CORS for custom headers, preventing cross-origin attackers from setting this
+  const xRequestedWith = event.headers['X-Requested-With'] || event.headers['x-requested-with'];
+  if (xRequestedWith !== 'XMLHttpRequest') {
+    log('WARN', 'Missing or invalid X-Requested-With header (CSRF protection)', ctx, {
+      xRequestedWith: xRequestedWith || 'missing',
+    });
+    return createResponse(403, { error: 'Forbidden', code: 'ERR_CSRF_VALIDATION' });
   }
 
   // Parse request body
   let formData: ContactFormData;
   try {
     formData = JSON.parse(event.body || '{}');
-  } catch {
-    return createResponse(400, { error: 'Invalid JSON in request body' });
+  } catch (parseError) {
+    log('WARN', 'Invalid JSON in request body', ctx, {
+      error: parseError instanceof Error ? parseError.message : 'Unknown parse error'
+    });
+    return createResponse(400, { error: 'Invalid JSON in request body', code: 'ERR_INVALID_JSON' });
   }
 
   // Validate form data
@@ -226,15 +312,31 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const publicErrors = validationErrors.filter((e) => e.field !== 'honeypot');
     if (publicErrors.length === 0) {
       // Silently reject spam but return success to not tip off bots
-      console.log('Spam submission detected and rejected');
+      log('WARN', 'Spam submission detected and rejected', ctx, { honeypot: true });
       return createResponse(200, { success: true, message: 'Thank you for your message!' });
     }
-    return createResponse(400, { error: 'Validation failed', errors: publicErrors });
+    log('INFO', 'Validation failed', ctx, { errors: publicErrors });
+    return createResponse(400, { error: 'Validation failed', code: 'ERR_VALIDATION_FAILED', errors: publicErrors });
+  }
+
+  // Check rate limit for this email
+  const { allowed, recentCount } = await checkRateLimit(formData.email, ctx);
+  if (!allowed) {
+    log('WARN', 'Rate limit exceeded', ctx, {
+      email: formData.email.substring(0, 3) + '***',
+      recentCount,
+      maxAllowed: MAX_SUBMISSIONS_PER_WINDOW,
+    });
+    return createResponse(429, {
+      error: 'Too many submissions. Please wait before submitting again.',
+      code: 'ERR_RATE_LIMIT_EXCEEDED',
+    });
   }
 
   // Generate inquiry ID
   const inquiryId = randomUUID();
   const timestamp = new Date().toISOString();
+  const ctxWithInquiry = { ...ctx, inquiryId };
 
   // Store in DynamoDB
   try {
@@ -254,10 +356,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         },
       })
     );
-    console.log(`Inquiry ${inquiryId} stored successfully`);
+    log('INFO', 'Inquiry stored successfully', ctxWithInquiry);
   } catch (error) {
-    console.error('Failed to store inquiry:', error);
-    return createResponse(500, { error: 'Failed to submit inquiry. Please try again.' });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    log('ERROR', 'Failed to store inquiry', ctxWithInquiry, {
+      error: errorMessage,
+      errorType: errorName
+    });
+    return createResponse(500, { error: 'Failed to submit inquiry. Please try again.', code: 'ERR_DATABASE_WRITE' });
   }
 
   // Send emails (don't fail the request if emails fail)
@@ -266,12 +373,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       sendNotificationEmail({ ...formData, id: inquiryId }),
       sendConfirmationEmail(formData),
     ]);
-    console.log('Notification emails sent successfully');
+    log('INFO', 'Notification emails sent successfully', ctxWithInquiry);
   } catch (error) {
     // Log but don't fail - the inquiry is already saved
-    console.error('Failed to send notification emails:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown email error';
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    log('ERROR', 'Failed to send notification emails', ctxWithInquiry, {
+      error: errorMessage,
+      errorType: errorName
+    });
   }
 
+  log('INFO', 'Contact form submission completed', ctxWithInquiry);
   return createResponse(200, {
     success: true,
     message: 'Thank you for your message! We will get back to you soon.',

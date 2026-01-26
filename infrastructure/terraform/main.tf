@@ -34,6 +34,7 @@ provider "aws" {
       Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "Terraform"
+      CostCenter  = var.cost_center
     }
   }
 }
@@ -48,6 +49,7 @@ provider "aws" {
       Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "Terraform"
+      CostCenter  = var.cost_center
     }
   }
 }

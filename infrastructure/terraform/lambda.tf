@@ -24,6 +24,9 @@ resource "aws_lambda_function" "contact" {
   memory_size      = var.lambda_memory_size
   timeout          = var.lambda_timeout
 
+  # Limit concurrent executions to control costs and protect downstream services
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
   environment {
     variables = {
       INQUIRIES_TABLE = aws_dynamodb_table.inquiries.name

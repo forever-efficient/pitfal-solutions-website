@@ -46,6 +46,10 @@ resource "aws_dynamodb_table" "inquiries" {
     enabled = true
   }
 
+  server_side_encryption {
+    enabled = true
+  }
+
   tags = {
     Name = "${local.name_prefix}-inquiries"
   }
@@ -109,6 +113,10 @@ resource "aws_dynamodb_table" "galleries" {
     enabled = true
   }
 
+  server_side_encryption {
+    enabled = true
+  }
+
   tags = {
     Name = "${local.name_prefix}-galleries"
   }
@@ -156,6 +164,10 @@ resource "aws_dynamodb_table" "admin" {
   }
 
   point_in_time_recovery {
+    enabled = true
+  }
+
+  server_side_encryption {
     enabled = true
   }
 

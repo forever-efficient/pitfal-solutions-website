@@ -17,7 +17,7 @@ export default function AboutPage() {
       <Section size="lg" className="pt-32 bg-neutral-50">
         <Container>
           <div className="max-w-3xl">
-            <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
               About Us
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
@@ -37,12 +37,16 @@ export default function AboutPage() {
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Image placeholder */}
-            <div className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" />
-              <div className="absolute inset-0 flex items-center justify-center">
+            <figure
+              className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative"
+              role="img"
+              aria-label="Portrait of the Pitfal Solutions photographer"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" aria-hidden="true" />
+              <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
                 <span className="text-neutral-400 text-lg">Photographer Portrait</span>
               </div>
-            </div>
+            </figure>
 
             {/* Content */}
             <div>

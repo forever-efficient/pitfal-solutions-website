@@ -129,7 +129,7 @@ export default function ServicesPage() {
       <Section size="lg" className="pt-32 bg-neutral-50">
         <Container>
           <div className="max-w-3xl">
-            <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
               Our Services
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
@@ -160,8 +160,10 @@ export default function ServicesPage() {
                   className={`aspect-[4/3] bg-neutral-200 rounded-2xl overflow-hidden relative ${
                     index % 2 === 1 ? 'lg:order-2' : ''
                   }`}
+                  role="img"
+                  aria-label={`${service.title} service preview image`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" aria-hidden="true" />
                 </div>
 
                 {/* Content */}
@@ -215,7 +217,7 @@ export default function ServicesPage() {
       <Section size="lg" background="light" id="packages">
         <Container>
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
               Packages
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 font-display">

@@ -62,9 +62,9 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 # Cache policy for static assets
 resource "aws_cloudfront_cache_policy" "static_assets" {
   name        = "${local.name_prefix}-static-assets"
-  min_ttl     = 86400      # 1 day
-  default_ttl = 604800     # 7 days
-  max_ttl     = 31536000   # 1 year
+  min_ttl     = 86400    # 1 day
+  default_ttl = 604800   # 7 days
+  max_ttl     = 31536000 # 1 year
 
   parameters_in_cache_key_and_forwarded_to_origin {
     cookies_config {
@@ -84,9 +84,9 @@ resource "aws_cloudfront_cache_policy" "static_assets" {
 # Cache policy for media (longer cache)
 resource "aws_cloudfront_cache_policy" "media" {
   name        = "${local.name_prefix}-media"
-  min_ttl     = 604800     # 7 days
-  default_ttl = 2592000    # 30 days
-  max_ttl     = 31536000   # 1 year
+  min_ttl     = 604800   # 7 days
+  default_ttl = 2592000  # 30 days
+  max_ttl     = 31536000 # 1 year
 
   parameters_in_cache_key_and_forwarded_to_origin {
     cookies_config {
@@ -114,6 +114,7 @@ resource "aws_cloudfront_distribution" "website" {
   default_root_object = "index.html"
   price_class         = var.cloudfront_price_class
   aliases             = [var.domain_name, "www.${var.domain_name}"]
+  web_acl_id          = var.enable_waf ? aws_wafv2_web_acl.cloudfront[0].arn : null
 
   # Website S3 origin
   origin {

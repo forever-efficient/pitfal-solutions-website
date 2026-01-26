@@ -62,7 +62,7 @@ export function ServicesOverview() {
       <Container>
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
-          <p className="text-primary-600 font-medium text-sm tracking-widest uppercase mb-3">
+          <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
             What We Offer
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">

@@ -168,8 +168,9 @@ website/
 ## Code Review Checklist
 
 **Review Date:** January 2026
-**Total Issues:** 55 (~~10~~ 0 Critical, 16 High, 19 Medium, 10 Low)
+**Total Issues:** 55 (~~10~~ 0 Critical, ~~16~~ ~~7~~ 1 High, 19 Medium, 10 Low)
 **Critical Issues Fixed:** January 25, 2026
+**High Priority Fixed:** January 26, 2026 (15 issues: DynamoDB encryption, Lambda concurrency, S3 policy, SDK clients, loading states, testimonials, structured logging, error codes, image alt text, WAF protection, cost allocation tags, rate limiting, CSRF protection, color contrast)
 
 ### Critical Issues (Fix Before Deploy)
 
@@ -194,26 +195,26 @@ website/
 ### High Priority Issues
 
 #### Terraform High
-- [ ] **S3 bucket policy allows all CloudFront** (`s3.tf`) - Restrict to specific distribution ID
-- [ ] **No DynamoDB encryption at rest** (`dynamodb.tf`) - Add `server_side_encryption` block
-- [ ] **No Lambda reserved concurrency** (`lambda.tf`) - Add `reserved_concurrent_executions`
-- [ ] **No WAF protection** (`cloudfront.tf`) - Add AWS WAF web ACL
-- [ ] **Missing cost allocation tags** (All `.tf` files) - Add `CostCenter`, `Environment` tags
-- [ ] **CloudFront no geo restrictions** (`cloudfront.tf`) - Consider geo restrictions if needed
+- [x] **S3 bucket policy allows all CloudFront** (`s3.tf`) - Already restricted to specific distribution ARN via `AWS:SourceArn` condition
+- [x] **No DynamoDB encryption at rest** (`dynamodb.tf`) - Added `server_side_encryption` block to all 3 tables
+- [x] **No Lambda reserved concurrency** (`lambda.tf`) - Added `reserved_concurrent_executions` with configurable variable (default: 10)
+- [x] **No WAF protection** (`cloudfront.tf`) - Added AWS WAF with managed rules (Common, KnownBadInputs, SQLi, BotControl) and rate limiting in `waf.tf`
+- [x] **Missing cost allocation tags** (All `.tf` files) - Added `CostCenter` to default_tags in `main.tf`, configurable via `var.cost_center`
+- [ ] **CloudFront no geo restrictions** (`cloudfront.tf`) - Consider geo restrictions if needed (currently not required for US-based photography business)
 
 #### Lambda High
-- [ ] **SDK clients recreated per invoke** (`shared/db.ts`, `shared/email.ts`) - Move client creation outside handler
-- [ ] **Insufficient error logging** (`contact/index.ts`) - Add structured logging with context
-- [ ] **Generic error messages** (`shared/response.ts`) - Add error codes for debugging
-- [ ] **No rate limiting logic** (`contact/index.ts`) - Check for duplicate submissions
+- [x] **SDK clients recreated per invoke** (`shared/db.ts`, `shared/email.ts`) - False positive: clients already at module scope (cold start only)
+- [x] **Insufficient error logging** (`contact/index.ts`) - Added structured JSON logging with requestId, sourceIp, userAgent, inquiryId context
+- [x] **Generic error messages** (`shared/response.ts`) - Added ErrorCode enum (ERR_BAD_REQUEST, ERR_VALIDATION_FAILED, etc.) to all responses
+- [x] **No rate limiting logic** (`contact/index.ts`) - Added `checkRateLimit()` function: queries email-index GSI, allows max 3 submissions per 15 minutes per email
 
 #### Frontend High
-- [ ] **No CSRF protection** (`ContactForm.tsx`) - Add CSRF token handling
-- [ ] **No loading states** (`ContactForm.tsx`) - Add skeleton/spinner during submission
-- [ ] **Color contrast unverified** (`tailwind.config.ts`) - Audit contrast ratios for WCAG AA
-- [ ] **Missing SEO metadata** (Page files) - Add proper `<head>` metadata
-- [ ] **Hardcoded testimonials** (`TestimonialsSection.tsx`) - Move to `/content/testimonials.json`
-- [ ] **No image alt text** (Gallery components) - Add descriptive alt attributes
+- [x] **No CSRF protection** (`ContactForm.tsx`) - Added `X-Requested-With: XMLHttpRequest` header; Lambda validates presence (CORS prevents cross-origin attackers from setting custom headers)
+- [x] **No loading states** (`ContactForm.tsx`) - Already implemented via Button `isLoading` prop with spinner
+- [x] **Color contrast unverified** (`tailwind.config.ts`) - Audited and documented all contrast ratios; fixed small text from primary-600 (3.7:1) to primary-700 (5.0:1) for WCAG AA compliance
+- [x] **Missing SEO metadata** (Page files) - All pages have proper metadata with title, description, OG tags
+- [x] **Hardcoded testimonials** (`TestimonialsSection.tsx`) - Moved to `/content/testimonials.json`
+- [x] **No image alt text** (Gallery components) - Added ARIA labels and alt text to ImageCard, GalleryGrid, portfolio, services, about pages
 
 ---
 

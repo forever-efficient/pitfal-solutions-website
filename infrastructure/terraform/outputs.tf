@@ -79,7 +79,7 @@ output "acm_certificate_arn" {
 # Deployment Commands
 output "deployment_commands" {
   description = "Commands for deploying the website"
-  value = <<-EOT
+  value       = <<-EOT
     # Build the Next.js static site
     pnpm build
 

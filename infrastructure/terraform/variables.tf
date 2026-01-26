@@ -94,6 +94,12 @@ variable "lambda_timeout" {
   default     = 30
 }
 
+variable "lambda_reserved_concurrency" {
+  description = "Reserved concurrent executions for Lambda functions (limits max concurrent invocations)"
+  type        = number
+  default     = 10
+}
+
 # CloudFront settings
 variable "cloudfront_price_class" {
   description = "CloudFront price class"
@@ -105,4 +111,24 @@ variable "enable_cloudfront_logging" {
   description = "Enable CloudFront access logging"
   type        = bool
   default     = false
+}
+
+# Cost allocation
+variable "cost_center" {
+  description = "Cost center tag for AWS cost allocation reporting"
+  type        = string
+  default     = "pitfal-photography"
+}
+
+# WAF settings
+variable "enable_waf" {
+  description = "Enable AWS WAF protection for CloudFront"
+  type        = bool
+  default     = true
+}
+
+variable "waf_rate_limit" {
+  description = "WAF rate limit (requests per 5 minutes per IP)"
+  type        = number
+  default     = 1000
 }
