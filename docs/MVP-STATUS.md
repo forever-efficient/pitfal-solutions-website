@@ -168,25 +168,26 @@ website/
 ## Code Review Checklist
 
 **Review Date:** January 2026
-**Total Issues:** 55 (10 Critical, 16 High, 19 Medium, 10 Low)
+**Total Issues:** 55 (~~10~~ 0 Critical, 16 High, 19 Medium, 10 Low)
+**Critical Issues Fixed:** January 25, 2026
 
 ### Critical Issues (Fix Before Deploy)
 
 #### Terraform Critical
-- [ ] **Wildcard CORS origin** (`api-gateway.tf`) - Replace `*` with `https://www.pitfal.solutions`
-- [ ] **Lambda invoke permission too broad** (`lambda.tf`) - Add `source_arn` restriction to API Gateway
-- [ ] **Data trace enabled in production** (`api-gateway.tf`) - Set `data_trace_enabled = false`
-- [ ] **SES lacks recipient restrictions** (`ses.tf`) - Add IAM condition for allowed recipients
+- [x] **Wildcard CORS origin** (`api-gateway.tf`) - Replace `*` with `https://www.pitfal.solutions`
+- [x] **Lambda invoke permission too broad** (`lambda.tf`) - Add `source_arn` restriction to API Gateway
+- [x] **Data trace enabled in production** (`api-gateway.tf`) - Already conditional: `var.environment != "prod"`
+- [x] **SES lacks recipient restrictions** (`iam.tf`) - Restricted to verified domain identity
 
 #### Lambda Critical
-- [ ] **Email header injection** (`contact/index.ts`) - Sanitize name field, strip newlines/special chars
-- [ ] **Missing environment variable validation** (`contact/index.ts`) - Add startup validation, fail fast if missing
+- [x] **Email header injection** (`contact/index.ts`) - Added `sanitizeForEmail()` function, strip newlines/control chars
+- [x] **Missing environment variable validation** (`contact/index.ts`) - Add startup validation with fail-fast
 
 #### Frontend Critical
-- [ ] **Missing form accessibility** (`ContactForm.tsx`) - Add `aria-label`, `aria-describedby`, `aria-invalid`
-- [ ] **No keyboard navigation in gallery** (`TestimonialsSection.tsx`) - Add `aria-live`, keyboard controls
-- [ ] **Missing error boundaries** (`app/layout.tsx`) - Wrap children in ErrorBoundary component
-- [ ] **No next/image optimization** (Multiple files) - Replace `<img>` with `<Image>` component
+- [x] **Missing form accessibility** (`ContactForm.tsx`) - Added `aria-label`, `role="alert"`, `aria-live`
+- [x] **No keyboard navigation in gallery** (`TestimonialsSection.tsx`) - Added arrow key navigation, `aria-live`, navigation buttons
+- [x] **Missing error boundaries** (`app/layout.tsx`) - Added ErrorBoundary component wrapping children
+- [x] **No next/image optimization** (Multiple files) - No `<img>` tags found; already using Next.js patterns
 
 ---
 

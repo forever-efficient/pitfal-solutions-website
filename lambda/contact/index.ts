@@ -9,10 +9,33 @@ const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
 const sesClient = new SESClient({});
 
-// Environment variables
-const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE!;
-const FROM_EMAIL = process.env.FROM_EMAIL!;
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL!;
+// Environment variables with validation
+const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE;
+const FROM_EMAIL = process.env.FROM_EMAIL;
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+
+// Validate required environment variables at startup
+if (!INQUIRIES_TABLE || !FROM_EMAIL || !CONTACT_EMAIL) {
+  throw new Error(
+    `Missing required environment variables: ${[
+      !INQUIRIES_TABLE && 'INQUIRIES_TABLE',
+      !FROM_EMAIL && 'FROM_EMAIL',
+      !CONTACT_EMAIL && 'CONTACT_EMAIL',
+    ]
+      .filter(Boolean)
+      .join(', ')}`
+  );
+}
+
+// Sanitize string to prevent email header injection
+function sanitizeForEmail(input: string): string {
+  // Remove newlines, carriage returns, and other control characters
+  // that could be used for header injection
+  return input
+    .replace(/[\r\n\t]/g, ' ')
+    .replace(/[^\x20-\x7E\u00A0-\uFFFF]/g, '')
+    .trim();
+}
 
 // Types
 interface ContactFormData {
@@ -77,7 +100,7 @@ function createResponse(statusCode: number, body: object): APIGatewayProxyResult
     statusCode,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': 'https://www.pitfal.solutions',
       'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Requested-With',
       'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     },
@@ -87,16 +110,22 @@ function createResponse(statusCode: number, body: object): APIGatewayProxyResult
 
 // Send notification email to business owner
 async function sendNotificationEmail(inquiry: ContactFormData & { id: string }): Promise<void> {
+  const safeName = sanitizeForEmail(inquiry.name);
+  const safeEmail = sanitizeForEmail(inquiry.email);
+  const safePhone = inquiry.phone ? sanitizeForEmail(inquiry.phone) : 'Not provided';
+  const safeSessionType = inquiry.sessionType ? sanitizeForEmail(inquiry.sessionType) : 'Not specified';
+  const safeMessage = sanitizeForEmail(inquiry.message);
+
   const emailBody = `
 New Contact Form Submission
 
-Name: ${inquiry.name}
-Email: ${inquiry.email}
-Phone: ${inquiry.phone || 'Not provided'}
-Session Type: ${inquiry.sessionType || 'Not specified'}
+Name: ${safeName}
+Email: ${safeEmail}
+Phone: ${safePhone}
+Session Type: ${safeSessionType}
 
 Message:
-${inquiry.message}
+${safeMessage}
 
 ---
 Inquiry ID: ${inquiry.id}
@@ -111,7 +140,7 @@ Submitted at: ${new Date().toISOString()}
       },
       Message: {
         Subject: {
-          Data: `New Inquiry from ${inquiry.name} - Pitfal Solutions`,
+          Data: `New Inquiry from ${safeName} - Pitfal Solutions`,
           Charset: 'UTF-8',
         },
         Body: {
@@ -127,15 +156,19 @@ Submitted at: ${new Date().toISOString()}
 
 // Send confirmation email to customer
 async function sendConfirmationEmail(inquiry: ContactFormData): Promise<void> {
+  const safeName = sanitizeForEmail(inquiry.name);
+  const safeSessionType = inquiry.sessionType ? sanitizeForEmail(inquiry.sessionType) : 'General Inquiry';
+  const safeMessage = sanitizeForEmail(inquiry.message);
+
   const emailBody = `
-Hi ${inquiry.name},
+Hi ${safeName},
 
 Thank you for reaching out to Pitfal Solutions! We've received your message and will get back to you within 24-48 hours.
 
 Here's a summary of your inquiry:
 
-Session Type: ${inquiry.sessionType || 'General Inquiry'}
-Message: ${inquiry.message}
+Session Type: ${safeSessionType}
+Message: ${safeMessage}
 
 If you have any urgent questions, feel free to reach out directly.
 

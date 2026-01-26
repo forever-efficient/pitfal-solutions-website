@@ -22,9 +22,10 @@ export const navigationItems: NavItem[] = [
 export interface NavigationProps {
   items?: NavItem[];
   className?: string;
+  isScrolled?: boolean;
 }
 
-export function Navigation({ items = navigationItems, className }: NavigationProps) {
+export function Navigation({ items = navigationItems, className, isScrolled = true }: NavigationProps) {
   const pathname = usePathname();
 
   return (
@@ -40,9 +41,13 @@ export function Navigation({ items = navigationItems, className }: NavigationPro
             href={item.href}
             className={cn(
               'px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200',
-              isActive
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+              isScrolled
+                ? isActive
+                  ? 'text-accent-600 bg-accent-50'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                : isActive
+                  ? 'text-accent-400 bg-white/10'
+                  : 'text-white/90 hover:text-white hover:bg-white/10'
             )}
           >
             {item.label}

@@ -56,11 +56,11 @@ resource "aws_lambda_layer_version" "shared" {
   description = "Shared utilities for Pitfal Solutions Lambda functions"
 }
 
-# Lambda permission for API Gateway
+# Lambda permission for API Gateway - restricted to contact endpoint
 resource "aws_lambda_permission" "contact_api_gateway" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.contact.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/${aws_api_gateway_method.contact_post.http_method}${aws_api_gateway_resource.contact.path}"
 }

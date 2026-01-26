@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Container, Section } from '@/components/ui/Container';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +43,34 @@ export function TestimonialsSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeTestimonial = testimonials[activeIndex] ?? testimonials[0]!;
 
+  const goToNext = useCallback(() => {
+    setActiveIndex((prev) => (prev + 1) % testimonials.length);
+  }, []);
+
+  const goToPrev = useCallback(() => {
+    setActiveIndex((prev) => (prev - 1 + testimonials.length) % testimonials.length);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle if the carousel or its children are focused
+      const carousel = document.getElementById('testimonials-carousel');
+      if (!carousel?.contains(document.activeElement)) return;
+
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrev();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToNext, goToPrev]);
+
   return (
     <Section size="lg" background="light">
       <Container>
@@ -61,9 +89,22 @@ export function TestimonialsSection() {
         </div>
 
         {/* Testimonials carousel */}
-        <div className="max-w-4xl mx-auto">
+        <div
+          id="testimonials-carousel"
+          className="max-w-4xl mx-auto"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Client testimonials"
+        >
           {/* Active testimonial */}
-          <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12 relative">
+          <div
+            className="bg-white rounded-2xl shadow-lg p-8 md:p-12 relative"
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`Testimonial ${activeIndex + 1} of ${testimonials.length}`}
+            aria-live="polite"
+            tabIndex={0}
+          >
             {/* Quote icon */}
             <svg
               className="absolute top-6 left-6 w-12 h-12 text-primary-100"
@@ -118,21 +159,47 @@ export function TestimonialsSection() {
             </div>
           </div>
 
-          {/* Navigation dots */}
-          <div className="flex justify-center gap-2 mt-8">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={cn(
-                  'w-3 h-3 rounded-full transition-all duration-300',
-                  index === activeIndex
-                    ? 'bg-primary-600 w-8'
-                    : 'bg-neutral-300 hover:bg-neutral-400'
-                )}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
+          {/* Navigation controls */}
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              onClick={goToPrev}
+              className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Previous testimonial"
+            >
+              <svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Navigation dots */}
+            <div className="flex gap-2" role="tablist" aria-label="Testimonial navigation">
+              {testimonials.map((testimonial, index) => (
+                <button
+                  key={testimonial.id}
+                  role="tab"
+                  aria-selected={index === activeIndex}
+                  aria-controls="testimonials-carousel"
+                  onClick={() => setActiveIndex(index)}
+                  className={cn(
+                    'w-3 h-3 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    index === activeIndex
+                      ? 'bg-primary-600 w-8'
+                      : 'bg-neutral-300 hover:bg-neutral-400'
+                  )}
+                  aria-label={`Go to testimonial from ${testimonial.name}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={goToNext}
+              className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+              aria-label="Next testimonial"
+            >
+              <svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       </Container>

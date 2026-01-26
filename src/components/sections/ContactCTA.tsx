@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 
 export function ContactCTA() {
   return (
-    <Section size="lg" background="primary">
+    <Section size="lg" background="transparent" className="bg-slate-700/90">
       <Container>
         <div className="text-center max-w-3xl mx-auto">
           {/* Content */}
@@ -19,21 +19,18 @@ export function ContactCTA() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-white text-primary-600 hover:bg-neutral-100"
-              asChild
+            <Link
+              href="/contact"
+              className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[180px]"
             >
-              <Link href="/contact">Get in Touch</Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-white text-white hover:bg-white/10"
-              asChild
+              Get in Touch
+            </Link>
+            <Link
+              href="/services"
+              className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg border-2 border-white text-white hover:bg-white/10 transition-all duration-200 min-w-[180px]"
             >
-              <Link href="/services">View Packages</Link>
-            </Button>
+              View Packages
+            </Link>
           </div>
 
           {/* Contact info */}

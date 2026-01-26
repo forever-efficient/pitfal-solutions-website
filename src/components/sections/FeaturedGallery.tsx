@@ -25,27 +25,6 @@ const featuredWork = [
     thumbnail: '/images/featured/event-1.jpg',
     href: '/portfolio/events/wedding',
   },
-  {
-    id: '4',
-    title: 'Product Photography',
-    category: 'Brand',
-    thumbnail: '/images/featured/brand-2.jpg',
-    href: '/portfolio/brands/product',
-  },
-  {
-    id: '5',
-    title: 'Family Portraits',
-    category: 'Portraits',
-    thumbnail: '/images/featured/portrait-2.jpg',
-    href: '/portfolio/portraits/family',
-  },
-  {
-    id: '6',
-    title: 'Conference Coverage',
-    category: 'Events',
-    thumbnail: '/images/featured/event-2.jpg',
-    href: '/portfolio/events/conference',
-  },
 ];
 
 export function FeaturedGallery() {
@@ -66,36 +45,34 @@ export function FeaturedGallery() {
           </p>
         </div>
 
-        {/* Gallery grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
-          {featuredWork.map((item, index) => (
+        {/* Gallery grid - 3 columns on desktop, 1 on mobile */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {featuredWork.map((item) => (
             <Link
               key={item.id}
               href={item.href}
-              className={`group relative aspect-square overflow-hidden rounded-xl bg-neutral-200 ${
-                index === 0 || index === 3 ? 'md:row-span-2 md:aspect-auto' : ''
-              }`}
+              className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
               {/* Placeholder gradient - will be replaced with actual images */}
-              <div className="absolute inset-0 bg-gradient-to-br from-neutral-300 to-neutral-400" />
+              <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
 
-              {/* Content */}
-              <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <span className="text-white/80 text-xs font-medium uppercase tracking-wider">
+              {/* Content - always visible */}
+              <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
                   {item.category}
                 </span>
-                <h3 className="text-white font-semibold text-lg mt-1">
+                <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
                   {item.title}
                 </h3>
               </div>
 
               {/* View icon */}
-              <div className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
                 <svg
-                  className="w-5 h-5 text-neutral-900"
+                  className="w-6 h-6 text-neutral-900"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -120,24 +97,25 @@ export function FeaturedGallery() {
 
         {/* View all CTA */}
         <div className="text-center mt-12">
-          <Button variant="outline" size="lg" asChild>
-            <Link href="/portfolio">
-              View Full Portfolio
-              <svg
-                className="w-5 h-5 ml-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </Link>
-          </Button>
+          <Link
+            href="/portfolio"
+            className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md transition-all duration-200 min-w-[220px]"
+          >
+            View Full Portfolio
+            <svg
+              className="w-5 h-5 ml-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
+            </svg>
+          </Link>
         </div>
       </Container>
     </Section>

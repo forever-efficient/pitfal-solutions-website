@@ -158,7 +158,7 @@ export function ContactForm() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" aria-label="Contact form">
             {/* Honeypot field - hidden from users */}
             <input
               type="text"
@@ -236,7 +236,11 @@ export function ContactForm() {
             />
 
             {status === 'error' && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="bg-red-50 border border-red-200 rounded-lg p-4"
+              >
                 <p className="text-red-700 text-sm">{statusMessage}</p>
               </div>
             )}

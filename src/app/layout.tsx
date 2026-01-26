@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from 'next/font/google';
 import '@/styles/globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -115,7 +116,9 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <Header />
           <main id="main-content" className="flex-1">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </main>
           <Footer />
         </div>

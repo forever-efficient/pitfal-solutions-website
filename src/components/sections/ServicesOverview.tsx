@@ -88,13 +88,13 @@ export function ServicesOverview() {
                 </div>
 
                 <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-2 group-hover:text-primary-600 transition-colors">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-neutral-900 mb-3 group-hover:text-primary-600 transition-colors">
                     {service.title}
                   </h3>
-                  <p className="text-neutral-600 text-sm">
+                  <p className="text-neutral-600 text-base leading-relaxed">
                     {service.description}
                   </p>
-                  <span className="inline-flex items-center text-primary-600 font-medium text-sm mt-4 group-hover:gap-2 transition-all">
+                  <span className="inline-flex items-center text-primary-600 font-semibold text-base mt-4 group-hover:gap-2 transition-all">
                     Learn more
                     <svg
                       className="w-4 h-4 ml-1"

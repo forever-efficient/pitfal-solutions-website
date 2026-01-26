@@ -2,23 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Navigation } from './Navigation';
 import { MobileMenu } from './MobileMenu';
-import { Button } from '@/components/ui/Button';
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  const isHomepage = pathname === '/';
+  const [isScrolled, setIsScrolled] = useState(!isHomepage);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    // On non-homepage, always use scrolled style
+    if (!isHomepage) {
+      setIsScrolled(true);
+      return;
+    }
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
+    // Check initial scroll position
+    handleScroll();
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isHomepage]);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -50,12 +61,7 @@ export function Header() {
               className="flex items-center gap-2 group"
             >
               <span
-                className={cn(
-                  'text-xl md:text-2xl font-bold transition-colors',
-                  isScrolled
-                    ? 'text-primary-600'
-                    : 'text-white group-hover:text-primary-400'
-                )}
+                className="text-xl md:text-2xl font-bold text-accent-500 transition-colors group-hover:text-accent-400"
               >
                 Pitfal
               </span>
@@ -72,24 +78,16 @@ export function Header() {
             </Link>
 
             {/* Desktop Navigation */}
-            <Navigation
-              className={cn(
-                isScrolled ? '' : '[&_a]:text-white/90 [&_a:hover]:text-white [&_a:hover]:bg-white/10'
-              )}
-            />
+            <Navigation isScrolled={isScrolled} />
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-4">
-              <Button
-                variant={isScrolled ? 'primary' : 'outline'}
-                size="sm"
-                className={cn(
-                  !isScrolled && 'border-white text-white hover:bg-white hover:text-primary-600'
-                )}
-                asChild
+              <Link
+                href="/contact"
+                className="inline-flex items-center justify-center text-sm font-medium px-4 py-2 rounded-lg bg-accent-500 text-white hover:bg-accent-400 transition-colors shadow-sm hover:shadow-md"
               >
-                <Link href="/contact">Book Now</Link>
-              </Button>
+                Book Now
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}

@@ -9,21 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary brand colors
+        // Primary brand color - Orange
         primary: {
-          50: '#f5f7ff',
-          100: '#ebf0fe',
-          200: '#d6e0fd',
-          300: '#b2c5fb',
-          400: '#879ff7',
-          500: '#5c77f2',
-          600: '#3f54e8',
-          700: '#3242d5',
-          800: '#2c38ad',
-          900: '#293489',
-          950: '#1c2053',
+          50: '#fdf7f0',
+          100: '#faebdb',
+          200: '#f4d4b6',
+          300: '#ecb688',
+          400: '#e38f58',
+          500: '#dc7136',
+          600: '#ce582c',
+          700: '#ab4326',
+          800: '#893725',
+          900: '#6f3022',
+          950: '#3c1610',
         },
-        // Secondary/accent colors
+        // Accent color - same as primary for consistency
         accent: {
           50: '#fdf7f0',
           100: '#faebdb',

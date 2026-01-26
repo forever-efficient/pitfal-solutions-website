@@ -55,7 +55,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
-# SES policy for Lambda
+# SES policy for Lambda - restricted to verified domain
 resource "aws_iam_role_policy" "lambda_ses" {
   name = "${local.name_prefix}-lambda-ses"
   role = aws_iam_role.lambda_execution.id
@@ -69,7 +69,7 @@ resource "aws_iam_role_policy" "lambda_ses" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = "*"
+        Resource = "arn:aws:ses:${var.aws_region}:*:identity/${var.domain_name}"
         Condition = {
           StringEquals = {
             "ses:FromAddress" = var.from_email
