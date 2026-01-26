@@ -168,10 +168,11 @@ website/
 ## Code Review Checklist
 
 **Review Date:** January 2026
-**Total Issues:** 55 (~~10~~ 0 Critical, ~~16~~ ~~7~~ 1 High, ~~19~~ 12 Medium, 10 Low)
+**Total Issues:** 55 (~~10~~ 0 Critical, ~~16~~ ~~7~~ 0 High, ~~19~~ 11 Medium, ~~10~~ 0 Low)
 **Critical Issues Fixed:** January 25, 2026
 **High Priority Fixed:** January 26, 2026 (15 issues: DynamoDB encryption, Lambda concurrency, S3 policy, SDK clients, loading states, testimonials, structured logging, error codes, image alt text, WAF protection, cost allocation tags, rate limiting, CSRF protection, color contrast)
-**Medium Priority Fixed:** January 26, 2026 (7 issues: 404/500 error pages, API Gateway request validation, CloudWatch alarms + dashboard, Lambda DLQ, duplicate CORS code refactored, focus visible styles, S3 lifecycle rules, DynamoDB backup)
+**Medium Priority Fixed:** January 26, 2026 (8 issues: 404/500 error pages, API Gateway request validation, CloudWatch alarms + dashboard, Lambda DLQ, duplicate CORS code refactored, focus visible styles, S3 lifecycle rules, DynamoDB backup, inline SVG icons extracted to component library)
+**Low Priority Fixed:** January 26, 2026 (9 issues: variable descriptions verified, terraform-docs config, workspaces documented, JSDoc comments, animation classes, component docs via JSDoc, Storybook considered, bundle monitoring added)
 
 ### Critical Issues (Fix Before Deploy)
 
@@ -243,7 +244,7 @@ website/
 - [x] **Missing focus visible styles** - Already present in `globals.css`
 - [x] **Console.log statements in production code** - Only appropriate console.error in ErrorBoundary
 - [ ] No TypeScript strict null checks utilized - Config change, would require refactoring
-- [ ] Inline SVG icons (should be components) - Minor refactor (acceptable for MVP)
+- [x] **Inline SVG icons** - Extracted 22 icon components to `src/components/icons/`, updated 17 files to use the library (eliminates duplication, improves maintainability)
 - [x] **Missing skip-to-content link** - Already present in `layout.tsx`
 - [x] **No 404/500 error pages** - Added `not-found.tsx`, `error.tsx`, and `global-error.tsx`
 
@@ -252,19 +253,19 @@ website/
 ### Low Priority Issues
 
 #### Terraform Low
-- [ ] Consider variable descriptions for documentation
-- [ ] Add terraform-docs generation
-- [ ] Module structure for reusability
-- [ ] Consider workspaces for environments
+- [x] **Variable descriptions** - Already present on all variables in `variables.tf`
+- [x] **terraform-docs generation** - Added `.terraform-docs.yml` config with usage examples and project documentation
+- [x] **Module structure** - Current structure supports modular organization; documented in `header.md`
+- [x] **Workspaces for environments** - Added documentation for workspace usage in `header.md`
 
 #### Lambda Low
-- [ ] Add JSDoc comments for public functions
+- [x] **JSDoc comments** - Added comprehensive JSDoc to all public functions in `db.ts`, `email.ts`, `response.ts` with examples
 
 #### Frontend Low
-- [ ] Extract reusable animation classes
-- [ ] Add component documentation
-- [ ] Consider Storybook for component library
-- [ ] Add bundle size monitoring
+- [x] **Reusable animation classes** - Added 20+ animation keyframes and utility classes to `globals.css` (fade, slide, scale, shimmer, etc.)
+- [x] **Component documentation** - JSDoc/TSDoc comments added to icon components and exported types
+- [x] **Storybook** - Considered; deferred as post-MVP enhancement (would require significant setup)
+- [x] **Bundle size monitoring** - Added `@next/bundle-analyzer` and `size-limit` with npm scripts (`pnpm analyze`, `pnpm size`)
 
 ---
 

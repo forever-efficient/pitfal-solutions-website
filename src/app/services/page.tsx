@@ -4,6 +4,7 @@ import { Container, Section } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ContactCTA } from '@/components/sections';
+import { CheckIcon } from '@/components/icons';
 
 export const metadata: Metadata = {
   title: 'Services',
@@ -178,19 +179,7 @@ export default function ServicesPage() {
                   <ul className="space-y-2 mb-6">
                     {service.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-2">
-                        <svg
-                          className="w-5 h-5 text-primary-600 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <CheckIcon size={20} className="text-primary-600 flex-shrink-0" />
                         <span className="text-neutral-700">{feature}</span>
                       </li>
                     ))}
@@ -256,19 +245,7 @@ export default function ServicesPage() {
                   <ul className="space-y-3 mb-8">
                     {pkg.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-2 text-sm">
-                        <svg
-                          className="w-5 h-5 text-primary-600 flex-shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <CheckIcon size={20} className="text-primary-600 flex-shrink-0" />
                         <span className="text-neutral-700">{feature}</span>
                       </li>
                     ))}

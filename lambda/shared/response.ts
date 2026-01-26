@@ -1,6 +1,13 @@
+/**
+ * @fileoverview API response utilities for Lambda functions.
+ * Provides standardized response formatting, CORS headers, error codes,
+ * and common HTTP response patterns.
+ * @module lambda/shared/response
+ */
+
 import { APIGatewayProxyResult } from 'aws-lambda';
 
-// Production CORS origin - default to production domain, allow override via environment variable
+/** CORS origin - defaults to production domain, configurable via environment */
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://www.pitfal.solutions';
 
 // Default CORS headers for production use
@@ -49,7 +56,15 @@ export interface ApiResponse<T = unknown> {
   };
 }
 
-// Create a successful response
+/**
+ * Creates a successful API response with JSON body.
+ * @template T - Type of the response data
+ * @param data - Response payload to include in the body
+ * @param statusCode - HTTP status code (default: 200)
+ * @returns Formatted API Gateway response with CORS headers
+ * @example
+ * return success({ message: 'Created', id: '123' }, 201);
+ */
 export function success<T>(data: T, statusCode = 200): APIGatewayProxyResult {
   return {
     statusCode,
@@ -64,7 +79,14 @@ export function success<T>(data: T, statusCode = 200): APIGatewayProxyResult {
   };
 }
 
-// Create a successful response with pagination metadata
+/**
+ * Creates a successful paginated response with metadata.
+ * @template T - Type of the response data
+ * @param data - Response payload (typically an array)
+ * @param meta - Pagination metadata (page, limit, total)
+ * @param statusCode - HTTP status code (default: 200)
+ * @returns Formatted response with pagination info and hasMore flag
+ */
 export function successWithMeta<T>(
   data: T,
   meta: { page: number; limit: number; total: number },
@@ -87,7 +109,18 @@ export function successWithMeta<T>(
   };
 }
 
-// Create an error response
+/**
+ * Creates an error API response with optional error code and field errors.
+ * @param message - Human-readable error message
+ * @param statusCode - HTTP status code (default: 400)
+ * @param options - Optional error code and field-level validation errors
+ * @returns Formatted error response with CORS headers
+ * @example
+ * return error('Invalid email', 400, {
+ *   code: ErrorCode.VALIDATION_FAILED,
+ *   fieldErrors: [{ field: 'email', message: 'Invalid format' }]
+ * });
+ */
 export function error(
   message: string,
   statusCode = 400,
@@ -112,31 +145,41 @@ export function error(
   };
 }
 
-// Common error responses
+/** Returns a 400 Bad Request response */
 export function badRequest(message = 'Bad request'): APIGatewayProxyResult {
   return error(message, 400, { code: ErrorCode.BAD_REQUEST });
 }
 
+/** Returns a 401 Unauthorized response */
 export function unauthorized(message = 'Unauthorized'): APIGatewayProxyResult {
   return error(message, 401, { code: ErrorCode.UNAUTHORIZED });
 }
 
+/** Returns a 403 Forbidden response */
 export function forbidden(message = 'Forbidden'): APIGatewayProxyResult {
   return error(message, 403, { code: ErrorCode.FORBIDDEN });
 }
 
+/** Returns a 404 Not Found response */
 export function notFound(message = 'Not found'): APIGatewayProxyResult {
   return error(message, 404, { code: ErrorCode.NOT_FOUND });
 }
 
+/** Returns a 405 Method Not Allowed response */
 export function methodNotAllowed(message = 'Method not allowed'): APIGatewayProxyResult {
   return error(message, 405, { code: ErrorCode.METHOD_NOT_ALLOWED });
 }
 
+/** Returns a 409 Conflict response */
 export function conflict(message = 'Conflict'): APIGatewayProxyResult {
   return error(message, 409, { code: ErrorCode.CONFLICT });
 }
 
+/**
+ * Returns a 422 Unprocessable Entity response for validation failures.
+ * @param message - Error message
+ * @param fieldErrors - Array of field-level validation errors
+ */
 export function unprocessableEntity(
   message = 'Validation failed',
   fieldErrors?: Array<{ field: string; message: string }>
@@ -144,15 +187,20 @@ export function unprocessableEntity(
   return error(message, 422, { code: ErrorCode.VALIDATION_FAILED, fieldErrors });
 }
 
+/** Returns a 429 Too Many Requests response for rate limiting */
 export function tooManyRequests(message = 'Too many requests'): APIGatewayProxyResult {
   return error(message, 429, { code: ErrorCode.RATE_LIMITED });
 }
 
+/** Returns a 500 Internal Server Error response */
 export function serverError(message = 'Internal server error'): APIGatewayProxyResult {
   return error(message, 500, { code: ErrorCode.INTERNAL_ERROR });
 }
 
-// CORS preflight response
+/**
+ * Returns an empty response for CORS preflight (OPTIONS) requests.
+ * @returns 200 response with CORS headers and empty body
+ */
 export function corsResponse(): APIGatewayProxyResult {
   return {
     statusCode: 200,
@@ -161,7 +209,12 @@ export function corsResponse(): APIGatewayProxyResult {
   };
 }
 
-// Create response with custom headers
+/**
+ * Adds custom headers to an existing response.
+ * @param response - The original API Gateway response
+ * @param additionalHeaders - Headers to add/override
+ * @returns New response object with merged headers
+ */
 export function withHeaders(
   response: APIGatewayProxyResult,
   additionalHeaders: Record<string, string>
@@ -175,7 +228,15 @@ export function withHeaders(
   };
 }
 
-// Create response with cookie
+/**
+ * Adds a Set-Cookie header to the response.
+ * Defaults to secure HttpOnly cookies with 7-day expiration.
+ * @param response - The original API Gateway response
+ * @param name - Cookie name
+ * @param value - Cookie value
+ * @param options - Cookie options (maxAge, httpOnly, secure, sameSite, path)
+ * @returns Response with Set-Cookie header
+ */
 export function withCookie(
   response: APIGatewayProxyResult,
   name: string,
@@ -211,7 +272,13 @@ export function withCookie(
   });
 }
 
-// Clear a cookie
+/**
+ * Clears a cookie by setting its Max-Age to 0.
+ * @param response - The original API Gateway response
+ * @param name - Cookie name to clear
+ * @param path - Cookie path (default: '/')
+ * @returns Response with cookie-clearing Set-Cookie header
+ */
 export function clearCookie(
   response: APIGatewayProxyResult,
   name: string,

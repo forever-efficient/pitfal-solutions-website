@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Container, Section } from '@/components/ui/Container';
 import { cn } from '@/lib/utils';
 import testimonialsData from '@/../content/testimonials.json';
+import { QuoteIcon, StarIcon, ChevronLeftIcon, ChevronRightIcon } from '@/components/icons';
 
 interface Testimonial {
   id: string;
@@ -81,13 +82,7 @@ export function TestimonialsSection() {
             tabIndex={0}
           >
             {/* Quote icon */}
-            <svg
-              className="absolute top-6 left-6 w-12 h-12 text-primary-100"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-            </svg>
+            <QuoteIcon size={48} className="absolute top-6 left-6 text-primary-100" />
 
             <div className="relative">
               {/* Content */}
@@ -115,19 +110,16 @@ export function TestimonialsSection() {
                 {/* Rating */}
                 <div className="ml-auto flex gap-1">
                   {[...Array(5)].map((_, i) => (
-                    <svg
+                    <StarIcon
                       key={i}
-                      className={cn(
-                        'w-5 h-5',
+                      size={20}
+                      filled={i < activeTestimonial.rating}
+                      className={
                         i < activeTestimonial.rating
                           ? 'text-accent-500'
                           : 'text-neutral-300'
-                      )}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
+                      }
+                    />
                   ))}
                 </div>
               </div>
@@ -141,9 +133,7 @@ export function TestimonialsSection() {
               className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label="Previous testimonial"
             >
-              <svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeftIcon size={20} className="text-neutral-600" />
             </button>
 
             {/* Navigation dots */}
@@ -171,9 +161,7 @@ export function TestimonialsSection() {
               className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
               aria-label="Next testimonial"
             >
-              <svg className="w-5 h-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRightIcon size={20} className="text-neutral-600" />
             </button>
           </div>
         </div>

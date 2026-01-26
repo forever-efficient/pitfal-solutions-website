@@ -1,22 +1,20 @@
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
+import {
+  ArrowRightIcon,
+  BuildingIcon,
+  UserIcon,
+  CalendarIcon,
+  ChevronRightIcon,
+} from '@/components/icons';
 
 const services = [
   {
     title: 'Brand Photography',
     description:
       'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-        />
-      </svg>
-    ),
+    icon: <BuildingIcon size={32} strokeWidth={1.5} />,
     href: '/services#brand',
     image: '/images/services/brand.jpg',
   },
@@ -24,16 +22,7 @@ const services = [
     title: 'Portrait Sessions',
     description:
       'From headshots to family portraits, we capture authentic moments and genuine expressions that you will treasure.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-    ),
+    icon: <UserIcon size={32} strokeWidth={1.5} />,
     href: '/services#portraits',
     image: '/images/services/portraits.jpg',
   },
@@ -41,16 +30,7 @@ const services = [
     title: 'Event Coverage',
     description:
       'Comprehensive event documentation including corporate events, weddings, and special occasions. Never miss a moment.',
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-        />
-      </svg>
-    ),
+    icon: <CalendarIcon size={32} strokeWidth={1.5} />,
     href: '/services#events',
     image: '/images/services/events.jpg',
   },
@@ -96,19 +76,7 @@ export function ServicesOverview() {
                   </p>
                   <span className="inline-flex items-center text-primary-600 font-semibold text-base mt-4 group-hover:gap-2 transition-all">
                     Learn more
-                    <svg
-                      className="w-4 h-4 ml-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                    <ChevronRightIcon size={16} className="ml-1" />
                   </span>
                 </CardContent>
               </Card>
@@ -123,19 +91,7 @@ export function ServicesOverview() {
             className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium"
           >
             View all services
-            <svg
-              className="w-5 h-5 ml-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
+            <ArrowRightIcon size={20} className="ml-2" />
           </Link>
         </div>
       </Container>

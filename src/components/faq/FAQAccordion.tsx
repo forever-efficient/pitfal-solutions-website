@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { ChevronDownIcon } from '@/components/icons';
 
 interface FAQItem {
   question: string;
@@ -34,22 +35,13 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
             <span className="font-medium text-neutral-900 pr-4">
               {item.question}
             </span>
-            <svg
+            <ChevronDownIcon
+              size={20}
               className={cn(
-                'w-5 h-5 text-neutral-500 flex-shrink-0 transition-transform duration-200',
+                'text-neutral-500 flex-shrink-0 transition-transform duration-200',
                 openIndex === index && 'rotate-180'
               )}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </button>
 
           <div

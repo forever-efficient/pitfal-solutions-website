@@ -1,12 +1,20 @@
+/**
+ * @fileoverview Email utilities for Lambda functions using AWS SES.
+ * Provides templated emails, attachments, and common email patterns.
+ * @module lambda/shared/email
+ */
+
 import { SESClient, SendEmailCommand, SendRawEmailCommand } from '@aws-sdk/client-ses';
 
-// Initialize SES client
+/**
+ * SES Client instance initialized once per Lambda cold start.
+ */
 const sesClient = new SESClient({});
 
-// Environment variables
+/** Default sender email address for all outgoing emails */
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@pitfal.solutions';
 
-// Email types
+/** Options for sending a simple email */
 export interface EmailOptions {
   to: string | string[];
   subject: string;
@@ -28,7 +36,18 @@ export type EmailTemplate =
   | 'booking-confirmation'
   | 'gallery-ready';
 
-// Send a simple email
+/**
+ * Sends a simple email via AWS SES.
+ * @param options - Email configuration including recipients, subject, and body
+ * @throws Will throw if SES fails to send the email
+ * @example
+ * await sendEmail({
+ *   to: 'customer@example.com',
+ *   subject: 'Welcome!',
+ *   textBody: 'Thanks for signing up.',
+ *   htmlBody: '<h1>Thanks for signing up!</h1>'
+ * });
+ */
 export async function sendEmail(options: EmailOptions): Promise<void> {
   const toAddresses = Array.isArray(options.to) ? options.to : [options.to];
 
@@ -146,12 +165,28 @@ Pitfal Solutions
   },
 };
 
-// Replace template placeholders
+/**
+ * Replaces template placeholders with actual data values.
+ * @param template - Template string with {{placeholder}} syntax
+ * @param data - Key-value pairs for replacement
+ * @returns Template with placeholders replaced
+ */
 function applyTemplate(template: string, data: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => data[key] || match);
 }
 
-// Send a templated email
+/**
+ * Sends an email using a predefined template.
+ * Templates are defined in the templates object and support {{placeholder}} syntax.
+ * @param options - Template name, recipient, and data for placeholder replacement
+ * @throws Will throw if template doesn't exist or SES fails
+ * @example
+ * await sendTemplatedEmail({
+ *   to: 'customer@example.com',
+ *   template: 'contact-confirmation',
+ *   data: { name: 'John', sessionType: 'Portrait' }
+ * });
+ */
 export async function sendTemplatedEmail(options: TemplatedEmailOptions): Promise<void> {
   const template = templates[options.template];
   if (!template) {
@@ -171,7 +206,22 @@ export async function sendTemplatedEmail(options: TemplatedEmailOptions): Promis
   });
 }
 
-// Send email with attachment (using raw email)
+/**
+ * Sends an email with file attachments using raw MIME format.
+ * @param options - Email options plus array of attachments
+ * @throws Will throw if SES fails to send the raw email
+ * @example
+ * await sendEmailWithAttachment({
+ *   to: 'customer@example.com',
+ *   subject: 'Your Photos',
+ *   textBody: 'Here are your photos!',
+ *   attachments: [{
+ *     filename: 'photo.jpg',
+ *     content: imageBuffer,
+ *     contentType: 'image/jpeg'
+ *   }]
+ * });
+ */
 export async function sendEmailWithAttachment(
   options: EmailOptions & { attachments: Array<{ filename: string; content: Buffer; contentType: string }> }
 ): Promise<void> {

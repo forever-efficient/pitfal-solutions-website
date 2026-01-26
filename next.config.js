@@ -1,3 +1,9 @@
+// Bundle analyzer for monitoring bundle size
+// Run with: ANALYZE=true pnpm build
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Static export for S3 hosting
@@ -84,4 +90,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withBundleAnalyzer(nextConfig);

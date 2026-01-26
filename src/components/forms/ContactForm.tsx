@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
+import { CheckIcon } from '@/components/icons';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -133,19 +134,7 @@ export function ContactForm() {
         {status === 'success' ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              <CheckIcon size={32} className="text-green-600" />
             </div>
             <h3 className="text-xl font-semibold text-neutral-900 mb-2">
               Message Sent!
