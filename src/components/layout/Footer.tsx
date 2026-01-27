@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { InstagramIcon, FacebookIcon, LinkedInIcon } from '@/components/icons';
+import { BUSINESS, COPY, SERVICES } from '@/lib/constants';
 
 const footerLinks = {
   services: [
-    { label: 'Brand Photography', href: '/services#brand' },
-    { label: 'Portraits', href: '/services#portraits' },
-    { label: 'Events', href: '/services#events' },
+    { label: SERVICES.brand.title, href: SERVICES.brand.href },
+    { label: 'Portraits', href: SERVICES.portraits.href },
+    { label: 'Events', href: SERVICES.events.href },
     { label: 'Commercial', href: '/services#commercial' },
   ],
   company: [
@@ -24,17 +25,17 @@ const footerLinks = {
 const socialLinks = [
   {
     label: 'Instagram',
-    href: 'https://instagram.com/pitfalsolutions',
+    href: BUSINESS.social.instagram,
     icon: <InstagramIcon size={20} />,
   },
   {
     label: 'Facebook',
-    href: 'https://facebook.com/pitfalsolutions',
+    href: BUSINESS.social.facebook,
     icon: <FacebookIcon size={20} />,
   },
   {
     label: 'LinkedIn',
-    href: 'https://linkedin.com/company/pitfalsolutions',
+    href: BUSINESS.social.linkedin,
     icon: <LinkedInIcon size={20} />,
   },
 ];
@@ -55,11 +56,10 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-neutral-400 text-sm">
-              Professional photography and videography services in Denver, Colorado.
-              Capturing moments that matter.
+              {COPY.footer.description} Capturing moments that matter.
             </p>
             <p className="mt-2 text-accent-500 font-medium text-sm italic">
-              &quot;Swing the Gap&quot;
+              {COPY.footer.tagline}
             </p>
 
             {/* Social links */}
@@ -123,21 +123,21 @@ export function Footer() {
               Contact
             </h3>
             <ul className="space-y-3 text-sm text-neutral-400">
-              <li>Denver, Colorado</li>
+              <li>{BUSINESS.location.full}</li>
               <li>
                 <a
-                  href="mailto:info@pitfal.solutions"
+                  href={`mailto:${BUSINESS.contact.email}`}
                   className="hover:text-white transition-colors"
                 >
-                  info@pitfal.solutions
+                  {BUSINESS.contact.email}
                 </a>
               </li>
               <li>
                 <a
-                  href="tel:+13035551234"
+                  href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
                   className="hover:text-white transition-colors"
                 >
-                  (303) 555-1234
+                  {BUSINESS.contact.phone}
                 </a>
               </li>
             </ul>
@@ -156,7 +156,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-neutral-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-neutral-500 text-sm">
-              &copy; {currentYear} Pitfal Solutions. All rights reserved.
+              &copy; {currentYear} {BUSINESS.name}. All rights reserved.
             </p>
             <div className="flex gap-6">
               {footerLinks.legal.map((link) => (

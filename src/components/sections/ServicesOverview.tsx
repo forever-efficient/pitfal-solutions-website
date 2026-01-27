@@ -8,31 +8,30 @@ import {
   CalendarIcon,
   ChevronRightIcon,
 } from '@/components/icons';
+import { SERVICES } from '@/lib/constants';
 
 const services = [
   {
-    title: 'Brand Photography',
+    title: SERVICES.brand.title,
     description:
       'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators looking to make a lasting impression.',
     icon: <BuildingIcon size={32} strokeWidth={1.5} />,
-    href: '/services#brand',
-    image: '/images/services/brand.jpg',
+    href: SERVICES.brand.href,
+    image: SERVICES.brand.image,
   },
   {
-    title: 'Portrait Sessions',
-    description:
-      'From professional headshots to family portraits, authentic moments are captured with genuine expressions to treasure for years to come',
+    title: SERVICES.portraits.title,
+    description: SERVICES.portraits.description,
     icon: <UserIcon size={32} strokeWidth={1.5} />,
-    href: '/services#portraits',
-    image: '/images/services/portraits.jpg',
+    href: SERVICES.portraits.href,
+    image: SERVICES.portraits.image,
   },
   {
-    title: 'Event Coverage',
-    description:
-      'Comprehensive event documentation including corporate events, weddings, and special occasions. Never miss a moment.',
+    title: SERVICES.events.title,
+    description: SERVICES.events.description,
     icon: <CalendarIcon size={32} strokeWidth={1.5} />,
-    href: '/services#events',
-    image: '/images/services/events.jpg',
+    href: SERVICES.events.href,
+    image: SERVICES.events.image,
   },
 ];
 

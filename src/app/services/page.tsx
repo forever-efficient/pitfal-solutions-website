@@ -5,17 +5,17 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ContactCTA } from '@/components/sections';
 import { CheckIcon } from '@/components/icons';
+import { SERVICES, PAGE_META } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'Services',
-  description:
-    'Professional photography and videography services including brand photography, portrait sessions, and event coverage. View our packages and pricing.',
+  title: PAGE_META.services.title,
+  description: PAGE_META.services.description,
 };
 
 const services = [
   {
-    id: 'brand',
-    title: 'Brand Photography',
+    id: SERVICES.brand.id,
+    title: SERVICES.brand.title,
     description:
       'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators looking to make a lasting impression.',
     features: [
@@ -26,37 +26,23 @@ const services = [
       'Marketing materials',
     ],
     startingAt: '$500',
-    image: '/images/services/brand.jpg',
+    image: SERVICES.brand.image,
   },
   {
-    id: 'portraits',
-    title: 'Portrait Sessions',
-    description:
-      'From professional headshots to family portraits, authentic moments are captured with genuine expressions to treasure for years to come.',
-    features: [
-      'Professional headshots',
-      'Family portraits',
-      'Couples photography',
-      'Senior portraits',
-      'Personal branding',
-    ],
+    id: SERVICES.portraits.id,
+    title: SERVICES.portraits.title,
+    description: SERVICES.portraits.description,
+    features: SERVICES.portraits.features,
     startingAt: '$300',
-    image: '/images/services/portraits.jpg',
+    image: SERVICES.portraits.image,
   },
   {
-    id: 'events',
-    title: 'Event Coverage',
-    description:
-      'Comprehensive event documentation including corporate events, weddings, and special occasions. Never miss a moment.',
-    features: [
-      'Corporate events',
-      'Weddings',
-      'Conferences',
-      'Private parties',
-      'Live performances',
-    ],
+    id: SERVICES.events.id,
+    title: SERVICES.events.title,
+    description: SERVICES.events.description,
+    features: SERVICES.events.features,
     startingAt: '$1,000',
-    image: '/images/services/events.jpg',
+    image: SERVICES.events.image,
   },
   {
     id: 'commercial',

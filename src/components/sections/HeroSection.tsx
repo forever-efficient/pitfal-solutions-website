@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowDownIcon } from '@/components/icons';
+import { COPY } from '@/lib/constants';
 
 export interface HeroSectionProps {
   title?: string;
@@ -13,12 +14,12 @@ export interface HeroSectionProps {
 }
 
 export function HeroSection({
-  title = 'Capturing Moments That Matter',
-  subtitle = 'Professional photography and videography services in Denver, Colorado',
-  tagline = 'Swing the Gap',
+  title = COPY.hero.title,
+  subtitle = COPY.hero.subtitle,
+  tagline = COPY.hero.tagline,
   ctaText = 'Book a Session',
   ctaHref = '/contact',
-  secondaryCtaText = 'View Portfolio',
+  secondaryCtaText = COPY.hero.cta,
   secondaryCtaHref = '/portfolio',
   backgroundImage = '/images/hero-bg.jpg',
 }: HeroSectionProps) {

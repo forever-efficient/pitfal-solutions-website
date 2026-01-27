@@ -2,34 +2,34 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
+import { PAGE_META, PORTFOLIO_CATEGORIES, SERVICES } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'Portfolio',
-  description:
-    'View our photography and videography portfolio featuring brand photography, portrait sessions, and event coverage. Based in Denver, Colorado.',
+  title: PAGE_META.portfolio.title,
+  description: PAGE_META.portfolio.description,
 };
 
 const categories = [
   {
-    slug: 'brands',
-    title: 'Brand Photography',
+    slug: PORTFOLIO_CATEGORIES.brands.slug,
+    title: SERVICES.brand.title,
     description: 'Professional brand imagery for businesses and entrepreneurs',
     count: 12,
-    image: '/images/portfolio/brands-cover.jpg',
+    image: PORTFOLIO_CATEGORIES.brands.image,
   },
   {
-    slug: 'portraits',
-    title: 'Portraits',
-    description: 'Headshots, family portraits, and personal branding',
+    slug: PORTFOLIO_CATEGORIES.portraits.slug,
+    title: PORTFOLIO_CATEGORIES.portraits.title,
+    description: PORTFOLIO_CATEGORIES.portraits.description,
     count: 18,
-    image: '/images/portfolio/portraits-cover.jpg',
+    image: PORTFOLIO_CATEGORIES.portraits.image,
   },
   {
-    slug: 'events',
-    title: 'Events',
+    slug: PORTFOLIO_CATEGORIES.events.slug,
+    title: PORTFOLIO_CATEGORIES.events.title,
     description: 'Weddings, corporate events, and special occasions',
     count: 8,
-    image: '/images/portfolio/events-cover.jpg',
+    image: PORTFOLIO_CATEGORIES.events.image,
   },
 ];
 

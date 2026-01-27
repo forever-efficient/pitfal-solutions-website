@@ -13,12 +13,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      include: [
+        'src/components/**/*.{ts,tsx}',
+        'src/lib/**/*.{ts,tsx}',
+      ],
       exclude: [
         'node_modules/',
         'tests/',
         '**/*.d.ts',
         '**/*.config.{js,ts}',
         '**/types/',
+        '**/index.ts', // Re-export files
+        '**/*.test.{ts,tsx}',
       ],
       thresholds: {
         lines: 80,

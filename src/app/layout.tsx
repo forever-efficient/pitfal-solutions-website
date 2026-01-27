@@ -4,6 +4,7 @@ import '@/styles/globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { BUSINESS, SEO } from '@/lib/constants';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -19,48 +20,36 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Pitfal Solutions | Photography & Videography',
-    template: '%s | Pitfal Solutions',
+    default: `${BUSINESS.name} | Photography & Videography`,
+    template: `%s | ${BUSINESS.name}`,
   },
-  description:
-    'Professional photography and videography services in Denver, CO. Specializing in brand photography, portraits, and event coverage. Swing the Gap.',
-  keywords: [
-    'photography',
-    'videography',
-    'Denver Colorado',
-    'brand photography',
-    'portrait photographer',
-    'event photography',
-    'commercial photographer',
-    'Denver photographer',
-  ],
-  authors: [{ name: 'Pitfal Solutions' }],
-  creator: 'Pitfal Solutions',
+  description: SEO.defaultDescription,
+  keywords: [...SEO.keywords],
+  authors: [{ name: BUSINESS.name }],
+  creator: BUSINESS.name,
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pitfal.solutions'
   ),
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
+    type: SEO.openGraph.type,
+    locale: SEO.openGraph.locale,
     url: '/',
-    siteName: 'Pitfal Solutions',
-    title: 'Pitfal Solutions | Photography & Videography',
-    description:
-      'Professional photography and videography services in Denver, CO.',
+    siteName: BUSINESS.name,
+    title: `${BUSINESS.name} | Photography & Videography`,
+    description: SEO.shortDescription,
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Pitfal Solutions Photography',
+        alt: `${BUSINESS.name} Photography`,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pitfal Solutions | Photography & Videography',
-    description:
-      'Professional photography and videography services in Denver, CO.',
+    title: `${BUSINESS.name} | Photography & Videography`,
+    description: SEO.shortDescription,
     images: ['/og-image.jpg'],
   },
   robots: {

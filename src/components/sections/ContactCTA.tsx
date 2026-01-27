@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { EmailIcon, PhoneIcon, LocationIcon } from '@/components/icons';
+import { BUSINESS, COPY } from '@/lib/constants';
 
 export function ContactCTA() {
   return (
@@ -12,8 +13,7 @@ export function ContactCTA() {
             Ready to Capture Your Story?
           </h2>
           <p className="text-lg md:text-xl text-white/90 mb-8">
-            Let&apos;s create a solution you&apos;ll love. Whether it&apos;s a brand
-            photoshoot, special event, or portrait session, your unique vision will be brought to life.
+            {COPY.cta.contact.description}
           </p>
 
           {/* CTAs */}
@@ -22,7 +22,7 @@ export function ContactCTA() {
               href="/contact"
               className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[180px]"
             >
-              Get in Touch
+              {COPY.cta.contact.button}
             </Link>
             <Link
               href="/services"
@@ -35,24 +35,24 @@ export function ContactCTA() {
           {/* Contact info */}
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6 text-white/80">
             <a
-              href="mailto:info@pitfal.solutions"
+              href={`mailto:${BUSINESS.contact.email}`}
               className="flex items-center gap-2 hover:text-white transition-colors"
             >
               <EmailIcon size={20} />
-              info@pitfal.solutions
+              {BUSINESS.contact.email}
             </a>
             <span className="hidden sm:block">|</span>
             <a
-              href="tel:+13035551234"
+              href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
               className="flex items-center gap-2 hover:text-white transition-colors"
             >
               <PhoneIcon size={20} />
-              (303) 555-1234
+              {BUSINESS.contact.phone}
             </a>
             <span className="hidden sm:block">|</span>
             <span className="flex items-center gap-2">
               <LocationIcon size={20} />
-              Denver, Colorado
+              {BUSINESS.location.full}
             </span>
           </div>
         </div>

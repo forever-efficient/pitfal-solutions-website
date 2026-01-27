@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactForm } from '@/components/forms/ContactForm';
+import { BUSINESS, PAGE_META } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'Contact',
-  description:
-    'Get in touch with Pitfal Solutions for photography and videography inquiries. Based in Denver, Colorado, serving the Denver metro area.',
+  title: PAGE_META.contact.title,
+  description: PAGE_META.contact.description,
 };
 
 export default function ContactPage() {
@@ -46,7 +46,7 @@ export default function ContactPage() {
                   Location
                 </h3>
                 <p className="text-neutral-600">
-                  Denver, Colorado
+                  {BUSINESS.location.full}
                   <br />
                   Serving the Denver Metro Area
                 </p>
@@ -58,10 +58,10 @@ export default function ContactPage() {
                   Email
                 </h3>
                 <a
-                  href="mailto:info@pitfal.solutions"
+                  href={`mailto:${BUSINESS.contact.email}`}
                   className="text-primary-600 hover:underline"
                 >
-                  info@pitfal.solutions
+                  {BUSINESS.contact.email}
                 </a>
               </div>
 
@@ -71,10 +71,10 @@ export default function ContactPage() {
                   Phone
                 </h3>
                 <a
-                  href="tel:+13035551234"
+                  href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
                   className="text-primary-600 hover:underline"
                 >
-                  (303) 555-1234
+                  {BUSINESS.contact.phone}
                 </a>
               </div>
 
@@ -97,7 +97,7 @@ export default function ContactPage() {
                 </h3>
                 <div className="flex gap-4">
                   <a
-                    href="https://instagram.com/pitfalsolutions"
+                    href={BUSINESS.social.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-neutral-500 hover:text-primary-600 transition-colors"
@@ -108,7 +108,7 @@ export default function ContactPage() {
                     </svg>
                   </a>
                   <a
-                    href="https://facebook.com/pitfalsolutions"
+                    href={BUSINESS.social.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-neutral-500 hover:text-primary-600 transition-colors"
@@ -119,7 +119,7 @@ export default function ContactPage() {
                     </svg>
                   </a>
                   <a
-                    href="https://linkedin.com/company/pitfalsolutions"
+                    href={BUSINESS.social.linkedin}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-neutral-500 hover:text-primary-600 transition-colors"

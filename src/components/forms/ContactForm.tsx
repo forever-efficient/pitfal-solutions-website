@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { CheckIcon } from '@/components/icons';
+import { SERVICES } from '@/lib/constants';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -25,9 +26,9 @@ interface FormErrors {
 
 const sessionTypes = [
   { value: '', label: 'Select a service...' },
-  { value: 'brand', label: 'Brand Photography' },
+  { value: 'brand', label: SERVICES.brand.title },
   { value: 'portrait', label: 'Portrait Session' },
-  { value: 'event', label: 'Event Coverage' },
+  { value: 'event', label: SERVICES.events.title },
   { value: 'commercial', label: 'Commercial Project' },
   { value: 'other', label: 'Other / General Inquiry' },
 ];

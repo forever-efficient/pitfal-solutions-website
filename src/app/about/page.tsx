@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { HeartIcon, ShieldCheckIcon, UsersIcon } from '@/components/icons';
+import { BUSINESS, PAGE_META } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'About',
-  description:
-    'Learn about Pitfal Solutions - Professional photography and videography services in Denver, Colorado. Our story, philosophy, and approach to capturing moments.',
+  title: PAGE_META.about.title,
+  description: PAGE_META.about.description,
 };
 
 export default function AboutPage() {
@@ -138,7 +138,7 @@ export default function AboutPage() {
         <Container>
           <div className="text-center">
             <p className="text-2xl md:text-3xl font-display italic text-neutral-700">
-              &quot;Swing the Gap&quot;
+              &quot;{BUSINESS.tagline}&quot;
             </p>
             <p className="mt-4 text-neutral-500">
               This motto is a reminder to bridge the gap between vision and reality,
