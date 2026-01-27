@@ -41,6 +41,8 @@ test.describe('Navigation - Desktop', () => {
 
   test('navigates to FAQ page from footer', async ({ page }) => {
     const footer = page.locator('footer');
+    // Scroll footer into view for Firefox compatibility
+    await footer.scrollIntoViewIfNeeded();
     await footer.getByRole('link', { name: /faq/i }).click();
     await expect(page).toHaveURL(/\/faq\/?$/);
   });

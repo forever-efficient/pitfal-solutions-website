@@ -44,7 +44,7 @@ export default function PortfolioPage() {
               Portfolio
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
-              Our Work
+              Featured Projects
             </h1>
             <p className="text-xl text-neutral-600">
               Explore past collection of photography and videography projects to see what the future can bring you.

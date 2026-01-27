@@ -5,7 +5,7 @@ import { FeaturedGallery } from '@/components/sections/FeaturedGallery';
 describe('FeaturedGallery', () => {
   it('renders the section header', () => {
     render(<FeaturedGallery />);
-    expect(screen.getByText('Our Work')).toBeInTheDocument();
+    expect(screen.getByText('Past Solutions')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Featured Projects' })).toBeInTheDocument();
   });
 
