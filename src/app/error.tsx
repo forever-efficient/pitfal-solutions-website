@@ -25,7 +25,7 @@ export default function Error({
         Something Went Wrong
       </h2>
       <p className="mt-4 max-w-md text-neutral-600">
-        We apologize for the inconvenience. An unexpected error has occurred.
+        Sorry for the inconvenience. An unexpected error has occurred.
         Please try again or reach out if the problem persists.
       </p>
       {error.digest && (

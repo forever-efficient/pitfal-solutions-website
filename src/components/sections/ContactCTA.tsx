@@ -12,9 +12,8 @@ export function ContactCTA() {
             Ready to Capture Your Story?
           </h2>
           <p className="text-lg md:text-xl text-white/90 mb-8">
-            Let&apos;s create something beautiful together. Whether it&apos;s a brand
-            photoshoot, special event, or portrait session, we&apos;re here to bring
-            your vision to life.
+            Let&apos;s create a solution you&apos;ll love. Whether it&apos;s a brand
+            photoshoot, special event, or portrait session, your unique vision will be brought to life.
           </p>
 
           {/* CTAs */}

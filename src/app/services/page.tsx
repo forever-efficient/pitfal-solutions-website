@@ -32,7 +32,7 @@ const services = [
     id: 'portraits',
     title: 'Portrait Sessions',
     description:
-      'From professional headshots to family portraits, we capture authentic moments and genuine expressions that you will treasure for years to come.',
+      'From professional headshots to family portraits, authentic moments are captured with genuine expressions to treasure for years to come.',
     features: [
       'Professional headshots',
       'Family portraits',
@@ -47,7 +47,7 @@ const services = [
     id: 'events',
     title: 'Event Coverage',
     description:
-      'Comprehensive documentation of your special occasions. From corporate events to weddings, we ensure every important moment is captured beautifully.',
+      'Comprehensive documentation of your special occasions. From corporate events to weddings, where every important moment is captured beautifully.',
     features: [
       'Corporate events',
       'Weddings',

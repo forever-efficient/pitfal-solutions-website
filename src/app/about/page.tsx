@@ -19,14 +19,14 @@ export default function AboutPage() {
         <Container>
           <div className="max-w-3xl">
             <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
-              About Us
+              About
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
               The Story Behind the Lens
             </h1>
             <p className="text-xl text-neutral-600">
-              At Pitfal Solutions, we believe every image tells a story. We&apos;re
-              passionate about capturing authentic moments that resonate and
+              At Pitfal Solutions, story telling is a passion. Here, it&apos;s all 
+              about capturing authentic moments that resonate and
               inspire.
             </p>
           </div>
@@ -52,7 +52,7 @@ export default function AboutPage() {
             {/* Content */}
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-6 font-display">
-                Our Philosophy
+                The Philosophy
               </h2>
               <div className="prose prose-lg text-neutral-600">
                 <p>
@@ -62,21 +62,24 @@ export default function AboutPage() {
                 </p>
                 <p>
                   Based in Denver, Colorado, Pitfal Solutions brings a unique
-                  perspective to every project. Our approach combines technical
-                  excellence with creative vision, ensuring that every shot
-                  captures the essence of the moment.
+                  perspective to every project. Combining technical
+                  excellence with creative vision ensures you get the highest quality
+                  when those fleeting moments are on the line.
                 </p>
                 <p>
                   Whether it&apos;s a corporate brand shoot, an intimate portrait
-                  session, or documenting a special event, we bring the same
-                  level of dedication and artistry to every project.
+                  session, or documenting a special event, the same
+                  level of dedication and artistry is brought to every project.
                 </p>
               </div>
 
               <div className="mt-8">
-                <Button asChild>
-                  <Link href="/contact">Work With Us</Link>
-                </Button>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md text-base px-4 py-2 rounded-lg"
+                >
+                  Contact Today
+                </Link>
               </div>
             </div>
           </div>
@@ -88,10 +91,10 @@ export default function AboutPage() {
         <Container>
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4 font-display">
-              What Drives Us
+              The Mission
             </h2>
             <p className="text-lg text-neutral-600">
-              Our values guide everything we do, from the first consultation to
+              Core values guide project and every deliverable, from the first consultation to
               the final delivery.
             </p>
           </div>
@@ -101,19 +104,19 @@ export default function AboutPage() {
               {
                 title: 'Authenticity',
                 description:
-                  'We capture real moments and genuine emotions. No forced poses, no fake smiles—just authentic imagery that tells your true story.',
+                  'Capturing real moments and genuine emotions. Not forced or fake—just authentic imagery that tells your true story.',
                 icon: <HeartIcon size={32} strokeWidth={1.5} />,
               },
               {
                 title: 'Excellence',
                 description:
-                  'We never compromise on quality. Every image is carefully crafted, edited, and delivered to meet the highest professional standards.',
+                  'Never compromise on quality. Every image is carefully crafted, edited, and delivered to meet the highest professional standards.',
                 icon: <ShieldCheckIcon size={32} strokeWidth={1.5} />,
               },
               {
                 title: 'Connection',
                 description:
-                  'We build relationships with our clients, understanding their vision and creating a comfortable environment for the best results.',
+                  'Building relationships with our clients, understanding their vision and creating a comfortable environment for the best results.',
                 icon: <UsersIcon size={32} strokeWidth={1.5} />,
               },
             ].map((value) => (
@@ -139,7 +142,7 @@ export default function AboutPage() {
               &quot;Swing the Gap&quot;
             </p>
             <p className="mt-4 text-neutral-500">
-              Our motto reminds us to bridge the gap between vision and reality,
+              This motto is a reminder to bridge the gap between vision and reality,
               between the moment and its preservation.
             </p>
           </div>
