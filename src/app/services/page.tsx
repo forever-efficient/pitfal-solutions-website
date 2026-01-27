@@ -47,7 +47,7 @@ const services = [
     id: 'events',
     title: 'Event Coverage',
     description:
-      'Comprehensive documentation of your special occasions. From corporate events to weddings, where every important moment is captured beautifully.',
+      'Comprehensive event documentation including corporate events, weddings, and special occasions. Never miss a moment.',
     features: [
       'Corporate events',
       'Weddings',

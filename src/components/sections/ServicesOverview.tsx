@@ -13,7 +13,7 @@ const services = [
   {
     title: 'Brand Photography',
     description:
-      'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators.',
+      'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators looking to make a lasting impression.',
     icon: <BuildingIcon size={32} strokeWidth={1.5} />,
     href: '/services#brand',
     image: '/images/services/brand.jpg',
@@ -21,7 +21,7 @@ const services = [
   {
     title: 'Portrait Sessions',
     description:
-      'From headshots to family portraits, we capture authentic moments and genuine expressions that you will treasure.',
+      'From professional headshots to family portraits, authentic moments are captured with genuine expressions to treasure for years to come',
     icon: <UserIcon size={32} strokeWidth={1.5} />,
     href: '/services#portraits',
     image: '/images/services/portraits.jpg',
@@ -43,7 +43,7 @@ export function ServicesOverview() {
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
           <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
-            What We Offer
+            Find Your Solution
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">
             Services Provided
