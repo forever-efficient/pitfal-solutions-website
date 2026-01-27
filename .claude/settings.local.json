@@ -41,7 +41,8 @@
       "mcp__terraform__RunCheckovScan",
       "Bash(pip3 install:*)",
       "Bash(npx playwright:*)",
-      "Bash(tr:*)"
+      "Bash(tr:*)",
+      "Bash(pkill:*)"
     ]
   },
   "enabledMcpjsonServers": [

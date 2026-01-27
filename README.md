@@ -106,6 +106,105 @@ terraform plan
 terraform apply
 ```
 
+## Testing
+
+### Unit Tests (Vitest)
+
+Unit tests are located in `tests/` and use Vitest with React Testing Library.
+
+```bash
+# Run all unit tests
+pnpm test
+
+# Run tests in watch mode (for development)
+pnpm test:watch
+
+# Run tests with coverage report
+pnpm test:coverage
+
+# Run only tests matching a pattern
+pnpm test -- --grep "Button"
+```
+
+### E2E Tests (Playwright)
+
+End-to-end tests are located in `tests/e2e/` and test full user flows across browsers.
+
+```bash
+# Install Playwright browsers (first time only)
+pnpm exec playwright install
+
+# Run all E2E tests
+pnpm test:e2e
+
+# Run E2E tests with UI mode (interactive debugging)
+pnpm test:e2e:ui
+
+# Run tests for a specific browser
+pnpm exec playwright test --project=chromium
+
+# Run a specific test file
+pnpm exec playwright test tests/e2e/homepage.spec.ts
+
+# View test report after run
+pnpm exec playwright show-report
+```
+
+### Test Structure
+
+```
+tests/
+├── setup.ts                    # Vitest setup and mocks
+├── lib/                        # Utility function tests
+├── components/                 # Component unit tests
+│   ├── ui/                     # UI component tests
+│   ├── forms/                  # Form component tests
+│   ├── faq/                    # FAQ component tests
+│   ├── icons/                  # Icon component tests
+│   └── layout/                 # Layout component tests
+└── e2e/                        # Playwright E2E tests
+    ├── homepage.spec.ts        # Homepage tests
+    ├── navigation.spec.ts      # Navigation and routing tests
+    ├── contact-form.spec.ts    # Contact form validation tests
+    └── pages.spec.ts           # All pages rendering tests
+```
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration. The workflow runs on every push to `main`/`develop` and on all pull requests.
+
+### Pipeline Steps
+
+1. **Lint** - ESLint checks for code quality issues
+2. **Type Check** - TypeScript compiler validates types
+3. **Unit Tests** - Vitest runs all component and utility tests
+4. **Build** - Next.js production build (only runs if all above pass)
+5. **Bundle Size** - Monitors JavaScript bundle size for regressions
+
+### Running CI Checks Locally
+
+Before pushing, run the full CI check locally:
+
+```bash
+# Run all checks (same as CI)
+pnpm lint && pnpm type-check && pnpm test && pnpm build
+
+# Or run individually
+pnpm lint           # ESLint
+pnpm type-check     # TypeScript
+pnpm test           # Unit tests
+pnpm build          # Production build
+```
+
+### Coverage Reports
+
+Test coverage is uploaded to Codecov on CI runs. View coverage locally:
+
+```bash
+pnpm test:coverage
+# Open coverage/index.html in browser
+```
+
 ## Documentation
 
 - `docs/REQUIREMENTS.md` - Functional requirements
