@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
-import { Button } from '@/components/ui/Button';
 import { ContactCTA } from '@/components/sections';
 import { HeartIcon, ShieldCheckIcon, UsersIcon } from '@/components/icons';
 
