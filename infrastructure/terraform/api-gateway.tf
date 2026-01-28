@@ -144,12 +144,13 @@ resource "aws_api_gateway_integration_response" "contact_options" {
   http_method = aws_api_gateway_method.contact_options.http_method
   status_code = aws_api_gateway_method_response.contact_options.status_code
 
-  # Note: API Gateway single-origin CORS requires Lambda to handle dynamic origin
-  # For now, using www subdomain as canonical; root domain redirects to www via CloudFront
+  # CORS preflight response
+  # When using custom domain: specific origin for security
+  # When using CloudFront default: wildcard for preflight (Lambda validates actual requests)
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
     "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'https://www.pitfal.solutions'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
   }
 }
 
@@ -159,8 +160,11 @@ resource "aws_api_gateway_gateway_response" "bad_request_body" {
   response_type = "BAD_REQUEST_BODY"
   status_code   = "400"
 
+  # CORS error response headers
+  # When using custom domain: specific origin for security
+  # When using CloudFront default: wildcard (these are error responses, not sensitive)
   response_parameters = {
-    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'https://www.pitfal.solutions'"
+    "gatewayresponse.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
     "gatewayresponse.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
     "gatewayresponse.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
   }

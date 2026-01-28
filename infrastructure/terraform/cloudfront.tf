@@ -113,7 +113,7 @@ resource "aws_cloudfront_distribution" "website" {
   comment             = "Pitfal Solutions Website"
   default_root_object = "index.html"
   price_class         = var.cloudfront_price_class
-  aliases             = [var.domain_name, "www.${var.domain_name}"]
+  aliases             = var.use_custom_domain ? [var.domain_name, "www.${var.domain_name}"] : []
   web_acl_id          = var.enable_waf ? aws_wafv2_web_acl.cloudfront[0].arn : null
 
   # Website S3 origin
@@ -212,10 +212,21 @@ resource "aws_cloudfront_distribution" "website" {
     }
   }
 
-  viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.main.certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+  # Use ACM certificate when custom domain is enabled, otherwise use CloudFront default certificate
+  dynamic "viewer_certificate" {
+    for_each = var.use_custom_domain ? [1] : []
+    content {
+      acm_certificate_arn      = aws_acm_certificate_validation.main[0].certificate_arn
+      ssl_support_method       = "sni-only"
+      minimum_protocol_version = "TLSv1.2_2021"
+    }
+  }
+
+  dynamic "viewer_certificate" {
+    for_each = var.use_custom_domain ? [] : [1]
+    content {
+      cloudfront_default_certificate = true
+    }
   }
 
   # Optional logging

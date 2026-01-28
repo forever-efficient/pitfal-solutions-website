@@ -34,7 +34,7 @@ output "cloudfront_domain_name" {
 
 output "website_url" {
   description = "Primary website URL"
-  value       = "https://${var.domain_name}"
+  value       = var.use_custom_domain ? "https://www.${var.domain_name}" : "https://${aws_cloudfront_distribution.website.domain_name}"
 }
 
 # API Gateway
@@ -70,10 +70,10 @@ output "lambda_contact_arn" {
   value       = aws_lambda_function.contact.arn
 }
 
-# SSL Certificate
+# SSL Certificate (only when using custom domain)
 output "acm_certificate_arn" {
-  description = "ARN of the ACM SSL certificate"
-  value       = aws_acm_certificate.main.arn
+  description = "ARN of the ACM SSL certificate (only set when use_custom_domain = true)"
+  value       = var.use_custom_domain ? aws_acm_certificate.main[0].arn : null
 }
 
 # Deployment Commands
@@ -81,6 +81,9 @@ output "deployment_commands" {
   description = "Commands for deploying the website"
   value       = <<-EOT
     # Build the Next.js static site
+    # Set environment variables for the correct URLs:
+    ${var.use_custom_domain ? "" : "# NEXT_PUBLIC_SITE_URL=https://${aws_cloudfront_distribution.website.domain_name}"}
+    ${var.use_custom_domain ? "" : "# NEXT_PUBLIC_API_URL=https://${aws_cloudfront_distribution.website.domain_name}/api"}
     pnpm build
 
     # Sync to S3
@@ -89,4 +92,15 @@ output "deployment_commands" {
     # Invalidate CloudFront cache
     aws cloudfront create-invalidation --distribution-id ${aws_cloudfront_distribution.website.id} --paths "/*"
   EOT
+}
+
+# Domain configuration info
+output "domain_configuration" {
+  description = "Current domain configuration"
+  value = {
+    use_custom_domain = var.use_custom_domain
+    website_url       = var.use_custom_domain ? "https://www.${var.domain_name}" : "https://${aws_cloudfront_distribution.website.domain_name}"
+    cloudfront_domain = aws_cloudfront_distribution.website.domain_name
+    custom_domain     = var.use_custom_domain ? var.domain_name : null
+  }
 }

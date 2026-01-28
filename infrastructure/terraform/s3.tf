@@ -125,15 +125,26 @@ resource "aws_s3_bucket_cors_configuration" "media" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    # Only allow localhost CORS in non-production environments
-    allowed_origins = var.environment == "prod" ? [
-      "https://${var.domain_name}",
-      "https://www.${var.domain_name}"
-      ] : [
-      "https://${var.domain_name}",
-      "https://www.${var.domain_name}",
-      "http://localhost:3000"
-    ]
+    # Dynamic CORS origins based on custom domain usage and environment
+    # When using custom domain: specific origins for security
+    # When using CloudFront default: allow all cloudfront.net domains (S3 CORS doesn't support circular refs)
+    allowed_origins = var.use_custom_domain ? (
+      var.environment == "prod" ? [
+        "https://${var.domain_name}",
+        "https://www.${var.domain_name}"
+        ] : [
+        "https://${var.domain_name}",
+        "https://www.${var.domain_name}",
+        "http://localhost:3000"
+      ]
+      ) : (
+      var.environment == "prod" ? [
+        "https://*.cloudfront.net"
+        ] : [
+        "https://*.cloudfront.net",
+        "http://localhost:3000"
+      ]
+    )
     expose_headers  = ["ETag"]
     max_age_seconds = 3600
   }

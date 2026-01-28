@@ -70,10 +70,14 @@ resource "aws_lambda_function" "contact" {
 
   environment {
     variables = {
-      INQUIRIES_TABLE = aws_dynamodb_table.inquiries.name
-      FROM_EMAIL      = var.from_email
-      CONTACT_EMAIL   = var.contact_email
-      ENVIRONMENT     = var.environment
+      INQUIRIES_TABLE   = aws_dynamodb_table.inquiries.name
+      FROM_EMAIL        = var.from_email
+      CONTACT_EMAIL     = var.contact_email
+      ENVIRONMENT       = var.environment
+      USE_CUSTOM_DOMAIN = tostring(var.use_custom_domain)
+      CUSTOM_DOMAIN     = var.domain_name
+      # CORS_ALLOWED_ORIGINS will be set dynamically after CloudFront deploys
+      # Lambda should validate Origin header against CloudFront domain or custom domain
     }
   }
 

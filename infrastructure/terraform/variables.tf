@@ -35,6 +35,13 @@ variable "subject_alternative_names" {
   default     = ["www.pitfal.solutions"]
 }
 
+# Custom domain configuration
+variable "use_custom_domain" {
+  description = "Whether to use a custom domain with ACM certificate (false = CloudFront default domain)"
+  type        = bool
+  default     = false
+}
+
 # Route53 - set to empty string if managing DNS externally
 variable "route53_zone_id" {
   description = "Route53 hosted zone ID (leave empty if DNS managed externally)"
