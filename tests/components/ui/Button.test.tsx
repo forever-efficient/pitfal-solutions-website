@@ -30,7 +30,8 @@ describe('Button', () => {
   it('applies primary variant by default', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('bg-primary-600');
+    // Uses primary-700 for WCAG AA contrast (5.0:1 for white text)
+    expect(button).toHaveClass('bg-primary-700');
   });
 
   it('applies secondary variant', () => {

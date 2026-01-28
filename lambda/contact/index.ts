@@ -1,18 +1,16 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { randomUUID } from 'crypto';
 import {
   success,
   error,
-  badRequest,
   forbidden,
   methodNotAllowed,
   tooManyRequests,
-  serverError,
   ErrorCode,
 } from '../shared/response';
+import { sendEmail } from '../shared/email';
 
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW_MINUTES = 15; // Time window for rate limiting
@@ -21,19 +19,17 @@ const MAX_SUBMISSIONS_PER_WINDOW = 3; // Max submissions per email per window
 // Initialize clients
 const dynamoClient = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const sesClient = new SESClient({});
 
 // Environment variables with validation
 const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE;
-const FROM_EMAIL = process.env.FROM_EMAIL;
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
 
 // Validate required environment variables at startup
-if (!INQUIRIES_TABLE || !FROM_EMAIL || !CONTACT_EMAIL) {
+// Note: FROM_EMAIL is handled by shared/email module with its own default
+if (!INQUIRIES_TABLE || !CONTACT_EMAIL) {
   throw new Error(
     `Missing required environment variables: ${[
       !INQUIRIES_TABLE && 'INQUIRIES_TABLE',
-      !FROM_EMAIL && 'FROM_EMAIL',
       !CONTACT_EMAIL && 'CONTACT_EMAIL',
     ]
       .filter(Boolean)
@@ -200,26 +196,12 @@ Inquiry ID: ${inquiry.id}
 Submitted at: ${new Date().toISOString()}
   `.trim();
 
-  await sesClient.send(
-    new SendEmailCommand({
-      Source: FROM_EMAIL,
-      Destination: {
-        ToAddresses: [CONTACT_EMAIL],
-      },
-      Message: {
-        Subject: {
-          Data: `New Inquiry from ${safeName} - Pitfal Solutions`,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Text: {
-            Data: emailBody,
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    })
-  );
+  await sendEmail({
+    to: CONTACT_EMAIL,
+    subject: `New Inquiry from ${safeName} - Pitfal Solutions`,
+    textBody: emailBody,
+    replyTo: inquiry.email,
+  });
 }
 
 // Send confirmation email to customer
@@ -248,37 +230,25 @@ Pitfal Solutions
 This is an automated confirmation email. Please do not reply directly to this message.
   `.trim();
 
-  await sesClient.send(
-    new SendEmailCommand({
-      Source: FROM_EMAIL,
-      Destination: {
-        ToAddresses: [inquiry.email],
-      },
-      Message: {
-        Subject: {
-          Data: 'Thank you for contacting Pitfal Solutions!',
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Text: {
-            Data: emailBody,
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    })
-  );
+  await sendEmail({
+    to: inquiry.email,
+    subject: 'Thank you for contacting Pitfal Solutions!',
+    textBody: emailBody,
+  });
 }
 
 // Main handler
 export const handler: APIGatewayProxyHandler = async (event) => {
   const ctx = getRequestContext(event);
+  // Extract origin header for dynamic CORS (supports both root and www domains)
+  const requestOrigin = event.headers['origin'] || event.headers['Origin'];
+
   log('INFO', 'Contact form submission received', ctx, { method: event.httpMethod });
 
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     log('WARN', 'Method not allowed', ctx, { method: event.httpMethod });
-    return methodNotAllowed();
+    return methodNotAllowed(undefined, requestOrigin);
   }
 
   // CSRF protection: Verify X-Requested-With header
@@ -288,7 +258,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     log('WARN', 'Missing or invalid X-Requested-With header (CSRF protection)', ctx, {
       xRequestedWith: xRequestedWith || 'missing',
     });
-    return forbidden('CSRF validation failed');
+    return forbidden('CSRF validation failed', requestOrigin);
   }
 
   // Parse request body
@@ -299,7 +269,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     log('WARN', 'Invalid JSON in request body', ctx, {
       error: parseError instanceof Error ? parseError.message : 'Unknown parse error'
     });
-    return error('Invalid JSON in request body', 400, { code: ErrorCode.INVALID_JSON });
+    return error('Invalid JSON in request body', 400, { code: ErrorCode.INVALID_JSON, requestOrigin });
   }
 
   // Validate form data
@@ -310,10 +280,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (publicErrors.length === 0) {
       // Silently reject spam but return success to not tip off bots
       log('WARN', 'Spam submission detected and rejected', ctx, { honeypot: true });
-      return success({ message: 'Thank you for your message!' });
+      return success({ message: 'Thank you for your message!' }, 200, requestOrigin);
     }
     log('INFO', 'Validation failed', ctx, { errors: publicErrors });
-    return error('Validation failed', 400, { code: ErrorCode.VALIDATION_FAILED, fieldErrors: publicErrors });
+    return error('Validation failed', 400, { code: ErrorCode.VALIDATION_FAILED, fieldErrors: publicErrors, requestOrigin });
   }
 
   // Check rate limit for this email
@@ -324,7 +294,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       recentCount,
       maxAllowed: MAX_SUBMISSIONS_PER_WINDOW,
     });
-    return tooManyRequests('Too many submissions. Please wait before submitting again.');
+    return tooManyRequests('Too many submissions. Please wait before submitting again.', requestOrigin);
   }
 
   // Generate inquiry ID
@@ -358,7 +328,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       error: errorMessage,
       errorType: errorName
     });
-    return error('Failed to submit inquiry. Please try again.', 500, { code: ErrorCode.DATABASE_ERROR });
+    return error('Failed to submit inquiry. Please try again.', 500, { code: ErrorCode.DATABASE_ERROR, requestOrigin });
   }
 
   // Send emails (don't fail the request if emails fail)
@@ -382,5 +352,5 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   return success({
     message: 'Thank you for your message! We will get back to you soon.',
     inquiryId,
-  });
+  }, 200, requestOrigin);
 };

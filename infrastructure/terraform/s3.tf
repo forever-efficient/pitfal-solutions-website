@@ -3,6 +3,10 @@
 # Website bucket (static site hosting)
 resource "aws_s3_bucket" "website" {
   bucket = "${local.name_prefix}-website"
+
+  tags = {
+    Name = "${local.name_prefix}-website"
+  }
 }
 
 resource "aws_s3_bucket_versioning" "website" {
@@ -58,6 +62,10 @@ resource "aws_s3_bucket_policy" "website" {
 # Media bucket (images, videos)
 resource "aws_s3_bucket" "media" {
   bucket = "${local.name_prefix}-media"
+
+  tags = {
+    Name = "${local.name_prefix}-media"
+  }
 }
 
 resource "aws_s3_bucket_versioning" "media" {
@@ -117,7 +125,11 @@ resource "aws_s3_bucket_cors_configuration" "media" {
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    allowed_origins = [
+    # Only allow localhost CORS in non-production environments
+    allowed_origins = var.environment == "prod" ? [
+      "https://${var.domain_name}",
+      "https://www.${var.domain_name}"
+      ] : [
       "https://${var.domain_name}",
       "https://www.${var.domain_name}",
       "http://localhost:3000"
@@ -155,6 +167,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
 resource "aws_s3_bucket" "logs" {
   count  = var.enable_cloudfront_logging ? 1 : 0
   bucket = "${local.name_prefix}-logs"
+
+  tags = {
+    Name = "${local.name_prefix}-logs"
+  }
 }
 
 resource "aws_s3_bucket_ownership_controls" "logs" {

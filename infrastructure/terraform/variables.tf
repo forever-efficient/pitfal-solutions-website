@@ -97,7 +97,7 @@ variable "lambda_timeout" {
 variable "lambda_reserved_concurrency" {
   description = "Reserved concurrent executions for Lambda functions (limits max concurrent invocations)"
   type        = number
-  default     = 10
+  default     = 50
 }
 
 # CloudFront settings

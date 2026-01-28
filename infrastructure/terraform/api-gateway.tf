@@ -144,6 +144,8 @@ resource "aws_api_gateway_integration_response" "contact_options" {
   http_method = aws_api_gateway_method.contact_options.http_method
   status_code = aws_api_gateway_method_response.contact_options.status_code
 
+  # Note: API Gateway single-origin CORS requires Lambda to handle dynamic origin
+  # For now, using www subdomain as canonical; root domain redirects to www via CloudFront
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
     "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
@@ -246,7 +248,8 @@ resource "aws_api_gateway_method_settings" "main" {
     throttling_rate_limit  = var.api_throttle_rate_limit
     throttling_burst_limit = var.api_throttle_burst_limit
     logging_level          = "INFO"
-    data_trace_enabled     = var.environment != "prod"
-    metrics_enabled        = true
+    # Always disabled - data traces can log sensitive request/response bodies
+    data_trace_enabled = false
+    metrics_enabled    = true
   }
 }

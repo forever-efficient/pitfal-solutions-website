@@ -15,15 +15,15 @@ terraform {
     }
   }
 
-  # S3 backend for state management
-  # Uncomment after initial apply creates the bucket
-  # backend "s3" {
-  #   bucket         = "pitfal-terraform-state"
-  #   key            = "website/terraform.tfstate"
-  #   region         = "us-west-2"
-  #   encrypt        = true
-  #   dynamodb_table = "pitfal-terraform-locks"
-  # }
+  # S3 backend for state management with locking
+  # NOTE: Run `terraform init` after enabling to migrate state
+  backend "s3" {
+    bucket         = "pitfal-terraform-state"
+    key            = "website/terraform.tfstate"
+    region         = "us-west-2"
+    encrypt        = true
+    dynamodb_table = "pitfal-terraform-locks"
+  }
 }
 
 provider "aws" {

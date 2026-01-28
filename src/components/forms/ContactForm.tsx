@@ -15,6 +15,7 @@ interface FormData {
   phone: string;
   sessionType: string;
   message: string;
+  honeypot: string;
 }
 
 interface FormErrors {
@@ -40,6 +41,7 @@ export function ContactForm() {
     phone: '',
     sessionType: '',
     message: '',
+    honeypot: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [status, setStatus] = useState<FormStatus>('idle');
@@ -103,6 +105,7 @@ export function ContactForm() {
           phone: '',
           sessionType: '',
           message: '',
+          honeypot: '',
         });
       } else {
         setStatus('error');
@@ -150,13 +153,16 @@ export function ContactForm() {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6" aria-label="Contact form">
-            {/* Honeypot field - hidden from users */}
+            {/* Honeypot field - hidden from users, bots will fill this */}
             <input
               type="text"
               name="honeypot"
+              value={formData.honeypot}
+              onChange={(e) => handleChange('honeypot', e.target.value)}
               className="hidden"
               tabIndex={-1}
               autoComplete="off"
+              aria-hidden="true"
             />
 
             <div className="grid md:grid-cols-2 gap-6">
