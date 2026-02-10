@@ -1,16 +1,52 @@
 # Pitfal Solutions - Lambda Functions
 
-# Archive for Lambda deployment packages
+# ─────────────────────────────────────────────
+# Lambda TypeScript Build Steps
+# ─────────────────────────────────────────────
+# Lambda functions are written in TypeScript and must be compiled before deployment.
+# Triggers rebuild when source files change.
+
+resource "null_resource" "shared_build" {
+  triggers = {
+    db_hash       = filesha256("${path.module}/../../lambda/shared/db.ts")
+    email_hash    = filesha256("${path.module}/../../lambda/shared/email.ts")
+    response_hash = filesha256("${path.module}/../../lambda/shared/response.ts")
+    package_hash  = filesha256("${path.module}/../../lambda/shared/package.json")
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/shared && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+resource "null_resource" "contact_build" {
+  triggers = {
+    source_hash  = filesha256("${path.module}/../../lambda/contact/index.ts")
+    package_hash = filesha256("${path.module}/../../lambda/contact/package.json")
+    # Rebuild contact when shared code changes (esbuild bundles shared imports)
+    shared_hash  = null_resource.shared_build.id
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/contact && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+# Archive compiled Lambda deployment packages
 data "archive_file" "contact" {
   type        = "zip"
-  source_dir  = "${path.module}/../../lambda/contact"
+  source_dir  = "${path.module}/../../lambda/contact/dist"
   output_path = "${path.module}/builds/contact.zip"
+  depends_on  = [null_resource.contact_build]
 }
 
 data "archive_file" "shared" {
   type        = "zip"
-  source_dir  = "${path.module}/../../lambda/shared"
+  source_dir  = "${path.module}/../../lambda/shared/dist"
   output_path = "${path.module}/builds/shared.zip"
+  depends_on  = [null_resource.shared_build]
 }
 
 # Dead Letter Queue for failed Lambda invocations
@@ -18,6 +54,7 @@ resource "aws_sqs_queue" "lambda_dlq" {
   name                       = "${local.name_prefix}-lambda-dlq"
   message_retention_seconds  = 1209600 # 14 days
   visibility_timeout_seconds = 300
+  sqs_managed_sse_enabled    = true
 
   tags = {
     Name = "${local.name_prefix}-lambda-dlq"
@@ -70,14 +107,13 @@ resource "aws_lambda_function" "contact" {
 
   environment {
     variables = {
-      INQUIRIES_TABLE   = aws_dynamodb_table.inquiries.name
-      FROM_EMAIL        = var.from_email
-      CONTACT_EMAIL     = var.contact_email
-      ENVIRONMENT       = var.environment
-      USE_CUSTOM_DOMAIN = tostring(var.use_custom_domain)
-      CUSTOM_DOMAIN     = var.domain_name
-      # CORS_ALLOWED_ORIGINS will be set dynamically after CloudFront deploys
-      # Lambda should validate Origin header against CloudFront domain or custom domain
+      INQUIRIES_TABLE      = aws_dynamodb_table.inquiries.name
+      FROM_EMAIL           = var.from_email
+      CONTACT_EMAIL        = var.contact_email
+      ENVIRONMENT          = var.environment
+      USE_CUSTOM_DOMAIN    = tostring(var.use_custom_domain)
+      CUSTOM_DOMAIN        = var.domain_name
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
     }
   }
 

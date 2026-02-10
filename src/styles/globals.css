@@ -12,16 +12,6 @@
   --ring: 206 88 44;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 3 7 18;
-    --foreground: 249 250 251;
-    --muted: 31 41 55;
-    --muted-foreground: 156 163 175;
-    --border: 55 65 81;
-  }
-}
-
 /* Base styles */
 @layer base {
   html {
@@ -66,33 +56,6 @@
 
   .container-wide {
     @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
-  }
-
-  /* Button base */
-  .btn {
-    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
-  }
-
-  .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500;
-  }
-
-  .btn-secondary {
-    @apply btn bg-neutral-100 text-neutral-900 hover:bg-neutral-200 focus-visible:ring-neutral-400;
-  }
-
-  .btn-outline {
-    @apply btn border border-neutral-300 bg-transparent hover:bg-neutral-50 focus-visible:ring-neutral-400;
-  }
-
-  /* Card */
-  .card {
-    @apply rounded-xl border border-neutral-200 bg-white p-6 shadow-sm;
-  }
-
-  /* Form inputs */
-  .input {
-    @apply block w-full rounded-lg border border-neutral-300 px-4 py-2 text-neutral-900 placeholder:text-neutral-400 focus:border-primary-500 focus:ring-primary-500;
   }
 
   /* Gallery grid */
@@ -181,183 +144,80 @@
 }
 
 /* ============================================
-   REUSABLE ANIMATIONS
+   EXTENDED ANIMATIONS
+   Supplements Tailwind config animations (fadeIn, fadeInUp, scaleIn, slideIn)
+   with additional variants not defined in tailwind.config.ts.
    ============================================ */
 
-/* Fade animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 @keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @keyframes fade-in-down {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fade-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes fade-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Scale animations */
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes scale-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
-  }
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
 }
 
-/* Slide animations */
 @keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes slide-out-right {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(100%);
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
 }
 
 @keyframes slide-in-left {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
 }
 
 @keyframes slide-in-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 @keyframes slide-in-down {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
 }
 
-/* Bounce animation */
 @keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
-/* Pulse animation */
 @keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-/* Shimmer animation for loading states */
 @keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
 
-/* Animation utility classes */
+/* Extended animation utility classes (not in Tailwind config) */
 @layer utilities {
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-out forwards;
-  }
-
   .animate-fade-out {
     animation: fade-out 0.3s ease-out forwards;
-  }
-
-  .animate-fade-in-up {
-    animation: fade-in-up 0.5s ease-out forwards;
   }
 
   .animate-fade-in-down {
@@ -370,10 +230,6 @@
 
   .animate-fade-in-right {
     animation: fade-in-right 0.5s ease-out forwards;
-  }
-
-  .animate-scale-in {
-    animation: scale-in 0.3s ease-out forwards;
   }
 
   .animate-scale-out {
@@ -419,31 +275,6 @@
     animation: shimmer 1.5s infinite;
   }
 
-  /* Animation duration utilities */
-  .duration-150 {
-    animation-duration: 150ms;
-  }
-
-  .duration-200 {
-    animation-duration: 200ms;
-  }
-
-  .duration-300 {
-    animation-duration: 300ms;
-  }
-
-  .duration-500 {
-    animation-duration: 500ms;
-  }
-
-  .duration-700 {
-    animation-duration: 700ms;
-  }
-
-  .duration-1000 {
-    animation-duration: 1000ms;
-  }
-
   /* Animation fill mode utilities */
   .fill-forwards {
     animation-fill-mode: forwards;
@@ -455,5 +286,17 @@
 
   .fill-both {
     animation-fill-mode: both;
+  }
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

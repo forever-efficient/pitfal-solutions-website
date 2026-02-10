@@ -37,6 +37,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Lambda deps live in lambda/*/node_modules, not root.
+      // Aliases ensure vi.mock() and source files resolve the same physical copy.
+      '@aws-sdk/client-ses': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-ses'),
+      '@aws-sdk/client-dynamodb': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-dynamodb'),
+      '@aws-sdk/lib-dynamodb': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/lib-dynamodb'),
     },
   },
 });

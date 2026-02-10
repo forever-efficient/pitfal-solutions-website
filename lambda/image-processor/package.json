@@ -1,0 +1,21 @@
+{
+  "name": "pitfal-image-processor",
+  "version": "1.0.0",
+  "description": "Auto-edit RAW images (CR2/CR3) with professional magazine-quality adjustments",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "docker:build": "docker build -t pitfal-image-processor .",
+    "docker:test": "docker run --rm pitfal-image-processor"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5",
+    "@aws-sdk/client-s3": "^3.600.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.0"
+  }
+}

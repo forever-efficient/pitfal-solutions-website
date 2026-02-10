@@ -75,7 +75,7 @@ export default function AboutPage() {
               <div className="mt-8">
                 <Link
                   href="/contact"
-                  className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm hover:shadow-md text-base px-4 py-2 rounded-lg"
+                  className="inline-flex items-center justify-center font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 bg-primary-700 text-white hover:bg-primary-800 focus:ring-primary-500 shadow-sm hover:shadow-md text-base px-4 py-2 rounded-lg"
                 >
                   Contact Today
                 </Link>

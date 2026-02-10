@@ -313,7 +313,8 @@ domain_name     = "pitfal.solutions"
 # route53_zone_id = "Z1234567890ABC"  # Add after creating hosted zone
 
 # Email
-ses_from_email = "info@pitfal.solutions"
+contact_email = "info@pitfal.solutions"
+from_email    = "noreply@pitfal.solutions"
 ```
 
 ### Step 2.4: Deploy Infrastructure

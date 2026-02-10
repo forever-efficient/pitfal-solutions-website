@@ -19,7 +19,6 @@ export const BUSINESS = {
   },
   contact: {
     email: 'info@pitfal.solutions',
-    phone: '(303) 555-1234', // Update with real number
   },
   social: {
     instagram: 'https://instagram.com/pitfalsolutions',

@@ -35,6 +35,22 @@ resource "aws_s3_bucket_public_access_block" "website" {
   restrict_public_buckets = true
 }
 
+# Website bucket lifecycle - expire old versions
+resource "aws_s3_bucket_lifecycle_configuration" "website" {
+  bucket = aws_s3_bucket.website.id
+
+  rule {
+    id     = "expire-noncurrent-versions"
+    status = "Enabled"
+
+    filter {}
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
 # Website bucket policy - allow CloudFront access via OAC
 resource "aws_s3_bucket_policy" "website" {
   bucket = aws_s3_bucket.website.id
@@ -62,6 +78,10 @@ resource "aws_s3_bucket_policy" "website" {
 # Media bucket (images, videos)
 resource "aws_s3_bucket" "media" {
   bucket = "${local.name_prefix}-media"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = {
     Name = "${local.name_prefix}-media"
@@ -139,9 +159,9 @@ resource "aws_s3_bucket_cors_configuration" "media" {
       ]
       ) : (
       var.environment == "prod" ? [
-        "https://*.cloudfront.net"
+        "https://${aws_cloudfront_distribution.website.domain_name}"
         ] : [
-        "https://*.cloudfront.net",
+        "https://${aws_cloudfront_distribution.website.domain_name}",
         "http://localhost:3000"
       ]
     )
@@ -158,6 +178,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
     id     = "transition-to-ia"
     status = "Enabled"
 
+    # Exclude staging files from IA transition (they get moved to finished quickly)
+    filter {
+      prefix = "finished/"
+    }
+
     transition {
       days          = 90
       storage_class = "STANDARD_IA"
@@ -170,6 +195,22 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
 
     noncurrent_version_expiration {
       noncurrent_days = 365
+    }
+  }
+
+  # Auto-cleanup staging files that weren't processed (safety net)
+  rule {
+    id     = "staging-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "staging/"
+    }
+
+    # If a file sits in staging for 7 days without being processed,
+    # something went wrong - expire it to prevent orphaned files
+    expiration {
+      days = 7
     }
   }
 }
@@ -198,4 +239,41 @@ resource "aws_s3_bucket_acl" "logs" {
   depends_on = [aws_s3_bucket_ownership_controls.logs]
   bucket     = aws_s3_bucket.logs[0].id
   acl        = "log-delivery-write"
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "logs" {
+  count  = var.enable_cloudfront_logging ? 1 : 0
+  bucket = aws_s3_bucket.logs[0].id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "logs" {
+  count  = var.enable_cloudfront_logging ? 1 : 0
+  bucket = aws_s3_bucket.logs[0].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "logs" {
+  count  = var.enable_cloudfront_logging ? 1 : 0
+  bucket = aws_s3_bucket.logs[0].id
+
+  rule {
+    id     = "expire-old-logs"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = 365
+    }
+  }
 }

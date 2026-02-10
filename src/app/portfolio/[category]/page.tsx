@@ -4,107 +4,8 @@ import { notFound } from 'next/navigation';
 import { Container, Section } from '@/components/ui/Container';
 import { GalleryGrid } from '@/components/gallery/GalleryGrid';
 import { ContactCTA } from '@/components/sections';
-
-// Category data
-const categoryData: Record<
-  string,
-  {
-    title: string;
-    description: string;
-    galleries: Array<{
-      id: string;
-      slug: string;
-      title: string;
-      thumbnail: string;
-      imageCount: number;
-    }>;
-  }
-> = {
-  brands: {
-    title: 'Brand Photography',
-    description:
-      'Professional brand imagery for businesses, entrepreneurs, and content creators. From product photography to lifestyle brand shoots.',
-    galleries: [
-      {
-        id: '1',
-        slug: 'tech-startup-rebrand',
-        title: 'Tech Startup Rebrand',
-        thumbnail: '/images/portfolio/brands/tech-startup.jpg',
-        imageCount: 24,
-      },
-      {
-        id: '2',
-        slug: 'coffee-shop-launch',
-        title: 'Coffee Shop Launch',
-        thumbnail: '/images/portfolio/brands/coffee-shop.jpg',
-        imageCount: 32,
-      },
-      {
-        id: '3',
-        slug: 'fitness-brand',
-        title: 'Fitness Brand Campaign',
-        thumbnail: '/images/portfolio/brands/fitness.jpg',
-        imageCount: 28,
-      },
-    ],
-  },
-  portraits: {
-    title: 'Portrait Photography',
-    description:
-      'From professional headshots to family portraits, capturing authentic moments and genuine expressions.',
-    galleries: [
-      {
-        id: '1',
-        slug: 'executive-headshots',
-        title: 'Executive Headshots',
-        thumbnail: '/images/portfolio/portraits/executive.jpg',
-        imageCount: 15,
-      },
-      {
-        id: '2',
-        slug: 'family-session',
-        title: 'Smith Family Session',
-        thumbnail: '/images/portfolio/portraits/family.jpg',
-        imageCount: 45,
-      },
-      {
-        id: '3',
-        slug: 'senior-portraits',
-        title: 'Senior Portraits 2024',
-        thumbnail: '/images/portfolio/portraits/senior.jpg',
-        imageCount: 38,
-      },
-    ],
-  },
-  events: {
-    title: 'Event Coverage',
-    description:
-      'Comprehensive documentation of weddings, corporate events, and special occasions.',
-    galleries: [
-      {
-        id: '1',
-        slug: 'johnson-wedding',
-        title: 'Johnson Wedding',
-        thumbnail: '/images/portfolio/events/wedding.jpg',
-        imageCount: 250,
-      },
-      {
-        id: '2',
-        slug: 'tech-conference-2024',
-        title: 'Tech Conference 2024',
-        thumbnail: '/images/portfolio/events/conference.jpg',
-        imageCount: 120,
-      },
-      {
-        id: '3',
-        slug: 'charity-gala',
-        title: 'Annual Charity Gala',
-        thumbnail: '/images/portfolio/events/gala.jpg',
-        imageCount: 85,
-      },
-    ],
-  },
-};
+import { getGalleriesByCategory } from '@/lib/galleries';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -112,33 +13,43 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category } = await params;
-  const data = categoryData[category];
+  const categoryInfo = PORTFOLIO_CATEGORIES[category as keyof typeof PORTFOLIO_CATEGORIES];
 
-  if (!data) {
-    return {
-      title: 'Portfolio',
-    };
+  if (!categoryInfo) {
+    return { title: 'Portfolio' };
   }
 
   return {
-    title: data.title,
-    description: data.description,
+    title: categoryInfo.title,
+    description: categoryInfo.description,
   };
 }
 
 export async function generateStaticParams() {
-  return Object.keys(categoryData).map((category) => ({
+  return Object.keys(PORTFOLIO_CATEGORIES).map((category) => ({
     category,
   }));
 }
 
 export default async function CategoryPage({ params }: PageProps) {
   const { category } = await params;
-  const data = categoryData[category];
+  const categoryInfo = PORTFOLIO_CATEGORIES[category as keyof typeof PORTFOLIO_CATEGORIES];
 
-  if (!data) {
+  if (!categoryInfo) {
     notFound();
   }
+
+  const galleries = getGalleriesByCategory(category);
+
+  // Map gallery manifest data to the shape GalleryGrid expects
+  const galleryGridData = galleries.map((g) => ({
+    id: g.slug,
+    slug: g.slug,
+    title: g.title,
+    thumbnail: '',
+    imageCount: g.images.length,
+    description: g.description,
+  }));
 
   return (
     <>
@@ -154,15 +65,15 @@ export default async function CategoryPage({ params }: PageProps) {
                 </Link>
               </li>
               <li className="mx-2">/</li>
-              <li className="text-neutral-900">{data.title}</li>
+              <li className="text-neutral-900">{categoryInfo.title}</li>
             </ol>
           </nav>
 
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-6 font-display">
-              {data.title}
+              {categoryInfo.title}
             </h1>
-            <p className="text-xl text-neutral-600">{data.description}</p>
+            <p className="text-xl text-neutral-600">{categoryInfo.description}</p>
           </div>
         </Container>
       </Section>
@@ -170,7 +81,7 @@ export default async function CategoryPage({ params }: PageProps) {
       {/* Galleries */}
       <Section size="lg" background="white">
         <Container>
-          <GalleryGrid galleries={data.galleries} category={category} />
+          <GalleryGrid galleries={galleryGridData} category={category} />
         </Container>
       </Section>
 

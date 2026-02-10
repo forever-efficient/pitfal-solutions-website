@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowDownIcon } from '@/components/icons';
 import { COPY } from '@/lib/constants';
@@ -26,12 +27,15 @@ export function HeroSection({
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url(${backgroundImage})`,
-        }}
-      >
+      <div className="absolute inset-0">
+        <Image
+          src={backgroundImage}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
       </div>
@@ -57,7 +61,7 @@ export function HeroSection({
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-400">
           <Link
             href={ctaHref}
-            className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-accent-500 hover:bg-accent-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px]"
+            className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-accent-700 hover:bg-accent-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 min-w-[200px]"
           >
             {ctaText}
           </Link>

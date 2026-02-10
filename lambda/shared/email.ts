@@ -242,12 +242,13 @@ export async function sendEmailWithAttachment(
   ].join('\r\n');
 
   for (const attachment of options.attachments) {
+    const safeFilename = attachment.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     rawEmail += [
       '',
       `--${boundary}`,
-      `Content-Type: ${attachment.contentType}; name="${attachment.filename}"`,
+      `Content-Type: ${attachment.contentType}; name="${safeFilename}"`,
       'Content-Transfer-Encoding: base64',
-      `Content-Disposition: attachment; filename="${attachment.filename}"`,
+      `Content-Disposition: attachment; filename="${safeFilename}"`,
       '',
       attachment.content.toString('base64'),
     ].join('\r\n');

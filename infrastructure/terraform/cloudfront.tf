@@ -106,6 +106,28 @@ resource "aws_cloudfront_cache_policy" "media" {
   }
 }
 
+# Use AWS managed CachingDisabled policy for API
+# Managed policy ID: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+# Custom cache policies with TTL=0 cannot whitelist headers
+
+# Origin request policy for API (forward Content-Type)
+resource "aws_cloudfront_origin_request_policy" "api" {
+  name = "${local.name_prefix}-api-origin-request"
+
+  cookies_config {
+    cookie_behavior = "all"
+  }
+  headers_config {
+    header_behavior = "whitelist"
+    headers {
+      items = ["Content-Type", "Origin", "Accept", "X-Requested-With"]
+    }
+  }
+  query_strings_config {
+    query_string_behavior = "all"
+  }
+}
+
 # Main CloudFront distribution
 resource "aws_cloudfront_distribution" "website" {
   enabled             = true
@@ -178,19 +200,10 @@ resource "aws_cloudfront_distribution" "website" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "API-Gateway"
 
-    forwarded_values {
-      query_string = true
-      headers      = ["Authorization", "Content-Type", "Origin", "Accept"]
-
-      cookies {
-        forward = "all"
-      }
-    }
+    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # AWS Managed CachingDisabled
+    origin_request_policy_id = aws_cloudfront_origin_request_policy.api.id
 
     viewer_protocol_policy = "https-only"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
   }
 
   # Custom error responses for SPA routing

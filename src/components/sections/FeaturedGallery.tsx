@@ -1,33 +1,29 @@
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ArrowRightIcon, EyeIcon } from '@/components/icons';
-
-// Placeholder featured work - will be replaced with real data
-const featuredWork = [
-  {
-    id: '1',
-    title: 'Urban Portrait Session',
-    category: 'Portraits',
-    thumbnail: '/images/featured/portrait-1.jpg',
-    href: '/portfolio/portraits/urban-session',
-  },
-  {
-    id: '2',
-    title: 'Corporate Brand Shoot',
-    category: 'Brand',
-    thumbnail: '/images/featured/brand-1.jpg',
-    href: '/portfolio/brands/corporate-shoot',
-  },
-  {
-    id: '3',
-    title: 'Wedding Celebration',
-    category: 'Events',
-    thumbnail: '/images/featured/event-1.jpg',
-    href: '/portfolio/events/wedding',
-  },
-];
+import { getFeaturedGalleries } from '@/lib/galleries';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
 
 export function FeaturedGallery() {
+  const featured = getFeaturedGalleries();
+
+  // Fall back to static placeholders if no featured galleries exist yet
+  const featuredWork =
+    featured.length > 0
+      ? featured.map((g) => ({
+          id: g.slug,
+          title: g.title,
+          category:
+            PORTFOLIO_CATEGORIES[g.category as keyof typeof PORTFOLIO_CATEGORIES]?.title ||
+            g.category,
+          href: `/portfolio/${g.category}/${g.slug}`,
+        }))
+      : [
+          { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits' },
+          { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands' },
+          { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events' },
+        ];
+
   return (
     <Section size="lg" background="white">
       <Container>
@@ -53,7 +49,7 @@ export function FeaturedGallery() {
               href={item.href}
               className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              {/* Placeholder gradient - will be replaced with actual images */}
+              {/* Placeholder gradient - replaced with real images when available */}
               <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
 
               {/* Overlay */}
@@ -81,7 +77,7 @@ export function FeaturedGallery() {
         <div className="text-center mt-12">
           <Link
             href="/portfolio"
-            className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-600 hover:bg-primary-700 text-white shadow-sm hover:shadow-md transition-all duration-200 min-w-[220px]"
+            className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-700 hover:bg-primary-800 text-white shadow-sm hover:shadow-md transition-all duration-200 min-w-[220px]"
           >
             View Full Portfolio
             <ArrowRightIcon size={20} className="ml-2" />

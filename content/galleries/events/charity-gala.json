@@ -1,0 +1,26 @@
+{
+  "slug": "charity-gala",
+  "title": "Annual Charity Gala",
+  "description": "Black-tie charity fundraiser gala at the Denver Art Museum supporting local education initiatives.",
+  "date": "2025-12-06",
+  "coverImage": "finished/events/gala-001.jpg",
+  "images": [
+    { "key": "finished/events/gala-001.jpg", "alt": "Grand ballroom setup overview" },
+    { "key": "finished/events/gala-002.jpg", "alt": "Red carpet arrivals" },
+    { "key": "finished/events/gala-003.jpg", "alt": "Table centerpiece and decor" },
+    { "key": "finished/events/gala-004.jpg", "alt": "Live auction action" },
+    { "key": "finished/events/gala-005.jpg", "alt": "Orchestra performance" },
+    { "key": "finished/events/gala-006.jpg", "alt": "Guests mingling cocktail hour" },
+    { "key": "finished/events/gala-007.jpg", "alt": "Event organizer speech" },
+    { "key": "finished/events/gala-008.jpg", "alt": "Silent auction displays" },
+    { "key": "finished/events/gala-009.jpg", "alt": "Dance floor energy" },
+    { "key": "finished/events/gala-010.jpg", "alt": "Venue lighting and ambiance" },
+    { "key": "finished/events/gala-011.jpg", "alt": "Award presentation moment" },
+    { "key": "finished/events/gala-012.jpg", "alt": "Dessert station elegance" },
+    { "key": "finished/events/gala-013.jpg", "alt": "Guest couple formal portrait" },
+    { "key": "finished/events/gala-014.jpg", "alt": "Group photo at step and repeat" },
+    { "key": "finished/events/gala-015.jpg", "alt": "Champagne toast" },
+    { "key": "finished/events/gala-016.jpg", "alt": "Kids program beneficiaries" },
+    { "key": "finished/events/gala-017.jpg", "alt": "End of evening sparkler send-off" }
+  ]
+}

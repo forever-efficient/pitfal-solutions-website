@@ -20,9 +20,8 @@ describe('ImageCard', () => {
 
   it('renders image when imageSrc is provided', () => {
     render(<ImageCard title="Test" imageSrc="/test.jpg" />);
-    const img = document.querySelector('img');
+    const img = document.querySelector('img[src="/test.jpg"]');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', '/test.jpg');
   });
 
   it('renders gradient placeholder when no imageSrc', () => {
@@ -77,7 +76,7 @@ describe('ImageCard', () => {
 
   it('sets lazy loading on image', () => {
     render(<ImageCard title="Test" imageSrc="/test.jpg" />);
-    const img = document.querySelector('img');
+    const img = document.querySelector('img[src="/test.jpg"]');
     expect(img).toHaveAttribute('loading', 'lazy');
   });
 });

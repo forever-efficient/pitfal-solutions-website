@@ -29,6 +29,10 @@ vi.mock('next/image', () => ({
       width: props.width,
       height: props.height,
       className: props.className,
+      loading: props.loading,
+      sizes: props.sizes,
+      'data-fill': props.fill ? 'true' : undefined,
+      'data-priority': props.priority ? 'true' : undefined,
     }),
 }));
 

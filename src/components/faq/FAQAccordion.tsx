@@ -24,7 +24,7 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
     <div className="space-y-4">
       {items.map((item, index) => (
         <div
-          key={index}
+          key={item.question}
           className="border border-neutral-200 rounded-lg overflow-hidden"
         >
           <button
@@ -47,7 +47,7 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
           <div
             className={cn(
               'overflow-hidden transition-all duration-200',
-              openIndex === index ? 'max-h-96' : 'max-h-0'
+              openIndex === index ? 'max-h-[1000px]' : 'max-h-0'
             )}
           >
             <div className="p-4 pt-0 text-neutral-600 prose prose-sm max-w-none">

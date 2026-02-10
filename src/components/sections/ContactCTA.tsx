@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
-import { EmailIcon, PhoneIcon, LocationIcon } from '@/components/icons';
+import { EmailIcon, LocationIcon } from '@/components/icons';
 import { BUSINESS, COPY } from '@/lib/constants';
 
 export function ContactCTA() {
@@ -20,7 +20,7 @@ export function ContactCTA() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-600 text-white hover:bg-primary-700 shadow-sm hover:shadow-md transition-all duration-200 min-w-[180px]"
+              className="inline-flex items-center justify-center font-medium text-lg px-8 py-4 rounded-lg bg-primary-700 text-white hover:bg-primary-800 shadow-sm hover:shadow-md transition-all duration-200 min-w-[180px]"
             >
               {COPY.cta.contact.button}
             </Link>
@@ -40,14 +40,6 @@ export function ContactCTA() {
             >
               <EmailIcon size={20} />
               {BUSINESS.contact.email}
-            </a>
-            <span className="hidden sm:block">|</span>
-            <a
-              href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
-              className="flex items-center gap-2 hover:text-white transition-colors"
-            >
-              <PhoneIcon size={20} />
-              {BUSINESS.contact.phone}
             </a>
             <span className="hidden sm:block">|</span>
             <span className="flex items-center gap-2">

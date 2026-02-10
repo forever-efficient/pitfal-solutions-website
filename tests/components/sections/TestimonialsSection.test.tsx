@@ -150,4 +150,75 @@ describe('TestimonialsSection', () => {
     const slide = screen.getByRole('group');
     expect(slide).toHaveAttribute('aria-label', expect.stringContaining('Testimonial 1 of 3'));
   });
+
+  it('navigates with ArrowRight key when carousel is focused', () => {
+    render(<TestimonialsSection />);
+
+    // Focus the carousel slide
+    const slide = screen.getByRole('group');
+    slide.focus();
+
+    // Simulate ArrowRight
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    expect(screen.getByText('"Excellent work and professionalism."')).toBeInTheDocument();
+  });
+
+  it('navigates with ArrowLeft key when carousel is focused', () => {
+    render(<TestimonialsSection />);
+
+    // Focus the carousel slide
+    const slide = screen.getByRole('group');
+    slide.focus();
+
+    // ArrowLeft from first should wrap to last
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+
+    expect(screen.getByText('"Captured every moment perfectly."')).toBeInTheDocument();
+  });
+
+  it('does not navigate with arrow keys when carousel is not focused', () => {
+    render(<TestimonialsSection />);
+
+    // Don't focus the carousel — fire event on window
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+
+    // Should still show first testimonial
+    expect(screen.getByText('"Great photography service!"')).toBeInTheDocument();
+  });
+
+  it('updates slide aria-label when navigating', () => {
+    render(<TestimonialsSection />);
+
+    const nextButton = screen.getByRole('button', { name: /next testimonial/i });
+    fireEvent.click(nextButton);
+
+    const slide = screen.getByRole('group');
+    expect(slide).toHaveAttribute('aria-label', expect.stringContaining('Testimonial 2 of 3'));
+  });
+
+  it('renders correct number of filled vs unfilled stars for rating', () => {
+    render(<TestimonialsSection />);
+
+    // Navigate to second testimonial (rating: 4)
+    const nextButton = screen.getByRole('button', { name: /next testimonial/i });
+    fireEvent.click(nextButton);
+
+    const filledStars = document.querySelectorAll('.text-accent-500');
+    const unfilledStars = document.querySelectorAll('.text-neutral-300');
+    expect(filledStars.length).toBe(4);
+    expect(unfilledStars.length).toBe(1);
+  });
+
+  it('navigation dots reflect active tab with aria-selected', () => {
+    render(<TestimonialsSection />);
+
+    const dots = screen.getAllByRole('tab');
+    expect(dots[0]).toHaveAttribute('aria-selected', 'true');
+    expect(dots[1]).toHaveAttribute('aria-selected', 'false');
+
+    fireEvent.click(dots[2]);
+    expect(dots[0]).toHaveAttribute('aria-selected', 'false');
+    expect(dots[2]).toHaveAttribute('aria-selected', 'true');
+  });
 });

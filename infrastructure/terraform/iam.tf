@@ -1,8 +1,11 @@
 # Pitfal Solutions - IAM Roles and Policies
 
-# Lambda execution role
+# ─────────────────────────────────────────────
+# Contact Lambda Role (least-privilege)
+# ─────────────────────────────────────────────
+
 resource "aws_iam_role" "lambda_execution" {
-  name = "${local.name_prefix}-lambda-execution"
+  name = "${local.name_prefix}-contact-lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -24,9 +27,9 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# DynamoDB policy for Lambda
+# DynamoDB policy - scoped to inquiries table only (contact form + rate limiting)
 resource "aws_iam_role_policy" "lambda_dynamodb" {
-  name = "${local.name_prefix}-lambda-dynamodb"
+  name = "${local.name_prefix}-contact-dynamodb"
   role = aws_iam_role.lambda_execution.id
 
   policy = jsonencode({
@@ -35,29 +38,21 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:Query"
         ]
         Resource = [
           aws_dynamodb_table.inquiries.arn,
-          "${aws_dynamodb_table.inquiries.arn}/index/*",
-          aws_dynamodb_table.galleries.arn,
-          "${aws_dynamodb_table.galleries.arn}/index/*",
-          aws_dynamodb_table.admin.arn,
-          "${aws_dynamodb_table.admin.arn}/index/*"
+          "${aws_dynamodb_table.inquiries.arn}/index/*"
         ]
       }
     ]
   })
 }
 
-# SES policy for Lambda - restricted to verified domain
+# SES policy - restricted to verified domain and sender address
 resource "aws_iam_role_policy" "lambda_ses" {
-  name = "${local.name_prefix}-lambda-ses"
+  name = "${local.name_prefix}-contact-ses"
   role = aws_iam_role.lambda_execution.id
 
   policy = jsonencode({
@@ -75,31 +70,6 @@ resource "aws_iam_role_policy" "lambda_ses" {
             "ses:FromAddress" = var.from_email
           }
         }
-      }
-    ]
-  })
-}
-
-# S3 policy for Lambda (media bucket access)
-resource "aws_iam_role_policy" "lambda_s3" {
-  name = "${local.name_prefix}-lambda-s3"
-  role = aws_iam_role.lambda_execution.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          aws_s3_bucket.media.arn,
-          "${aws_s3_bucket.media.arn}/*"
-        ]
       }
     ]
   })

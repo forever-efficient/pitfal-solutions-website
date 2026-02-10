@@ -94,6 +94,27 @@ output "deployment_commands" {
   EOT
 }
 
+# Image Processor
+output "image_processor_ecr_repository" {
+  description = "ECR repository URL for the image processor Lambda"
+  value       = aws_ecr_repository.image_processor.repository_url
+}
+
+output "image_processor_lambda_arn" {
+  description = "ARN of the image processor Lambda function"
+  value       = var.enable_image_processor ? aws_lambda_function.image_processor[0].arn : ""
+}
+
+output "image_staging_path" {
+  description = "S3 path for uploading RAW images for auto-editing"
+  value       = "s3://${aws_s3_bucket.media.id}/staging/"
+}
+
+output "image_finished_path" {
+  description = "S3 path where edited images are delivered"
+  value       = "s3://${aws_s3_bucket.media.id}/finished/"
+}
+
 # Domain configuration info
 output "domain_configuration" {
   description = "Current domain configuration"

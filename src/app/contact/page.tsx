@@ -66,19 +66,6 @@ export default function ContactPage() {
                 </a>
               </div>
 
-              {/* Phone */}
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900 mb-3">
-                  Phone
-                </h3>
-                <a
-                  href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
-                  className="text-primary-600 hover:underline"
-                >
-                  {BUSINESS.contact.phone}
-                </a>
-              </div>
-
               {/* Hours */}
               <div>
                 <h3 className="text-lg font-semibold text-neutral-900 mb-3">

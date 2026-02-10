@@ -52,9 +52,7 @@ test.describe('About Page', () => {
 
     // Should have a way to contact/book
     const ctaLink = page.getByRole('link', { name: /contact|book/i });
-    if (await ctaLink.count() > 0) {
-      await expect(ctaLink.first()).toBeVisible();
-    }
+    await expect(ctaLink.first()).toBeVisible();
   });
 });
 
@@ -76,10 +74,8 @@ test.describe('Services Page', () => {
   test('has booking CTA', async ({ page }) => {
     await page.goto('/services');
 
-    const bookingLink = page.getByRole('link', { name: /book|contact|get started/i });
-    if (await bookingLink.count() > 0) {
-      await expect(bookingLink.first()).toBeVisible();
-    }
+    const bookingLink = page.getByRole('link', { name: /book|contact|get started|get a quote|get in touch/i });
+    await expect(bookingLink.first()).toBeVisible();
   });
 });
 
@@ -197,11 +193,9 @@ test.describe('Contact Page', () => {
   test('displays contact information', async ({ page }) => {
     await page.goto('/contact');
 
-    // Should show email or phone
-    const contactInfo = page.getByText(/info@pitfal|303|denver/i);
-    if (await contactInfo.count() > 0) {
-      await expect(contactInfo.first()).toBeVisible();
-    }
+    // Should show email or location info
+    const contactInfo = page.getByText(/info@pitfal|denver/i);
+    await expect(contactInfo.first()).toBeVisible();
   });
 });
 
@@ -242,9 +236,7 @@ test.describe('404 Page', () => {
 
     // Should still have header/navigation
     const homeLink = page.getByRole('link', { name: /home|pitfal/i });
-    if (await homeLink.count() > 0) {
-      await expect(homeLink.first()).toBeVisible();
-    }
+    await expect(homeLink.first()).toBeVisible();
   });
 });
 
@@ -294,13 +286,12 @@ test.describe('Performance', () => {
     // Wait for content to stabilize
     await page.waitForLoadState('networkidle');
 
-    // Take a screenshot to verify layout is stable
+    // Take two screenshots to verify layout is stable
     const screenshot1 = await page.screenshot();
     await page.waitForTimeout(500);
     const screenshot2 = await page.screenshot();
 
-    // Screenshots should be similar (simple check)
-    expect(screenshot1.length).toBeGreaterThan(0);
-    expect(screenshot2.length).toBeGreaterThan(0);
+    // Screenshots should be identical (no layout shift)
+    expect(Buffer.compare(screenshot1, screenshot2)).toBe(0);
   });
 });

@@ -120,9 +120,10 @@ export async function scanItems<T>(params: ScanCommandInput): Promise<T[]> {
  * Handles DynamoDB's 1MB response limit by making multiple requests.
  * @template T - The expected shape of the returned items
  * @param params - QueryCommand parameters including TableName and KeyConditionExpression
+ * @param maxItems - Safety limit on total items returned (default 10000)
  * @returns Array of all matching items across all pages
  */
-export async function queryAllItems<T>(params: QueryCommandInput): Promise<T[]> {
+export async function queryAllItems<T>(params: QueryCommandInput, maxItems: number = 10000): Promise<T[]> {
   const items: T[] = [];
   let lastKey: Record<string, unknown> | undefined;
 
@@ -135,7 +136,7 @@ export async function queryAllItems<T>(params: QueryCommandInput): Promise<T[]> 
     );
     items.push(...((result.Items as T[]) || []));
     lastKey = result.LastEvaluatedKey;
-  } while (lastKey);
+  } while (lastKey && items.length < maxItems);
 
   return items;
 }

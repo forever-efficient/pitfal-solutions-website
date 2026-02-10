@@ -209,6 +209,130 @@ describe('ContactForm', () => {
       });
     });
 
+    it('silently succeeds when honeypot field is filled (bot detection)', async () => {
+      global.fetch = vi.fn() as unknown as typeof fetch;
+
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      await user.type(screen.getByLabelText(/name/i), 'John Doe');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a test message for the form.');
+
+      // Fill the hidden honeypot field
+      const honeypotInput = document.querySelector('input[name="honeypot"]') as HTMLInputElement;
+      await user.type(honeypotInput, 'spam bot content');
+
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: /message sent/i })).toBeInTheDocument();
+      });
+
+      // Should NOT have called fetch
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('shows error for short name', async () => {
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      await user.type(screen.getByLabelText(/name/i), 'J');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a valid test message for the form');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/name must be at least 2 characters/i)).toBeInTheDocument();
+      });
+    });
+
+    it('clears field error when user starts typing', async () => {
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      // Submit with short name to trigger error
+      await user.type(screen.getByLabelText(/name/i), 'J');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a valid test message for the form');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/name must be at least 2 characters/i)).toBeInTheDocument();
+      });
+
+      // Continue typing in name field — error should clear
+      await user.type(screen.getByLabelText(/name/i), 'o');
+
+      expect(screen.queryByText(/name must be at least 2 characters/i)).not.toBeInTheDocument();
+    });
+
+    it('displays field errors from server response', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({
+            error: 'Validation failed',
+            errors: [{ field: 'email', message: 'Email already submitted' }],
+          }),
+        })
+      ) as unknown as typeof fetch;
+
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      await user.type(screen.getByLabelText(/name/i), 'John Doe');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a test message for the form.');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/email already submitted/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows default success message when server provides none', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        })
+      ) as unknown as typeof fetch;
+
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      await user.type(screen.getByLabelText(/name/i), 'John Doe');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a test message for the form.');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/thank you for your message/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows default error message when server provides none', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({}),
+        })
+      ) as unknown as typeof fetch;
+
+      const user = userEvent.setup();
+      render(<ContactForm />);
+
+      await user.type(screen.getByLabelText(/name/i), 'John Doe');
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/message/i), 'This is a test message for the form.');
+      await user.click(screen.getByRole('button', { name: /send message/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+      });
+    });
+
     it('allows sending another message after success', async () => {
       global.fetch = vi.fn(() =>
         Promise.resolve({

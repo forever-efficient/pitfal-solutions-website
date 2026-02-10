@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,50 @@ export interface MobileMenuProps {
 
 export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileMenuProps) {
   const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  // Auto-focus close button when opened
+  useEffect(() => {
+    if (isOpen) {
+      closeButtonRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  // Focus trap
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab' || !menuRef.current) return;
+
+    const focusableElements = menuRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0]!;
+    const lastElement = focusableElements[focusableElements.length - 1]!;
+
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement.focus();
+    }
+  }, []);
 
   return (
     <Fragment>
@@ -30,6 +74,11 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
 
       {/* Slide-out menu */}
       <div
+        ref={menuRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation menu"
+        onKeyDown={handleKeyDown}
         className={cn(
           'fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-xl z-50 transition-transform duration-300 ease-out md:hidden',
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -39,6 +88,7 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
         <div className="flex items-center justify-between p-4 border-b border-neutral-200">
           <span className="text-lg font-semibold text-neutral-900">Menu</span>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
             className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
             aria-label="Close menu"
@@ -80,7 +130,7 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
           <Link
             href="/contact"
             onClick={onClose}
-            className="block w-full px-4 py-3 text-center text-white bg-primary-600 hover:bg-primary-700 rounded-lg font-medium transition-colors"
+            className="block w-full px-4 py-3 text-center text-white bg-primary-700 hover:bg-primary-800 rounded-lg font-medium transition-colors"
           >
             Book a Session
           </Link>

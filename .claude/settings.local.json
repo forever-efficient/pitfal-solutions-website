@@ -42,7 +42,11 @@
       "Bash(pip3 install:*)",
       "Bash(npx playwright:*)",
       "Bash(tr:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(chmod:*)",
+      "Bash(npx vitest:*)",
+      "Bash(xargs:*)",
+      "Bash(grep:*)"
     ]
   },
   "enabledMcpjsonServers": [

@@ -155,6 +155,16 @@ function validateForm(data: ContactFormData): ValidationError[] {
     }
   }
 
+  // Session type validation (optional but must be reasonable length)
+  if (data.sessionType && data.sessionType.length > 50) {
+    errors.push({ field: 'sessionType', message: 'Session type must be less than 50 characters' });
+  }
+
+  // Email length validation
+  if (data.email && data.email.length > 254) {
+    errors.push({ field: 'email', message: 'Email address is too long' });
+  }
+
   // Message validation
   if (!data.message || data.message.trim().length < 10) {
     errors.push({ field: 'message', message: 'Message must be at least 10 characters' });
@@ -200,7 +210,7 @@ Submitted at: ${new Date().toISOString()}
     to: CONTACT_EMAIL,
     subject: `New Inquiry from ${safeName} - Pitfal Solutions`,
     textBody: emailBody,
-    replyTo: inquiry.email,
+    replyTo: sanitizeForEmail(inquiry.email),
   });
 }
 
@@ -332,20 +342,21 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
 
   // Send emails (don't fail the request if emails fail)
-  try {
-    await Promise.all([
-      sendNotificationEmail({ ...formData, id: inquiryId }),
-      sendConfirmationEmail(formData),
-    ]);
-    log('INFO', 'Notification emails sent successfully', ctxWithInquiry);
-  } catch (emailError) {
-    // Log but don't fail - the inquiry is already saved
-    const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown email error';
-    const errorName = emailError instanceof Error ? emailError.name : 'UnknownError';
-    log('ERROR', 'Failed to send notification emails', ctxWithInquiry, {
-      error: errorMessage,
-      errorType: errorName
-    });
+  const emailResults = await Promise.allSettled([
+    sendNotificationEmail({ ...formData, id: inquiryId }),
+    sendConfirmationEmail(formData),
+  ]);
+
+  const emailLabels = ['notification', 'confirmation'] as const;
+  emailResults.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      const reason = result.reason instanceof Error ? result.reason.message : 'Unknown email error';
+      log('ERROR', `Failed to send ${emailLabels[index]} email`, ctxWithInquiry, { error: reason });
+    }
+  });
+
+  if (emailResults.every((r) => r.status === 'fulfilled')) {
+    log('INFO', 'All notification emails sent successfully', ctxWithInquiry);
   }
 
   log('INFO', 'Contact form submission completed', ctxWithInquiry);

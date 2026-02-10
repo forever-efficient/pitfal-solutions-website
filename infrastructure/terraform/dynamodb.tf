@@ -6,6 +6,10 @@ resource "aws_dynamodb_table" "inquiries" {
   billing_mode = var.dynamodb_billing_mode
   hash_key     = "id"
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   attribute {
     name = "id"
     type = "S"
@@ -26,12 +30,12 @@ resource "aws_dynamodb_table" "inquiries" {
     type = "S"
   }
 
-  # GSI for querying by email
+  # GSI for querying by email (KEYS_ONLY - used for rate limiting COUNT queries)
   global_secondary_index {
     name            = "email-index"
     hash_key        = "email"
     range_key       = "createdAt"
-    projection_type = "ALL"
+    projection_type = "KEYS_ONLY"
   }
 
   # GSI for querying by status
@@ -60,6 +64,10 @@ resource "aws_dynamodb_table" "galleries" {
   name         = "${local.name_prefix}-galleries"
   billing_mode = var.dynamodb_billing_mode
   hash_key     = "id"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   attribute {
     name = "id"
@@ -128,6 +136,10 @@ resource "aws_dynamodb_table" "admin" {
   billing_mode = var.dynamodb_billing_mode
   hash_key     = "pk"
   range_key    = "sk"
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   attribute {
     name = "pk"

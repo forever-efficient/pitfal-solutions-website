@@ -54,7 +54,7 @@ const Section = forwardRef<HTMLElement, SectionProps>(
       white: 'bg-white',
       light: 'bg-neutral-50',
       dark: 'bg-neutral-900 text-white',
-      primary: 'bg-primary-600 text-white',
+      primary: 'bg-primary-700 text-white',
       transparent: '',
     };
 

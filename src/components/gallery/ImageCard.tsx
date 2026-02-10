@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { EyeIcon } from '@/components/icons';
 
 interface ImageCardProps {
@@ -26,11 +27,12 @@ export function ImageCard({
     >
       {/* Image or gradient placeholder */}
       {imageSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={imageSrc}
           alt={altText}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover"
           loading="lazy"
         />
       ) : (
@@ -49,8 +51,8 @@ export function ImageCard({
         />
       )}
 
-      {/* Content */}
-      <div className="absolute inset-0 p-4 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      {/* Content - always visible with gradient, enhanced on hover */}
+      <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end bg-gradient-to-t from-black/60 to-transparent">
         <h3 className="text-white font-semibold text-lg">{title}</h3>
         {imageCount !== undefined && (
           <p className="text-white/80 text-sm">{imageCount} images</p>

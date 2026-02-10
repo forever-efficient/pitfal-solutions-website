@@ -3,8 +3,9 @@
 
 # SNS topic for alarm notifications
 resource "aws_sns_topic" "alarms" {
-  count = var.enable_cloudwatch_alarms ? 1 : 0
-  name  = "${local.name_prefix}-alarms"
+  count             = var.enable_cloudwatch_alarms ? 1 : 0
+  name              = "${local.name_prefix}-alarms"
+  kms_master_key_id = "alias/aws/sns"
 
   tags = {
     Name = "${local.name_prefix}-alarms"
@@ -152,10 +153,19 @@ resource "aws_cloudwatch_metric_alarm" "api_latency" {
   }
 }
 
-# DynamoDB Read Throttling Alarm
+# DynamoDB tables to monitor
+locals {
+  dynamodb_tables = var.enable_cloudwatch_alarms ? {
+    inquiries = aws_dynamodb_table.inquiries.name
+    galleries = aws_dynamodb_table.galleries.name
+    admin     = aws_dynamodb_table.admin.name
+  } : {}
+}
+
+# DynamoDB Read Throttling Alarms (all tables)
 resource "aws_cloudwatch_metric_alarm" "dynamodb_read_throttle" {
-  count               = var.enable_cloudwatch_alarms ? 1 : 0
-  alarm_name          = "${local.name_prefix}-dynamodb-read-throttle"
+  for_each            = local.dynamodb_tables
+  alarm_name          = "${local.name_prefix}-dynamodb-${each.key}-read-throttle"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "ReadThrottledRequests"
@@ -163,25 +173,25 @@ resource "aws_cloudwatch_metric_alarm" "dynamodb_read_throttle" {
   period              = 300
   statistic           = "Sum"
   threshold           = 0
-  alarm_description   = "DynamoDB read throttling detected"
+  alarm_description   = "DynamoDB ${each.key} table read throttling detected"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    TableName = aws_dynamodb_table.inquiries.name
+    TableName = each.value
   }
 
   alarm_actions = [aws_sns_topic.alarms[0].arn]
   ok_actions    = [aws_sns_topic.alarms[0].arn]
 
   tags = {
-    Name = "${local.name_prefix}-dynamodb-read-throttle"
+    Name = "${local.name_prefix}-dynamodb-${each.key}-read-throttle"
   }
 }
 
-# DynamoDB Write Throttling Alarm
+# DynamoDB Write Throttling Alarms (all tables)
 resource "aws_cloudwatch_metric_alarm" "dynamodb_write_throttle" {
-  count               = var.enable_cloudwatch_alarms ? 1 : 0
-  alarm_name          = "${local.name_prefix}-dynamodb-write-throttle"
+  for_each            = local.dynamodb_tables
+  alarm_name          = "${local.name_prefix}-dynamodb-${each.key}-write-throttle"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 1
   metric_name         = "WriteThrottledRequests"
@@ -189,18 +199,18 @@ resource "aws_cloudwatch_metric_alarm" "dynamodb_write_throttle" {
   period              = 300
   statistic           = "Sum"
   threshold           = 0
-  alarm_description   = "DynamoDB write throttling detected"
+  alarm_description   = "DynamoDB ${each.key} table write throttling detected"
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    TableName = aws_dynamodb_table.inquiries.name
+    TableName = each.value
   }
 
   alarm_actions = [aws_sns_topic.alarms[0].arn]
   ok_actions    = [aws_sns_topic.alarms[0].arn]
 
   tags = {
-    Name = "${local.name_prefix}-dynamodb-write-throttle"
+    Name = "${local.name_prefix}-dynamodb-${each.key}-write-throttle"
   }
 }
 

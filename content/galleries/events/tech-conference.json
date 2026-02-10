@@ -1,0 +1,24 @@
+{
+  "slug": "tech-conference",
+  "title": "Denver Tech Summit 2025",
+  "description": "Full-day coverage of the annual Denver Tech Summit with keynotes, panels, and networking events.",
+  "date": "2025-09-18",
+  "coverImage": "finished/events/conference-001.jpg",
+  "images": [
+    { "key": "finished/events/conference-001.jpg", "alt": "Keynote speaker on main stage" },
+    { "key": "finished/events/conference-002.jpg", "alt": "Audience engagement wide shot" },
+    { "key": "finished/events/conference-003.jpg", "alt": "Panel discussion close-up" },
+    { "key": "finished/events/conference-004.jpg", "alt": "Networking reception candid" },
+    { "key": "finished/events/conference-005.jpg", "alt": "Exhibition booth displays" },
+    { "key": "finished/events/conference-006.jpg", "alt": "Registration and welcome area" },
+    { "key": "finished/events/conference-007.jpg", "alt": "Breakout session interaction" },
+    { "key": "finished/events/conference-008.jpg", "alt": "Sponsor wall and branding" },
+    { "key": "finished/events/conference-009.jpg", "alt": "Coffee break conversations" },
+    { "key": "finished/events/conference-010.jpg", "alt": "Live demo on stage" },
+    { "key": "finished/events/conference-011.jpg", "alt": "Venue exterior architecture" },
+    { "key": "finished/events/conference-012.jpg", "alt": "Award ceremony presentation" },
+    { "key": "finished/events/conference-013.jpg", "alt": "Workshop hands-on coding" },
+    { "key": "finished/events/conference-014.jpg", "alt": "VIP dinner event" },
+    { "key": "finished/events/conference-015.jpg", "alt": "Closing remarks and applause" }
+  ]
+}

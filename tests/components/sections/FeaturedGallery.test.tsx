@@ -14,17 +14,18 @@ describe('FeaturedGallery', () => {
     expect(screen.getByText(/A selection of recent work/i)).toBeInTheDocument();
   });
 
-  it('renders all three featured projects', () => {
+  it('renders all three featured projects from gallery manifests', () => {
     render(<FeaturedGallery />);
-    expect(screen.getByText('Urban Portrait Session')).toBeInTheDocument();
-    expect(screen.getByText('Corporate Brand Shoot')).toBeInTheDocument();
-    expect(screen.getByText('Wedding Celebration')).toBeInTheDocument();
+    // Featured galleries sorted by date desc: tech-startup (2026-01), johnson-wedding (2025-10-25), family-session (2025-10-18)
+    expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
+    expect(screen.getByText('Johnson Wedding')).toBeInTheDocument();
+    expect(screen.getByText('Smith Family Session')).toBeInTheDocument();
   });
 
-  it('renders category labels', () => {
+  it('renders category labels from gallery data', () => {
     render(<FeaturedGallery />);
+    expect(screen.getByText('Brand Photography')).toBeInTheDocument();
     expect(screen.getByText('Portraits')).toBeInTheDocument();
-    expect(screen.getByText('Brand')).toBeInTheDocument();
     expect(screen.getByText('Events')).toBeInTheDocument();
   });
 
@@ -32,7 +33,6 @@ describe('FeaturedGallery', () => {
     render(<FeaturedGallery />);
     const links = screen.getAllByRole('link');
 
-    // Find project links (specific project paths)
     const projectLinks = links.filter(
       (link) => {
         const href = link.getAttribute('href');
@@ -41,9 +41,10 @@ describe('FeaturedGallery', () => {
     );
 
     expect(projectLinks).toHaveLength(3);
-    expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/portraits/urban-session');
-    expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/brands/corporate-shoot');
-    expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/events/wedding');
+    // Sorted by date desc
+    expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/brands/tech-startup-rebrand');
+    expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/events/johnson-wedding');
+    expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/portraits/family-session');
   });
 
   it('renders View Full Portfolio CTA', () => {

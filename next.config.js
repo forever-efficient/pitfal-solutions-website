@@ -45,49 +45,9 @@ const nextConfig = {
     return config;
   },
 
-  // Headers for security
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
-  },
-
-  // Redirects
-  async redirects() {
-    return [
-      // Add redirects here as needed
-      // Example:
-      // {
-      //   source: '/old-path',
-      //   destination: '/new-path',
-      //   permanent: true,
-      // },
-    ];
-  },
+  // NOTE: Security headers are configured in CloudFront response headers policy
+  // (infrastructure/terraform/cloudfront.tf) since output: 'export' generates
+  // static files. Next.js headers() and redirects() only work with a server.
 };
 
 module.exports = withBundleAnalyzer(nextConfig);

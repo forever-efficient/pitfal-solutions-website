@@ -2,38 +2,42 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
+import { ArrowRightIcon } from '@/components/icons';
 import { PAGE_META, PORTFOLIO_CATEGORIES, SERVICES } from '@/lib/constants';
+import { getCategoryCounts } from '@/lib/galleries';
 
 export const metadata: Metadata = {
   title: PAGE_META.portfolio.title,
   description: PAGE_META.portfolio.description,
 };
 
-const categories = [
-  {
-    slug: PORTFOLIO_CATEGORIES.brands.slug,
-    title: SERVICES.brand.title,
-    description: 'Professional brand imagery for businesses and entrepreneurs',
-    count: 12,
-    image: PORTFOLIO_CATEGORIES.brands.image,
-  },
-  {
-    slug: PORTFOLIO_CATEGORIES.portraits.slug,
-    title: PORTFOLIO_CATEGORIES.portraits.title,
-    description: PORTFOLIO_CATEGORIES.portraits.description,
-    count: 18,
-    image: PORTFOLIO_CATEGORIES.portraits.image,
-  },
-  {
-    slug: PORTFOLIO_CATEGORIES.events.slug,
-    title: PORTFOLIO_CATEGORIES.events.title,
-    description: 'Weddings, corporate events, and special occasions',
-    count: 8,
-    image: PORTFOLIO_CATEGORIES.events.image,
-  },
-];
-
 export default function PortfolioPage() {
+  const counts = getCategoryCounts();
+
+  const categories = [
+    {
+      slug: PORTFOLIO_CATEGORIES.brands.slug,
+      title: SERVICES.brand.title,
+      description: 'Professional brand imagery for businesses and entrepreneurs',
+      count: counts.brands || 0,
+      image: PORTFOLIO_CATEGORIES.brands.image,
+    },
+    {
+      slug: PORTFOLIO_CATEGORIES.portraits.slug,
+      title: PORTFOLIO_CATEGORIES.portraits.title,
+      description: PORTFOLIO_CATEGORIES.portraits.description,
+      count: counts.portraits || 0,
+      image: PORTFOLIO_CATEGORIES.portraits.image,
+    },
+    {
+      slug: PORTFOLIO_CATEGORIES.events.slug,
+      title: PORTFOLIO_CATEGORIES.events.title,
+      description: 'Weddings, corporate events, and special occasions',
+      count: counts.events || 0,
+      image: PORTFOLIO_CATEGORIES.events.image,
+    },
+  ];
+
   return (
     <>
       {/* Hero */}
@@ -87,7 +91,7 @@ export default function PortfolioPage() {
                   {/* Category badge */}
                   <div className="absolute top-4 left-4">
                     <span className="bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium px-3 py-1 rounded-full">
-                      {category.count} galleries
+                      {category.count} {category.count === 1 ? 'gallery' : 'galleries'}
                     </span>
                   </div>
 
@@ -96,20 +100,7 @@ export default function PortfolioPage() {
                     className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-100 scale-90"
                     aria-hidden="true"
                   >
-                    <svg
-                      className="w-5 h-5 text-neutral-900"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17 8l4 4m0 0l-4 4m4-4H3"
-                      />
-                    </svg>
+                    <ArrowRightIcon size={20} className="text-neutral-900" />
                   </div>
                 </article>
 

@@ -13,7 +13,6 @@ const footerLinks = {
   company: [
     { label: 'About', href: '/about' },
     { label: 'Portfolio', href: '/portfolio' },
-    { label: 'Blog', href: '/blog' },
     { label: 'FAQ', href: '/faq' },
   ],
   legal: [
@@ -132,20 +131,12 @@ export function Footer() {
                   {BUSINESS.contact.email}
                 </a>
               </li>
-              <li>
-                <a
-                  href={`tel:${BUSINESS.contact.phone.replace(/[^+\d]/g, '')}`}
-                  className="hover:text-white transition-colors"
-                >
-                  {BUSINESS.contact.phone}
-                </a>
-              </li>
             </ul>
 
             {/* CTA */}
             <Link
               href="/contact"
-              className="inline-block mt-6 px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors"
+              className="inline-block mt-6 px-6 py-2 bg-primary-700 hover:bg-primary-800 text-white text-sm font-medium rounded-lg transition-colors"
             >
               Book a Session
             </Link>

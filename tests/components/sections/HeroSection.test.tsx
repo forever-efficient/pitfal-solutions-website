@@ -61,8 +61,9 @@ describe('HeroSection', () => {
 
   it('renders with custom background image', () => {
     render(<HeroSection backgroundImage="/custom-bg.jpg" />);
-    const bgElement = document.querySelector('[style*="background-image"]');
-    expect(bgElement).toHaveStyle({ backgroundImage: 'url(/custom-bg.jpg)' });
+    const img = document.querySelector('img[src="/custom-bg.jpg"]');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('data-priority', 'true');
   });
 
   it('renders scroll indicator', () => {

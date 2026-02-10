@@ -39,9 +39,7 @@ test.describe('Homepage', () => {
   test('displays services overview section', async ({ page }) => {
     // Check for services section content
     const servicesHeading = page.getByRole('heading', { name: /services/i });
-    if (await servicesHeading.count() > 0) {
-      await expect(servicesHeading.first()).toBeVisible();
-    }
+    await expect(servicesHeading.first()).toBeVisible();
   });
 
   test('displays testimonials section', async ({ page }) => {
@@ -56,7 +54,7 @@ test.describe('Homepage', () => {
     const hasQuotes = await quoteMark.count() > 0;
     const hasTestimonialSection = await testimonialSection.count() > 0;
 
-    expect(hasQuotes || hasTestimonialSection || true).toBeTruthy();
+    expect(hasQuotes || hasTestimonialSection).toBeTruthy();
   });
 
   test('social media links are present and have correct attributes', async ({ page }) => {
@@ -64,10 +62,9 @@ test.describe('Homepage', () => {
 
     // Check Instagram link
     const instagramLink = footer.getByLabel('Instagram');
-    if (await instagramLink.count() > 0) {
-      await expect(instagramLink).toHaveAttribute('target', '_blank');
-      await expect(instagramLink).toHaveAttribute('rel', /noopener/);
-    }
+    await expect(instagramLink).toBeVisible();
+    await expect(instagramLink).toHaveAttribute('target', '_blank');
+    await expect(instagramLink).toHaveAttribute('rel', /noopener/);
   });
 
   test('page loads within acceptable time', async ({ page }) => {

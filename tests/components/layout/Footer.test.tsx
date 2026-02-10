@@ -26,7 +26,6 @@ describe('Footer', () => {
     render(<Footer />);
     expect(screen.getByText('About')).toBeInTheDocument();
     expect(screen.getByText('Portfolio')).toBeInTheDocument();
-    expect(screen.getByText('Blog')).toBeInTheDocument();
     expect(screen.getByText('FAQ')).toBeInTheDocument();
   });
 
@@ -40,7 +39,6 @@ describe('Footer', () => {
     render(<Footer />);
     expect(screen.getByText('Denver, Colorado')).toBeInTheDocument();
     expect(screen.getByText('info@pitfal.solutions')).toBeInTheDocument();
-    expect(screen.getByText('(303) 555-1234')).toBeInTheDocument();
   });
 
   it('renders social media links', () => {

@@ -34,13 +34,6 @@ describe('ContactCTA', () => {
     expect(emailLink).toHaveAttribute('href', 'mailto:info@pitfal.solutions');
   });
 
-  it('renders phone contact link', () => {
-    render(<ContactCTA />);
-    const phoneLink = screen.getByRole('link', { name: /\(303\) 555-1234/i });
-    expect(phoneLink).toBeInTheDocument();
-    expect(phoneLink).toHaveAttribute('href', expect.stringContaining('tel:'));
-  });
-
   it('renders location', () => {
     render(<ContactCTA />);
     expect(screen.getByText('Denver, Colorado')).toBeInTheDocument();
@@ -51,12 +44,6 @@ describe('ContactCTA', () => {
     // EmailIcon should be in the email link
     const emailLink = screen.getByRole('link', { name: /info@pitfal\.solutions/i });
     expect(emailLink.querySelector('svg')).toBeInTheDocument();
-  });
-
-  it('renders phone icon', () => {
-    render(<ContactCTA />);
-    const phoneLink = screen.getByRole('link', { name: /\(303\) 555-1234/i });
-    expect(phoneLink.querySelector('svg')).toBeInTheDocument();
   });
 
   it('renders location icon', () => {

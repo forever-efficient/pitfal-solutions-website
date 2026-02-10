@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ContactCTA } from '@/components/sections';
 import { CheckIcon } from '@/components/icons';
-import { SERVICES, PAGE_META } from '@/lib/constants';
+import { SERVICES, PAGE_META, PACKAGES } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: PAGE_META.services.title,
@@ -63,47 +63,26 @@ const services = [
 
 const packages = [
   {
-    name: 'Starter',
-    price: '$300',
-    description: 'Perfect for individuals needing professional headshots or portraits.',
-    features: [
-      '1-hour session',
-      '1 location',
-      '15 edited images',
-      'Online gallery',
-      'Digital download',
-    ],
+    name: PACKAGES.starter.name,
+    price: `$${PACKAGES.starter.price}`,
+    description: PACKAGES.starter.description,
+    features: PACKAGES.starter.features,
     cta: 'Book Now',
     popular: false,
   },
   {
-    name: 'Professional',
-    price: '$650',
-    description: 'Ideal for entrepreneurs and small businesses building their brand.',
-    features: [
-      '2-hour session',
-      'Up to 2 locations',
-      '40 edited images',
-      'Online gallery',
-      'Digital download',
-      'Print release',
-    ],
+    name: PACKAGES.professional.name,
+    price: `$${PACKAGES.professional.price}`,
+    description: PACKAGES.professional.description,
+    features: PACKAGES.professional.features,
     cta: 'Book Now',
     popular: true,
   },
   {
-    name: 'Premium',
-    price: '$1,200',
-    description: 'Comprehensive coverage for brands and special occasions.',
-    features: [
-      '4-hour session',
-      'Multiple locations',
-      '80+ edited images',
-      'Online gallery',
-      'Digital download',
-      'Print release',
-      'Rush delivery available',
-    ],
+    name: PACKAGES.premium.name,
+    price: `$${PACKAGES.premium.price}`,
+    description: PACKAGES.premium.description,
+    features: PACKAGES.premium.features,
     cta: 'Book Now',
     popular: false,
   },
@@ -138,9 +117,7 @@ export default function ServicesPage() {
               <div
                 key={service.id}
                 id={service.id}
-                className={`grid lg:grid-cols-2 gap-8 lg:gap-12 items-center ${
-                  index % 2 === 1 ? 'lg:flex-row-reverse' : ''
-                }`}
+                className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center"
               >
                 {/* Image placeholder */}
                 <div

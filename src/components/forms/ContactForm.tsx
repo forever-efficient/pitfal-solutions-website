@@ -81,6 +81,13 @@ export function ContactForm() {
       return;
     }
 
+    // Client-side honeypot check — skip server call for bots
+    if (formData.honeypot) {
+      setStatus('success');
+      setStatusMessage('Thank you for your message!');
+      return;
+    }
+
     setStatus('submitting');
     setStatusMessage('');
 

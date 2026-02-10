@@ -133,7 +133,7 @@ describe('Section', () => {
   it('applies primary background', () => {
     render(<Section background="primary" data-testid="section">Content</Section>);
     const section = screen.getByTestId('section');
-    expect(section).toHaveClass('bg-primary-600');
+    expect(section).toHaveClass('bg-primary-700');
     expect(section).toHaveClass('text-white');
   });
 

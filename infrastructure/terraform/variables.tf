@@ -102,9 +102,9 @@ variable "lambda_timeout" {
 }
 
 variable "lambda_reserved_concurrency" {
-  description = "Reserved concurrent executions for Lambda functions (limits max concurrent invocations)"
+  description = "Reserved concurrent executions for Lambda functions (-1 = unreserved, use account pool)"
   type        = number
-  default     = 50
+  default     = -1
 }
 
 # CloudFront settings
@@ -131,7 +131,7 @@ variable "cost_center" {
 variable "enable_waf" {
   description = "Enable AWS WAF protection for CloudFront"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "waf_rate_limit" {
@@ -151,4 +151,43 @@ variable "alarm_email" {
   description = "Email address for alarm notifications (leave empty to skip email subscription)"
   type        = string
   default     = ""
+}
+
+# ─────────────────────────────────────────────
+# Image Processor settings
+# ─────────────────────────────────────────────
+
+variable "enable_image_processor" {
+  description = "Enable image processor Lambda. Set to false until Docker image is pushed to ECR."
+  type        = bool
+  default     = false
+}
+
+variable "image_processor_memory_size" {
+  description = "Memory size for image processor Lambda (MB). RAW processing needs significant memory."
+  type        = number
+  default     = 2048
+}
+
+variable "image_processor_timeout" {
+  description = "Timeout for image processor Lambda (seconds). RAW conversion is CPU-intensive."
+  type        = number
+  default     = 300 # 5 minutes
+}
+
+variable "image_processor_concurrency" {
+  description = "Max concurrent image processing executions. Controls costs for large batch uploads."
+  type        = number
+  default     = 5
+}
+
+variable "image_processor_jpeg_quality" {
+  description = "JPEG quality for edited images (1-100). 93 balances file size and print quality."
+  type        = number
+  default     = 93
+
+  validation {
+    condition     = var.image_processor_jpeg_quality >= 1 && var.image_processor_jpeg_quality <= 100
+    error_message = "JPEG quality must be between 1 and 100."
+  }
 }
