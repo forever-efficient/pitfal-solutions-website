@@ -1,9 +1,9 @@
 # System Architecture - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.4 (MVP Scope Refined)
-- **Last Updated:** January 2026
-- **Status:** MVP Architecture Finalized - Updated based on user decisions
+- **Version:** 1.5 (Infrastructure Deployed)
+- **Last Updated:** February 2026
+- **Status:** MVP Architecture Finalized - Infrastructure deployed to AWS
 
 ---
 
@@ -68,9 +68,8 @@
 | Framework | Next.js 14+ | React framework with App Router |
 | Language | TypeScript | Type-safe development |
 | Styling | Tailwind CSS | Utility-first CSS |
-| State | React Context + SWR | Client state and data fetching |
-| Forms | React Hook Form + Zod | Form handling and validation |
-| Animation | Framer Motion | Page transitions, gallery effects |
+| State | React Context | Client state management |
+| Animation | CSS keyframes + Tailwind | Page transitions, gallery effects |
 
 ### 2.2 Application Structure
 
@@ -452,7 +451,7 @@ interface ApiSuccessResponse<T> {
 lambda/
 ├── contact/
 │   ├── index.ts          # Handler
-│   ├── schema.ts         # Zod validation
+│   ├── schema.ts         # Input validation
 │   └── templates/        # Email templates
 │       ├── contact-ack.html
 │       └── inquiry-notify.html

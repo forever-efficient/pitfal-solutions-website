@@ -611,7 +611,7 @@ The following integrations are planned for Phase 2:
 | Area | Status | Notes |
 |------|--------|-------|
 | Project setup & tooling | Done | Next.js 14, TypeScript, Tailwind, Vitest, Playwright |
-| Infrastructure (Terraform) | Done | S3, CloudFront, API GW, Lambda, DynamoDB, WAF, SES, image pipeline |
+| Infrastructure (Terraform) | Done | S3, CloudFront, API GW, Lambda, DynamoDB, SES, image pipeline — deployed to AWS |
 | Core pages (Home, About, Services, Contact, FAQ, Portfolio) | Done | Static export, responsive |
 | Component library | Done | 20+ components with barrel exports |
 | Contact form Lambda | Done | Honeypot, rate limiting, CSRF, SES integration |
@@ -621,6 +621,7 @@ The following integrations are planned for Phase 2:
 | Code reviews | Done | 5-domain review complete, checklist in Section 15 |
 | Critical bug fixes from review | Done | 17/17 critical items fixed |
 | Warning fixes from review | Done | 37/38 warning items fixed (1 deferred: W-FE-4 build-time year) |
+| Terraform deployed to AWS | Done | `terraform apply` successful — all resources provisioned |
 | Frontend gallery integration | **TODO** | Connect finished/ images to gallery UI |
 | Client proofing system | **TODO** | Password-protected galleries |
 | Admin dashboard | **TODO** | Gallery management, inquiry viewing |
@@ -805,7 +806,7 @@ The following integrations are planned for Phase 2:
 - [x] **W-IF-5**: ~~CloudFront custom error responses mask legitimate 404s~~ -- By design: SPA routing requires 403/404→200 for default behavior; media and API paths have their own ordered cache behaviors that take priority
 - [x] **W-IF-6**: ~~No `prevent_destroy` lifecycle on critical resources~~ -- Fixed: added `lifecycle { prevent_destroy = true }` to all 3 DynamoDB tables and media S3 bucket
 - [x] **W-IF-7**: ~~WAF Bot Control rule costs ~$10/mo~~ -- Fixed: changed `enable_waf` default to `false` so it's opt-in for production
-- [x] **W-IF-8**: ~~`lambda_reserved_concurrency` default of 50 is aggressive~~ -- Fixed: reduced default from 50 to 10
+- [x] **W-IF-8**: ~~`lambda_reserved_concurrency` default of 50 is aggressive~~ -- Fixed: changed default to `-1` (unreserved, uses shared account pool); account concurrency limit too low for reserved allocation
 - [x] **W-IF-9**: ~~No DMARC record for email domain~~ -- Fixed: added `aws_route53_record` for `_dmarc.${var.domain_name}` with quarantine policy
 - [x] **W-IF-10**: ~~`X-Requested-With` header not in CloudFront forwarded headers~~ -- Fixed: added to forwarded headers in API behavior
 

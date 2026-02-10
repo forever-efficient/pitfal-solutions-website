@@ -281,17 +281,24 @@ test.describe('Performance', () => {
   });
 
   test('no layout shift during load', async ({ page }) => {
+    // Inject CLS observer before navigating
+    await page.addInitScript(() => {
+      (window as unknown as Record<string, number>).__CLS = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          if (!(entry as PerformanceEntry & { hadRecentInput: boolean }).hadRecentInput) {
+            (window as unknown as Record<string, number>).__CLS += (entry as PerformanceEntry & { value: number }).value;
+          }
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+
     await page.goto('/');
-
-    // Wait for content to stabilize
     await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    // Take two screenshots to verify layout is stable
-    const screenshot1 = await page.screenshot();
-    await page.waitForTimeout(500);
-    const screenshot2 = await page.screenshot();
-
-    // Screenshots should be identical (no layout shift)
-    expect(Buffer.compare(screenshot1, screenshot2)).toBe(0);
+    // CLS should be well under 0.1 (Google "good" threshold)
+    const cls = await page.evaluate(() => (window as unknown as Record<string, number>).__CLS);
+    expect(cls).toBeLessThan(0.1);
   });
 });

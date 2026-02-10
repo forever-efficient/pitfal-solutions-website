@@ -1,131 +1,153 @@
 # MVP Implementation Status
 
-**Last Updated:** January 2026
-**Build Status:** ✅ Passing (12 static pages)
+**Last Updated:** February 2026
+**Build Status:** All 500 unit tests passing, 21 static pages
+**Infrastructure:** Deployed to AWS via `terraform apply`
 
 ---
 
 ## What's Been Built
 
-### Infrastructure (Terraform)
+### Infrastructure (Terraform) — Deployed
 All files in `/infrastructure/terraform/`:
 
 | File | Status | Description |
 |------|--------|-------------|
-| `main.tf` | ✅ | AWS provider, backend config |
-| `variables.tf` | ✅ | Project variables |
-| `outputs.tf` | ✅ | Resource outputs |
-| `s3.tf` | ✅ | Website + media buckets |
-| `cloudfront.tf` | ✅ | CDN with SSL |
-| `acm.tf` | ✅ | SSL certificate |
-| `route53.tf` | ✅ | DNS records |
-| `dynamodb.tf` | ✅ | 3 tables with GSIs |
-| `api-gateway.tf` | ✅ | REST API |
-| `lambda.tf` | ✅ | Contact function |
-| `iam.tf` | ✅ | Roles/policies |
-| `ses.tf` | ✅ | Email service |
+| `main.tf` | Deployed | AWS provider, backend config |
+| `variables.tf` | Deployed | Project variables |
+| `outputs.tf` | Deployed | Resource outputs |
+| `s3.tf` | Deployed | Website + media + logs buckets (with lifecycle rules, encryption) |
+| `cloudfront.tf` | Deployed | CDN with SSL, cache policies, security headers |
+| `acm.tf` | Deployed | SSL certificate |
+| `route53.tf` | Deployed | DNS records (including DMARC) |
+| `dynamodb.tf` | Deployed | 3 tables with GSIs, prevent_destroy, PITR |
+| `api-gateway.tf` | Deployed | REST API with validation |
+| `lambda.tf` | Deployed | Contact function (unreserved concurrency) |
+| `iam.tf` | Deployed | Scoped roles/policies |
+| `ses.tf` | Deployed | Email service with SPF/DKIM/DMARC |
+| `cloudwatch-alarms.tf` | Deployed | Alarms for Lambda, API GW, all 3 DynamoDB tables |
+| `image-processor.tf` | Deployed | Docker Lambda for CR2/CR3 RAW processing |
 
 ### Lambda Functions
 | Function | Status | Location |
 |----------|--------|----------|
-| contact | ✅ | `/lambda/contact/index.ts` |
-| shared/db | ✅ | `/lambda/shared/db.ts` |
-| shared/email | ✅ | `/lambda/shared/email.ts` |
-| shared/response | ✅ | `/lambda/shared/response.ts` |
+| contact | Deployed | `/lambda/contact/index.ts` |
+| image-processor | Deployed | `/lambda/image-processor/` (Docker) |
+| shared/db | Done | `/lambda/shared/db.ts` |
+| shared/email | Done | `/lambda/shared/email.ts` |
+| shared/response | Done | `/lambda/shared/response.ts` |
 
-### Frontend Pages
+### Frontend Pages (21 pages)
 | Route | Status |
 |-------|--------|
-| `/` (homepage) | ✅ |
-| `/about` | ✅ |
-| `/services` | ✅ |
-| `/contact` | ✅ |
-| `/faq` | ✅ |
-| `/portfolio` | ✅ |
-| `/portfolio/[category]` | ✅ |
+| `/` (homepage) | Done |
+| `/about` | Done |
+| `/services` | Done |
+| `/contact` | Done |
+| `/faq` | Done |
+| `/portfolio` | Done |
+| `/portfolio/[category]` | Done (brands, portraits, events) |
+| `/portfolio/[category]/[gallery]` | Done (9 gallery pages) |
 
 ### Components
 | Category | Files |
 |----------|-------|
-| UI | Button, Input, Textarea, Card, Container, Section |
-| Layout | Header, Footer, Navigation, MobileMenu |
+| UI | Button, Input, Textarea, Card, Container, Section, ErrorBoundary |
+| Layout | Header, Footer, Navigation, MobileMenu (with focus trap, Escape key) |
 | Sections | Hero, Services, FeaturedGallery, Testimonials, ContactCTA |
-| Forms | ContactForm |
-| Gallery | GalleryGrid, ImageCard |
+| Forms | ContactForm (honeypot, validation, server error handling) |
+| Gallery | GalleryGrid, ImageCard, GalleryViewer (lightbox) |
 | FAQ | FAQAccordion |
+| Icons | 22 SVG icon components |
+
+### Testing
+| Type | Count | Status |
+|------|-------|--------|
+| Unit tests | 500 | All passing |
+| E2E tests | 4 specs, 5 browsers | Passing |
+| Lambda tests | 72 | Passing (handler, response, email) |
+
+### Code Review Status
+| Category | Critical | Warnings | Status |
+|----------|----------|----------|--------|
+| Frontend | 5/5 fixed | 7/8 fixed | W-FE-4 deferred (build-time year) |
+| Backend | 5/5 fixed | 5/5 fixed | Complete |
+| Infrastructure | 4/4 fixed | 10/10 fixed | Complete |
+| Design/UX | 3/3 fixed | 10/10 fixed | Complete |
+| Testing | 0 | 5/5 fixed | Complete |
+| **Total** | **17/17** | **37/38** | **All critical + nearly all warnings resolved** |
 
 ---
 
 ## Immediate Next Steps
 
-### 1. Deploy Infrastructure
+### 1. Build & Deploy Frontend to S3
+The infrastructure is deployed. Next: build the static site and sync to S3.
+
 ```bash
+# Get CloudFront domain from Terraform
 cd infrastructure/terraform
-
-# Create state bucket first (see docs/DEPLOYMENT.md Step 2.1)
-export AWS_PROFILE=pitfal
-
-# Initialize Terraform
-terraform init
-
-# Review plan
-terraform plan
-
-# Deploy (type 'yes' when prompted)
-terraform apply
-
-# Save outputs
-terraform output > terraform-outputs.txt
-```
-
-### 2. Configure DNS & SSL
-After `terraform apply`:
-1. Add SSL validation records to your DNS provider
-2. Wait for certificate validation (5-30 min)
-3. Add DNS records pointing to CloudFront
-
-See `terraform output certificate_validation_records` for required records.
-
-### 3. Deploy Frontend
-```bash
-# Build the site
-npm run build
-
-# Get bucket name from Terraform
+CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain_name)
 BUCKET=$(terraform output -raw website_bucket_name)
+DIST_ID=$(terraform output -raw cloudfront_distribution_id)
+
+# Build with CloudFront URLs
+cd ../..
+NEXT_PUBLIC_SITE_URL=https://$CLOUDFRONT_DOMAIN \
+NEXT_PUBLIC_API_URL=https://$CLOUDFRONT_DOMAIN/api \
+pnpm build
 
 # Deploy to S3
-aws s3 sync out/ s3://$BUCKET --delete
+aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
 
 # Invalidate CloudFront cache
-DIST_ID=$(terraform output -raw cloudfront_distribution_id)
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+
+echo "Site URL: https://$CLOUDFRONT_DOMAIN"
 ```
 
-### 4. Configure SES (Email)
+### 2. Configure SES (Email)
 1. Add SES verification records (see `terraform output ses_dns_records`)
 2. Request production access in AWS Console if needed
 
-### 5. Add Real Images
-Replace gradient placeholders with actual photos:
-- Hero background: `/public/images/hero-bg.jpg`
-- Service images: `/public/images/services/`
-- Portfolio images: `/public/images/portfolio/`
-- Testimonial avatars: `/public/images/testimonials/`
+### 3. Add Real Images
+Upload photos via the image pipeline:
+- Upload CR2/CR3 RAW files to `s3://BUCKET/staging/`
+- Lambda auto-processes to `s3://BUCKET/finished/`
+- Update gallery manifests in `content/galleries/`
+
+### 4. Remaining TODO Features
+| Feature | Priority | Status |
+|---------|----------|--------|
+| Frontend gallery integration | P0 | Connect finished/ images to gallery UI |
+| Client proofing system | P1 | Password-protected galleries |
+| Admin dashboard | P1 | Gallery management, inquiry viewing |
+| Blog (MDX) | P2 | Blog page and posts |
+| Custom domain (Phase 2) | P1 | DNS migration from Squarespace |
 
 ---
 
 ## Verification Checklist
 
-After deployment, verify:
+### Pre-Deploy (Frontend)
+- [x] All critical code review issues resolved (17/17)
+- [x] Warning fixes applied (37/38)
+- [x] `terraform apply` succeeds
+- [x] `pnpm build` succeeds (21 pages)
+- [x] `pnpm lint` passes
+- [x] `pnpm type-check` passes
+- [x] `pnpm test` passes (500 tests)
+- [x] `terraform validate` passes
 
-- [ ] Homepage loads at https://www.pitfal.solutions
+### Post-Deploy (After S3 sync)
+- [ ] Homepage loads at CloudFront URL
 - [ ] All navigation links work
 - [ ] Contact form submits successfully
 - [ ] SSL certificate valid (green lock)
 - [ ] CloudFront serving content (check x-cache header)
-- [ ] Mobile responsive (test on phone)
+- [ ] Mobile responsive (320px - 1440px+)
 - [ ] Images loading correctly
+- [ ] No console errors in browser
 
 ---
 
@@ -133,19 +155,25 @@ After deployment, verify:
 
 ```
 website/
-├── infrastructure/terraform/  # AWS infrastructure (complete)
-├── lambda/                    # Backend functions (contact complete)
+├── infrastructure/terraform/  # AWS infrastructure (deployed)
+├── lambda/                    # Backend functions
+│   ├── contact/               # Contact form handler
+│   ├── image-processor/       # Docker Lambda for RAW processing
+│   └── shared/                # Shared utilities (db, email, response)
 ├── src/
-│   ├── app/                   # Pages (complete)
-│   ├── components/            # React components (complete)
+│   ├── app/                   # Pages (21 routes)
+│   ├── components/            # React components (20+)
 │   │   ├── ui/                # Base UI components
-│   │   ├── layout/            # Header, Footer, Nav
+│   │   ├── layout/            # Header, Footer, Nav, MobileMenu
 │   │   ├── sections/          # Homepage sections
 │   │   ├── forms/             # Contact form
-│   │   ├── gallery/           # Portfolio grid
-│   │   └── faq/               # FAQ accordion
-│   └── lib/utils.ts           # Utility functions
-├── content/                   # Static content (JSON, MDX)
+│   │   ├── gallery/           # Portfolio grid, ImageCard, GalleryViewer
+│   │   ├── faq/               # FAQ accordion
+│   │   └── icons/             # 22 SVG icon components
+│   └── lib/                   # Utilities, constants, galleries loader
+├── content/                   # Static content (JSON, MDX, gallery manifests)
+├── tests/                     # 500 unit tests + 4 E2E specs
+├── scripts/                   # Build, deploy, image processor scripts
 └── docs/                      # Documentation
 ```
 
@@ -155,142 +183,14 @@ website/
 
 | Task | Command |
 |------|---------|
-| Install dependencies | `npm install` |
-| Run dev server | `npm run dev` |
-| Build for production | `npm run build` |
-| Run linter | `npm run lint` |
-| Type check | `npm run type-check` |
+| Install dependencies | `pnpm install` |
+| Run dev server | `pnpm dev` |
+| Build for production | `pnpm build` |
+| Run linter | `pnpm lint` |
+| Type check | `pnpm type-check` |
+| Run tests | `pnpm test` |
 | Deploy infrastructure | `cd infrastructure/terraform && terraform apply` |
-| View Terraform outputs | `terraform output` |
-
----
-
-## Code Review Checklist
-
-**Review Date:** January 2026
-**Total Issues:** 55 (~~10~~ 0 Critical, ~~16~~ ~~7~~ 0 High, ~~19~~ 11 Medium, ~~10~~ 0 Low)
-**Critical Issues Fixed:** January 25, 2026
-**High Priority Fixed:** January 26, 2026 (15 issues: DynamoDB encryption, Lambda concurrency, S3 policy, SDK clients, loading states, testimonials, structured logging, error codes, image alt text, WAF protection, cost allocation tags, rate limiting, CSRF protection, color contrast)
-**Medium Priority Fixed:** January 26, 2026 (8 issues: 404/500 error pages, API Gateway request validation, CloudWatch alarms + dashboard, Lambda DLQ, duplicate CORS code refactored, focus visible styles, S3 lifecycle rules, DynamoDB backup, inline SVG icons extracted to component library)
-**Low Priority Fixed:** January 26, 2026 (9 issues: variable descriptions verified, terraform-docs config, workspaces documented, JSDoc comments, animation classes, component docs via JSDoc, Storybook considered, bundle monitoring added)
-
-### Critical Issues (Fix Before Deploy)
-
-#### Terraform Critical
-- [x] **Wildcard CORS origin** (`api-gateway.tf`) - Replace `*` with `https://www.pitfal.solutions`
-- [x] **Lambda invoke permission too broad** (`lambda.tf`) - Add `source_arn` restriction to API Gateway
-- [x] **Data trace enabled in production** (`api-gateway.tf`) - Already conditional: `var.environment != "prod"`
-- [x] **SES lacks recipient restrictions** (`iam.tf`) - Restricted to verified domain identity
-
-#### Lambda Critical
-- [x] **Email header injection** (`contact/index.ts`) - Added `sanitizeForEmail()` function, strip newlines/control chars
-- [x] **Missing environment variable validation** (`contact/index.ts`) - Add startup validation with fail-fast
-
-#### Frontend Critical
-- [x] **Missing form accessibility** (`ContactForm.tsx`) - Added `aria-label`, `role="alert"`, `aria-live`
-- [x] **No keyboard navigation in gallery** (`TestimonialsSection.tsx`) - Added arrow key navigation, `aria-live`, navigation buttons
-- [x] **Missing error boundaries** (`app/layout.tsx`) - Added ErrorBoundary component wrapping children
-- [x] **No next/image optimization** (Multiple files) - No `<img>` tags found; already using Next.js patterns
-
----
-
-### High Priority Issues
-
-#### Terraform High
-- [x] **S3 bucket policy allows all CloudFront** (`s3.tf`) - Already restricted to specific distribution ARN via `AWS:SourceArn` condition
-- [x] **No DynamoDB encryption at rest** (`dynamodb.tf`) - Added `server_side_encryption` block to all 3 tables
-- [x] **No Lambda reserved concurrency** (`lambda.tf`) - Added `reserved_concurrent_executions` with configurable variable (default: 10)
-- [x] **No WAF protection** (`cloudfront.tf`) - Added AWS WAF with managed rules (Common, KnownBadInputs, SQLi, BotControl) and rate limiting in `waf.tf`
-- [x] **Missing cost allocation tags** (All `.tf` files) - Added `CostCenter` to default_tags in `main.tf`, configurable via `var.cost_center`
-- [x] **CloudFront no geo restrictions** (`cloudfront.tf`) - Consider geo restrictions if needed (currently not required for US-based photography business)
-
-#### Lambda High
-- [x] **SDK clients recreated per invoke** (`shared/db.ts`, `shared/email.ts`) - False positive: clients already at module scope (cold start only)
-- [x] **Insufficient error logging** (`contact/index.ts`) - Added structured JSON logging with requestId, sourceIp, userAgent, inquiryId context
-- [x] **Generic error messages** (`shared/response.ts`) - Added ErrorCode enum (ERR_BAD_REQUEST, ERR_VALIDATION_FAILED, etc.) to all responses
-- [x] **No rate limiting logic** (`contact/index.ts`) - Added `checkRateLimit()` function: queries email-index GSI, allows max 3 submissions per 15 minutes per email
-
-#### Frontend High
-- [x] **No CSRF protection** (`ContactForm.tsx`) - Added `X-Requested-With: XMLHttpRequest` header; Lambda validates presence (CORS prevents cross-origin attackers from setting custom headers)
-- [x] **No loading states** (`ContactForm.tsx`) - Already implemented via Button `isLoading` prop with spinner
-- [x] **Color contrast unverified** (`tailwind.config.ts`) - Audited and documented all contrast ratios; fixed small text from primary-600 (3.7:1) to primary-700 (5.0:1) for WCAG AA compliance
-- [x] **Missing SEO metadata** (Page files) - All pages have proper metadata with title, description, OG tags
-- [x] **Hardcoded testimonials** (`TestimonialsSection.tsx`) - Moved to `/content/testimonials.json`
-- [x] **No image alt text** (Gallery components) - Added ARIA labels and alt text to ImageCard, GalleryGrid, portfolio, services, about pages
-
----
-
-### Medium Priority Issues
-
-#### Terraform Medium
-- [x] **API Gateway missing request validation** - Added request model and validator in `api-gateway.tf` with JSON schema validation
-- [x] **No CloudWatch alarms configured** - Added `cloudwatch-alarms.tf` with alarms for Lambda errors, API Gateway 5xx/4xx, DynamoDB throttling, DLQ messages, plus CloudWatch dashboard
-- [x] **Lambda missing dead letter queue** - Added SQS DLQ in `lambda.tf` with IAM permissions and CloudWatch alarm
-- [ ] No secrets management (Secrets Manager) - Using environment variables (acceptable for MVP)
-- [x] **DynamoDB missing backup configuration** - Already had PITR enabled on all 3 tables
-- [ ] Missing API throttling per-client - Already has global throttling (per-client requires API keys)
-- [x] **No S3 lifecycle rules for cost optimization** - Already had lifecycle rules on media bucket
-
-#### Lambda Medium
-- [x] **Silent email failures** - Already logging errors with structured logging
-- [x] **Duplicate CORS code in response helpers** - Refactored `contact/index.ts` to use shared response helpers
-- [x] **No input length validation** - Already had validation in `validateForm()` function
-- [x] **Missing request ID in logs** - Already present in structured logging context
-- [ ] No retry logic for transient failures - Would add complexity (acceptable for MVP)
-
-#### Frontend Medium
-- [ ] Magic numbers in styles (should be design tokens) - Minor refactor (acceptable for MVP)
-- [ ] No error logging/reporting service - Could integrate Sentry later
-- [x] **Missing focus visible styles** - Already present in `globals.css`
-- [x] **Console.log statements in production code** - Only appropriate console.error in ErrorBoundary
-- [ ] No TypeScript strict null checks utilized - Config change, would require refactoring
-- [x] **Inline SVG icons** - Extracted 22 icon components to `src/components/icons/`, updated 17 files to use the library (eliminates duplication, improves maintainability)
-- [x] **Missing skip-to-content link** - Already present in `layout.tsx`
-- [x] **No 404/500 error pages** - Added `not-found.tsx`, `error.tsx`, and `global-error.tsx`
-
----
-
-### Low Priority Issues
-
-#### Terraform Low
-- [x] **Variable descriptions** - Already present on all variables in `variables.tf`
-- [x] **terraform-docs generation** - Added `.terraform-docs.yml` config with usage examples and project documentation
-- [x] **Module structure** - Current structure supports modular organization; documented in `header.md`
-- [x] **Workspaces for environments** - Added documentation for workspace usage in `header.md`
-
-#### Lambda Low
-- [x] **JSDoc comments** - Added comprehensive JSDoc to all public functions in `db.ts`, `email.ts`, `response.ts` with examples
-
-#### Frontend Low
-- [x] **Reusable animation classes** - Added 20+ animation keyframes and utility classes to `globals.css` (fade, slide, scale, shimmer, etc.)
-- [x] **Component documentation** - JSDoc/TSDoc comments added to icon components and exported types
-- [x] **Storybook** - Considered; deferred as post-MVP enhancement (would require significant setup)
-- [x] **Bundle size monitoring** - Added `@next/bundle-analyzer` and `size-limit` with npm scripts (`pnpm analyze`, `pnpm size`)
-
----
-
-### Pre-Deploy Verification
-
-- [ ] All critical issues resolved
-- [ ] `terraform plan` shows no unexpected changes
-- [ ] `npm run build` succeeds
-- [ ] `npm run lint` passes
-- [ ] `npm run type-check` passes
-- [ ] Lighthouse accessibility score > 90
-- [ ] CORS configured for production domain only
-- [ ] Environment variables validated
-- [ ] Error boundaries in place
-
-### Post-Deploy Verification
-
-- [ ] Contact form submits successfully
-- [ ] Email notifications received
-- [ ] CloudFront serves with correct headers
-- [ ] SSL certificate valid
-- [ ] No console errors in browser
-- [ ] Mobile responsive (320px - 1440px+)
-- [ ] All navigation links work
-- [ ] Portfolio images load correctly
+| View Terraform outputs | `cd infrastructure/terraform && terraform output` |
 
 ---
 
@@ -299,4 +199,5 @@ website/
 - **Full deployment guide:** `docs/DEPLOYMENT.md`
 - **Architecture:** `docs/ARCHITECTURE.md`
 - **Requirements:** `docs/REQUIREMENTS.md`
+- **PRD:** `docs/PRD.md` (v1.5)
 - **Project overview:** `CLAUDE.md`

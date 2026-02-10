@@ -1,9 +1,9 @@
 # Deployment Guide - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.3 (Two-Phase Domain Deployment)
-- **Last Updated:** January 2026
-- **Status:** MVP Deployment Guide
+- **Version:** 1.4 (Infrastructure Deployed)
+- **Last Updated:** February 2026
+- **Status:** Phase 1 infrastructure deployed — ready for frontend S3 sync
 
 ---
 
@@ -1243,3 +1243,4 @@ terraform destroy # Remove (careful!)
 | 1.1 | January 2026 | Claude Code | Added beginner-friendly sections, prerequisites checklist, step-by-step verification, simplified deployment strategy for MVP |
 | 1.2 | January 2026 | Claude Code | **Infrastructure updates:** (1) Documented modular Terraform structure with modules for Lambda, API Gateway, DynamoDB; (2) Changed Lambda deployment from manual zip to Terraform-managed with shared layer; (3) Added comprehensive pre-deployment checklist (Step 2.0); (4) Expanded post-deployment verification with health checks for all components; (5) Added Lambda environment variables reference table |
 | 1.3 | January 2026 | Claude Code | **Two-phase domain deployment:** (1) Added Section 3 "Domain Deployment Strategy" with full checklists for Phase 1 (CloudFront default domain) and Phase 2 (custom domain migration); (2) Added `use_custom_domain` variable documentation; (3) Added step-by-step checklists with fill-in-the-blank fields for recording deployment info; (4) Added quick command references for both phases; (5) Added rollback procedure from custom domain to CloudFront default; (6) Renumbered all subsequent sections |
+| 1.4 | February 2026 | Claude Code | **Infrastructure deployed:** (1) `terraform apply` completed successfully — all AWS resources provisioned; (2) Lambda concurrency changed from reserved to unreserved (account limit constraint); (3) Updated status to reflect deployment milestone; (4) CloudFront cache policies replacing deprecated forwarded_values; (5) All DynamoDB tables have prevent_destroy + alarms for all 3 tables |

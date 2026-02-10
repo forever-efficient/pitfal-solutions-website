@@ -1,9 +1,9 @@
 # Functional Requirements - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.5 (MVP Scope Refined)
-- **Last Updated:** January 2026
-- **Status:** MVP Scope Finalized - Updated based on user decisions
+- **Version:** 1.6 (Infrastructure Deployed)
+- **Last Updated:** February 2026
+- **Status:** MVP Scope Finalized - Infrastructure deployed to AWS
 
 ---
 
@@ -357,7 +357,6 @@
 - Business hours (7am-10pm daily)
 - Service area (Denver, CO and surrounding)
 - Contact email (info@pitfal.solutions)
-- Phone number ((970) 703-6336)
 - Social media links
 
 ---
