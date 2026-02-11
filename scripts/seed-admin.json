@@ -3,13 +3,12 @@
     {
       "PutRequest": {
         "Item": {
-          "PK": { "S": "ADMIN#admin" },
-          "SK": { "S": "METADATA" },
-          "passwordHash": { "S": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X0d8bZv8zWqJZ8ZHK" },
+          "pk": { "S": "ADMIN#admin" },
+          "sk": { "S": "PROFILE" },
+          "username": { "S": "admin" },
+          "passwordHash": { "S": "REPLACE_WITH_BCRYPT_HASH" },
           "email": { "S": "admin@pitfal.solutions" },
-          "role": { "S": "owner" },
-          "createdAt": { "N": "1704067200000" },
-          "lastLogin": { "N": "1704499200000" }
+          "createdAt": { "S": "2024-01-01T00:00:00.000Z" }
         }
       }
     },

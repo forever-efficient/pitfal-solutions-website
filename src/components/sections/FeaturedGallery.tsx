@@ -1,8 +1,10 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ArrowRightIcon, EyeIcon } from '@/components/icons';
 import { getFeaturedGalleries } from '@/lib/galleries';
 import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 export function FeaturedGallery() {
   const featured = getFeaturedGalleries();
@@ -17,11 +19,12 @@ export function FeaturedGallery() {
             PORTFOLIO_CATEGORIES[g.category as keyof typeof PORTFOLIO_CATEGORIES]?.title ||
             g.category,
           href: `/portfolio/${g.category}/${g.slug}`,
+          coverImage: g.images[0]?.key || '',
         }))
       : [
-          { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits' },
-          { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands' },
-          { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events' },
+          { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits', coverImage: '' },
+          { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands', coverImage: '' },
+          { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events', coverImage: '' },
         ];
 
   return (
@@ -49,8 +52,18 @@ export function FeaturedGallery() {
               href={item.href}
               className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
             >
-              {/* Placeholder gradient - replaced with real images when available */}
-              <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
+              {/* Cover image or gradient fallback */}
+              {item.coverImage ? (
+                <Image
+                  src={getImageUrl(item.coverImage)}
+                  alt={`${item.title} preview`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
+              )}
 
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />

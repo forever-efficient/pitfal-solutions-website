@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
+import { useToast } from './Toast';
 
 interface GalleryEditorProps {
   gallery: Record<string, unknown>;
@@ -9,6 +10,7 @@ interface GalleryEditorProps {
 }
 
 export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
+  const { showSuccess, showError } = useToast();
   const [form, setForm] = useState({
     title: (gallery.title as string) || '',
     description: (gallery.description as string) || '',
@@ -27,9 +29,10 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
     try {
       await adminGalleries.update(galleryId, form);
       setSaved(true);
+      showSuccess('Gallery saved');
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      // Save failed silently
+      showError('Failed to save gallery');
     } finally {
       setSaving(false);
     }

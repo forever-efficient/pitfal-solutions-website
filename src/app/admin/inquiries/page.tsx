@@ -2,25 +2,52 @@
 
 import { useState, useEffect } from 'react';
 import { InquiryList } from '@/components/admin/InquiryList';
+import { useToast } from '@/components/admin/Toast';
 import { adminInquiries } from '@/lib/api';
 
 export default function AdminInquiriesPage() {
+  const { showSuccess, showError } = useToast();
   const [inquiries, setInquiries] = useState<Array<Record<string, unknown>>>(
     []
   );
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
 
-  useEffect(() => {
+  function loadInquiries() {
     setLoading(true);
     adminInquiries
       .list(filter || undefined)
       .then((data) => setInquiries(data.inquiries))
       .catch(() => {
-        // Failed to load inquiries
+        showError('Failed to load inquiries');
       })
       .finally(() => setLoading(false));
-  }, [filter]);
+  }
+
+  useEffect(() => {
+    loadInquiries();
+  }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleStatusChange(id: string, status: string) {
+    try {
+      await adminInquiries.update(id, status);
+      showSuccess(`Marked as ${status}`);
+      loadInquiries();
+    } catch {
+      showError('Failed to update inquiry');
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Delete this inquiry?')) return;
+    try {
+      await adminInquiries.delete(id);
+      showSuccess('Inquiry deleted');
+      setInquiries((prev) => prev.filter((i) => i.id !== id));
+    } catch {
+      showError('Failed to delete inquiry');
+    }
+  }
 
   return (
     <div>
@@ -40,7 +67,11 @@ export default function AdminInquiriesPage() {
       {loading ? (
         <div className="text-neutral-400">Loading...</div>
       ) : (
-        <InquiryList inquiries={inquiries} />
+        <InquiryList
+          inquiries={inquiries}
+          onStatusChange={handleStatusChange}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/admin/StatCard';
+import { useToast } from '@/components/admin/Toast';
 import { adminGalleries, adminInquiries } from '@/lib/api';
 
 export default function AdminDashboardPage() {
+  const { showError } = useToast();
   const [stats, setStats] = useState({
     galleries: 0,
     images: 0,
@@ -32,10 +34,10 @@ export default function AdminDashboardPage() {
         });
       })
       .catch(() => {
-        // Failed to load stats
+        showError('Failed to load dashboard stats');
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>

@@ -248,22 +248,16 @@ export const adminImages = {
     }),
 
   updateAlt: (imageKey: string, galleryId: string, alt: string) =>
-    request<{ updated: boolean }>(
-      `/api/admin/images/${encodeURIComponent(imageKey)}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ galleryId, alt }),
-      }
-    ),
+    request<{ updated: boolean }>('/api/admin/images', {
+      method: 'PUT',
+      body: JSON.stringify({ imageKey, galleryId, alt }),
+    }),
 
   delete: (imageKey: string, galleryId: string) =>
-    request<{ deleted: boolean }>(
-      `/api/admin/images/${encodeURIComponent(imageKey)}`,
-      {
-        method: 'DELETE',
-        body: JSON.stringify({ galleryId }),
-      }
-    ),
+    request<{ deleted: boolean }>('/api/admin/images', {
+      method: 'DELETE',
+      body: JSON.stringify({ imageKey, galleryId }),
+    }),
 };
 
 // =============================================================================
@@ -274,5 +268,36 @@ export const adminInquiries = {
   list: (status?: string) =>
     request<{ inquiries: Array<Record<string, unknown>> }>(
       `/api/admin/inquiries${status ? `?status=${status}` : ''}`
+    ),
+
+  update: (id: string, status: string) =>
+    request<{ updated: boolean }>(`/api/admin/inquiries/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
+
+  delete: (id: string) =>
+    request<{ deleted: boolean }>(`/api/admin/inquiries/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+// =============================================================================
+// Admin Gallery Notifications
+// =============================================================================
+
+export const adminNotify = {
+  sendGalleryReady: (
+    galleryId: string,
+    clientEmail: string,
+    clientName: string,
+    expirationDays?: number
+  ) =>
+    request<{ notified: boolean }>(
+      `/api/admin/galleries/${galleryId}/notify`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ clientEmail, clientName, expirationDays }),
+      }
     ),
 };

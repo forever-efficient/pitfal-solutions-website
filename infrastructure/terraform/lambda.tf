@@ -336,6 +336,7 @@ resource "aws_lambda_function" "admin" {
       MEDIA_BUCKET         = aws_s3_bucket.media.id
       FROM_EMAIL           = var.from_email
       CONTACT_EMAIL        = var.contact_email
+      SITE_URL             = var.use_custom_domain ? "https://${var.domain_name}" : ""
       ENVIRONMENT          = var.environment
       CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
     }

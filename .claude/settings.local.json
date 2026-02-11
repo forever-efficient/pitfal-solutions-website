@@ -51,7 +51,9 @@
       "Bash(done)",
       "Bash(AWS_PROFILE=pitfal terraform output:*)",
       "Bash(AWS_PROFILE=pitfal aws lambda get-function-configuration:*)",
-      "Bash(./scripts/build-lambdas.sh:*)"
+      "Bash(./scripts/build-lambdas.sh:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx next build:*)"
     ]
   },
   "enabledMcpjsonServers": [

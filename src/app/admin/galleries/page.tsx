@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/components/admin/Toast';
 import { adminGalleries } from '@/lib/api';
 
 interface GallerySummary {
@@ -16,6 +17,7 @@ interface GallerySummary {
 }
 
 export default function AdminGalleriesPage() {
+  const { showSuccess, showError } = useToast();
   const [galleries, setGalleries] = useState<GallerySummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -39,7 +41,7 @@ export default function AdminGalleriesPage() {
       const data = await adminGalleries.list();
       setGalleries(data.galleries);
     } catch {
-      // Failed to load galleries
+      showError('Failed to load galleries');
     } finally {
       setLoading(false);
     }
@@ -68,9 +70,10 @@ export default function AdminGalleriesPage() {
         password: '',
         featured: false,
       });
+      showSuccess('Gallery created');
       loadGalleries();
     } catch {
-      // Create failed silently
+      showError('Failed to create gallery');
     } finally {
       setCreating(false);
     }
@@ -81,8 +84,9 @@ export default function AdminGalleriesPage() {
     try {
       await adminGalleries.delete(id);
       setGalleries((prev) => prev.filter((g) => g.id !== id));
+      showSuccess('Gallery deleted');
     } catch {
-      // Delete failed silently
+      showError('Failed to delete gallery');
     }
   }
 

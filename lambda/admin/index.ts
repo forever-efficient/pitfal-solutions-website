@@ -28,6 +28,7 @@ import {
   decodeToken,
 } from '../shared/session';
 import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteS3Objects } from '../shared/s3';
+import { sendTemplatedEmail } from '../shared/email';
 
 // Environment variables
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
@@ -123,6 +124,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
   ctx.adminUser = adminUser;
 
+  // Gallery notify route (must check before generic galleries route)
+  if (resource.includes('/admin/galleries') && resource.includes('/notify')) {
+    const galleryId = event.pathParameters?.id;
+    if (!galleryId) return badRequest('Gallery ID is required', requestOrigin);
+    return handleGalleryNotify(event, method, galleryId, ctx, requestOrigin);
+  }
+
   // Gallery routes
   if (resource.includes('/admin/galleries')) {
     const galleryId = event.pathParameters?.id;
@@ -132,17 +140,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return handleGalleries(event, method, ctx, requestOrigin);
   }
 
-  // Image routes
+  // Image routes (all methods use base endpoint with imageKey in body)
   if (resource.includes('/admin/images')) {
-    const imageId = event.pathParameters?.id;
-    if (imageId) {
-      return handleImageById(event, method, imageId, ctx, requestOrigin);
-    }
     return handleImages(event, method, ctx, requestOrigin);
   }
 
   // Inquiry routes
   if (resource.includes('/admin/inquiries')) {
+    const inquiryId = event.pathParameters?.id;
+    if (inquiryId) {
+      return handleInquiryById(event, method, inquiryId, ctx, requestOrigin);
+    }
     return handleInquiries(event, method, ctx, requestOrigin);
   }
 
@@ -411,65 +419,49 @@ async function handleImages(
   ctx: LogContext,
   requestOrigin?: string
 ): Promise<APIGatewayProxyResult> {
-  if (method === 'POST') {
-    let body: { galleryId?: string; filename?: string; contentType?: string };
-    try {
-      body = JSON.parse(event.body || '{}');
-    } catch {
-      return badRequest('Invalid JSON', requestOrigin);
-    }
+  let body: Record<string, unknown>;
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
 
+  if (method === 'POST') {
     if (!body.galleryId || !body.filename || !body.contentType) {
       return badRequest('galleryId, filename, and contentType are required', requestOrigin);
     }
 
     const key = `finished/${body.galleryId}/${randomUUID()}-${body.filename}`;
-    const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, body.contentType, 3600);
+    const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, body.contentType as string, 3600);
 
-    log('INFO', 'Upload URL generated', ctx, { galleryId: body.galleryId, key });
+    log('INFO', 'Upload URL generated', ctx, { galleryId: body.galleryId as string, key });
     return success({ uploadUrl, key }, 200, requestOrigin);
   }
 
-  return methodNotAllowed(undefined, requestOrigin);
-}
-
-async function handleImageById(
-  event: APIGatewayProxyEvent,
-  method: string,
-  imageId: string,
-  ctx: LogContext,
-  requestOrigin?: string
-): Promise<APIGatewayProxyResult> {
   if (method === 'PUT') {
-    // Update image metadata (alt text) in gallery
-    let body: { galleryId?: string; alt?: string };
-    try {
-      body = JSON.parse(event.body || '{}');
-    } catch {
-      return badRequest('Invalid JSON', requestOrigin);
-    }
-
-    if (!body.galleryId) {
-      return badRequest('galleryId is required', requestOrigin);
+    const imageKey = body.imageKey as string;
+    const galleryId = body.galleryId as string;
+    if (!imageKey || !galleryId) {
+      return badRequest('imageKey and galleryId are required', requestOrigin);
     }
 
     const gallery = await getItem<GalleryRecord>({
       TableName: GALLERIES_TABLE,
-      Key: { id: body.galleryId },
+      Key: { id: galleryId },
     });
 
     if (!gallery) return notFound('Gallery not found', requestOrigin);
 
-    const imageIndex = gallery.images?.findIndex(img => img.key === imageId);
+    const imageIndex = gallery.images?.findIndex(img => img.key === imageKey);
     if (imageIndex === undefined || imageIndex === -1) {
       return notFound('Image not found in gallery', requestOrigin);
     }
 
-    gallery.images[imageIndex] = { ...gallery.images[imageIndex], alt: body.alt };
+    gallery.images[imageIndex] = { ...gallery.images[imageIndex], alt: body.alt as string };
 
     await updateItem({
       TableName: GALLERIES_TABLE,
-      Key: { id: body.galleryId },
+      Key: { id: galleryId },
       UpdateExpression: 'SET images = :images, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':images': gallery.images,
@@ -477,36 +469,31 @@ async function handleImageById(
       },
     });
 
-    log('INFO', 'Image metadata updated', ctx, { galleryId: body.galleryId, imageKey: imageId });
+    log('INFO', 'Image metadata updated', ctx, { galleryId, imageKey });
     return success({ updated: true }, 200, requestOrigin);
   }
 
   if (method === 'DELETE') {
-    let body: { galleryId?: string };
-    try {
-      body = JSON.parse(event.body || '{}');
-    } catch {
-      return badRequest('Invalid JSON', requestOrigin);
-    }
-
-    if (!body.galleryId) {
-      return badRequest('galleryId is required', requestOrigin);
+    const imageKey = body.imageKey as string;
+    const galleryId = body.galleryId as string;
+    if (!imageKey || !galleryId) {
+      return badRequest('imageKey and galleryId are required', requestOrigin);
     }
 
     // Remove from S3
-    await deleteS3Objects(MEDIA_BUCKET!, [imageId]);
+    await deleteS3Objects(MEDIA_BUCKET!, [imageKey]);
 
     // Remove from gallery record
     const gallery = await getItem<GalleryRecord>({
       TableName: GALLERIES_TABLE,
-      Key: { id: body.galleryId },
+      Key: { id: galleryId },
     });
 
     if (gallery && gallery.images) {
-      const updatedImages = gallery.images.filter(img => img.key !== imageId);
+      const updatedImages = gallery.images.filter(img => img.key !== imageKey);
       await updateItem({
         TableName: GALLERIES_TABLE,
-        Key: { id: body.galleryId },
+        Key: { id: galleryId },
         UpdateExpression: 'SET images = :images, updatedAt = :updatedAt',
         ExpressionAttributeValues: {
           ':images': updatedImages,
@@ -515,7 +502,7 @@ async function handleImageById(
       });
     }
 
-    log('INFO', 'Image deleted', ctx, { galleryId: body.galleryId, imageKey: imageId });
+    log('INFO', 'Image deleted', ctx, { galleryId, imageKey });
     return success({ deleted: true }, 200, requestOrigin);
   }
 
@@ -557,4 +544,103 @@ async function handleInquiries(
 
   log('INFO', 'Inquiries listed', ctx, { count: inquiries.length, statusFilter: status || 'all' });
   return success({ inquiries }, 200, requestOrigin);
+}
+
+async function handleInquiryById(
+  event: APIGatewayProxyEvent,
+  method: string,
+  inquiryId: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'PUT') {
+    let body: { status?: string };
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return badRequest('Invalid JSON', requestOrigin);
+    }
+
+    const validStatuses = ['new', 'read', 'replied'];
+    if (!body.status || !validStatuses.includes(body.status)) {
+      return badRequest(`status must be one of: ${validStatuses.join(', ')}`, requestOrigin);
+    }
+
+    const expr = buildUpdateExpression({
+      status: body.status,
+      updatedAt: new Date().toISOString(),
+    });
+
+    await updateItem({
+      TableName: INQUIRIES_TABLE,
+      Key: { id: inquiryId },
+      ...expr,
+    });
+
+    log('INFO', 'Inquiry status updated', ctx, { inquiryId, status: body.status });
+    return success({ updated: true }, 200, requestOrigin);
+  }
+
+  if (method === 'DELETE') {
+    await deleteItem({
+      TableName: INQUIRIES_TABLE,
+      Key: { id: inquiryId },
+    });
+
+    log('INFO', 'Inquiry deleted', ctx, { inquiryId });
+    return success({ deleted: true }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed(undefined, requestOrigin);
+}
+
+// ============ GALLERY NOTIFY HANDLER ============
+
+async function handleGalleryNotify(
+  event: APIGatewayProxyEvent,
+  method: string,
+  galleryId: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  let body: { clientEmail?: string; clientName?: string; expirationDays?: number };
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
+
+  if (!body.clientEmail || !body.clientName) {
+    return badRequest('clientEmail and clientName are required', requestOrigin);
+  }
+
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE,
+    Key: { id: galleryId },
+  });
+
+  if (!gallery) return notFound('Gallery not found', requestOrigin);
+
+  const siteUrl = process.env.SITE_URL || requestOrigin || 'https://pitfal.solutions';
+  const galleryUrl = `${siteUrl}/client/${galleryId}`;
+  const expirationDays = String(body.expirationDays || 30);
+
+  await sendTemplatedEmail({
+    to: body.clientEmail,
+    template: 'gallery-ready',
+    data: {
+      name: body.clientName,
+      sessionType: gallery.category,
+      galleryUrl,
+      password: gallery.passwordHash ? '(use the password provided separately)' : 'No password required',
+      expirationDays,
+    },
+  });
+
+  log('INFO', 'Client notified about gallery', ctx, { galleryId, clientEmail: body.clientEmail });
+  return success({ notified: true }, 200, requestOrigin);
 }

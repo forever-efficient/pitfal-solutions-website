@@ -6,6 +6,7 @@ import { GalleryGrid } from '@/components/gallery/GalleryGrid';
 import { ContactCTA } from '@/components/sections';
 import { getGalleriesByCategory } from '@/lib/galleries';
 import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -46,7 +47,7 @@ export default async function CategoryPage({ params }: PageProps) {
     id: g.slug,
     slug: g.slug,
     title: g.title,
-    thumbnail: '',
+    thumbnail: g.images[0]?.key ? getImageUrl(g.images[0].key) : '',
     imageCount: g.images.length,
     description: g.description,
   }));

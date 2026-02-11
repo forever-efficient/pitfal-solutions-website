@@ -128,6 +128,53 @@ resource "aws_cloudfront_origin_request_policy" "api" {
   }
 }
 
+# CloudFront Function to rewrite URLs for static site routing
+# e.g., /admin → /admin/index.html
+resource "aws_cloudfront_function" "url_rewrite" {
+  name    = "${local.name_prefix}-url-rewrite"
+  runtime = "cloudfront-js-2.0"
+  comment = "Rewrite URLs to append /index.html for directory paths"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+
+      // If URI has a file extension, serve as-is
+      if (uri.includes('.')) {
+        return request;
+      }
+
+      // If URI ends with /, append index.html
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+      } else {
+        // Append /index.html for clean URLs
+        request.uri = uri + '/index.html';
+      }
+
+      return request;
+    }
+  EOF
+}
+
+# CloudFront Function to strip /media prefix for S3 media origin
+# Requests come in as /media/finished/gallery/image.jpg
+# S3 keys are finished/gallery/image.jpg (no /media prefix)
+resource "aws_cloudfront_function" "media_path_rewrite" {
+  name    = "${local.name_prefix}-media-path-rewrite"
+  runtime = "cloudfront-js-2.0"
+  comment = "Strip /media prefix so S3 keys match"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/media/, '');
+      return request;
+    }
+  EOF
+}
+
 # Main CloudFront distribution
 resource "aws_cloudfront_distribution" "website" {
   enabled             = true
@@ -137,6 +184,7 @@ resource "aws_cloudfront_distribution" "website" {
   price_class         = var.cloudfront_price_class
   aliases             = var.use_custom_domain ? [var.domain_name, "www.${var.domain_name}"] : []
   web_acl_id          = var.enable_waf ? aws_wafv2_web_acl.cloudfront[0].arn : null
+  wait_for_deployment = false
 
   # Website S3 origin
   origin {
@@ -177,6 +225,11 @@ resource "aws_cloudfront_distribution" "website" {
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.url_rewrite.arn
+    }
   }
 
   # Media files behavior
@@ -191,6 +244,11 @@ resource "aws_cloudfront_distribution" "website" {
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.media_path_rewrite.arn
+    }
   }
 
   # API behavior
@@ -206,17 +264,19 @@ resource "aws_cloudfront_distribution" "website" {
     viewer_protocol_policy = "https-only"
   }
 
-  # Custom error responses for SPA routing
+  # Custom error responses - serve 404 page for missing content
   custom_error_response {
-    error_code         = 403
-    response_code      = 200
-    response_page_path = "/index.html"
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 0
   }
 
   custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 0
   }
 
   restrictions {

@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
+import { NotifyClient } from '@/components/admin/NotifyClient';
 import { adminGalleries } from '@/lib/api';
 
 function GalleryEditContent() {
@@ -51,9 +52,10 @@ function GalleryEditContent() {
             />
           </svg>
         </button>
-        <h1 className="text-2xl font-bold text-neutral-900">
+        <h1 className="text-2xl font-bold text-neutral-900 flex-1">
           {gallery.title as string}
         </h1>
+        <NotifyClient galleryId={galleryId} galleryTitle={gallery.title as string} />
       </div>
       <div className="space-y-6">
         <GalleryEditor gallery={gallery} galleryId={galleryId} />

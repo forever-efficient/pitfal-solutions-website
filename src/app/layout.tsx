@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { BUSINESS, SEO } from '@/lib/constants';
 import { LocalBusinessJsonLd } from '@/components/seo';
+import { SiteShell } from '@/components/layout/SiteShell';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -104,15 +105,14 @@ export default function RootLayout({
         </a>
 
         {/* Main application */}
-        <div className="flex min-h-screen flex-col">
-          <Header />
-          <main id="main-content" className="flex-1">
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-          </main>
-          <Footer />
-        </div>
+        <SiteShell
+          header={<Header />}
+          footer={<Footer />}
+        >
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </SiteShell>
       </body>
     </html>
   );

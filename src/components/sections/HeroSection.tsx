@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowDownIcon } from '@/components/icons';
-import { COPY } from '@/lib/constants';
+import { COPY, SITE_IMAGES } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 export interface HeroSectionProps {
   title?: string;
@@ -22,7 +23,7 @@ export function HeroSection({
   ctaHref = '/contact',
   secondaryCtaText = COPY.hero.cta,
   secondaryCtaHref = '/portfolio',
-  backgroundImage = '/images/hero-bg.jpg',
+  backgroundImage = getImageUrl(SITE_IMAGES.hero),
 }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">

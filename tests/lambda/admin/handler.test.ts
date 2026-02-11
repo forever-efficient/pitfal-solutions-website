@@ -32,6 +32,7 @@ const mockHash = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedUploadUrl = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
 const mockDeleteS3Objects = vi.hoisted(() => vi.fn());
+const mockSendTemplatedEmail = vi.hoisted(() => vi.fn());
 
 // Mock db module
 vi.mock('../../../lambda/shared/db', () => ({
@@ -69,6 +70,11 @@ vi.mock('../../../lambda/shared/s3', () => ({
   generatePresignedUploadUrl: mockGeneratePresignedUploadUrl,
   generatePresignedDownloadUrl: mockGeneratePresignedDownloadUrl,
   deleteS3Objects: mockDeleteS3Objects,
+}));
+
+// Mock email utilities
+vi.mock('../../../lambda/shared/email', () => ({
+  sendTemplatedEmail: mockSendTemplatedEmail,
 }));
 
 // Import handler after mocks and env are set
@@ -147,6 +153,7 @@ describe('Admin Lambda Handler', () => {
     mockGeneratePresignedUploadUrl.mockClear();
     mockGeneratePresignedDownloadUrl.mockClear();
     mockDeleteS3Objects.mockClear();
+    mockSendTemplatedEmail.mockClear();
 
     // Defaults
     mockGetItem.mockImplementation(async () => null);
@@ -940,12 +947,229 @@ describe('Admin Lambda Handler', () => {
       });
     });
 
-    it('returns 405 for non-GET methods on inquiries route', async () => {
+    it('returns 405 for non-GET methods on inquiries collection route', async () => {
       setupAuthenticatedAdmin();
 
       const event = createEvent({
         httpMethod: 'POST',
         resource: '/api/admin/inquiries',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ INQUIRY BY ID ============
+
+  describe('PUT /admin/inquiries/{id}', () => {
+    it('updates inquiry status to read', async () => {
+      setupAuthenticatedAdmin();
+      mockBuildUpdateExpression.mockImplementation((updates: Record<string, unknown>) => ({
+        UpdateExpression: 'SET #status = :status, #updatedAt = :updatedAt',
+        ExpressionAttributeNames: { '#status': 'status', '#updatedAt': 'updatedAt' },
+        ExpressionAttributeValues: { ':status': updates.status, ':updatedAt': updates.updatedAt },
+      }));
+      mockUpdateItem.mockImplementation(async () => {});
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+        body: JSON.stringify({ status: 'read' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.updated).toBe(true);
+      expect(mockUpdateItem).toHaveBeenCalledWith(
+        expect.objectContaining({ TableName: 'test-inquiries', Key: { id: 'inquiry-123' } })
+      );
+    });
+
+    it('updates inquiry status to replied', async () => {
+      setupAuthenticatedAdmin();
+      mockBuildUpdateExpression.mockImplementation((updates: Record<string, unknown>) => ({
+        UpdateExpression: 'SET #status = :status',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':status': updates.status },
+      }));
+      mockUpdateItem.mockImplementation(async () => {});
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+        body: JSON.stringify({ status: 'replied' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+    });
+
+    it('rejects invalid status value', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+        body: JSON.stringify({ status: 'invalid' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      expect(mockUpdateItem).not.toHaveBeenCalled();
+    });
+
+    it('rejects missing status field', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+  });
+
+  describe('DELETE /admin/inquiries/{id}', () => {
+    it('deletes an inquiry', async () => {
+      setupAuthenticatedAdmin();
+      mockDeleteItem.mockImplementation(async () => {});
+
+      const event = createEvent({
+        httpMethod: 'DELETE',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.deleted).toBe(true);
+      expect(mockDeleteItem).toHaveBeenCalledWith({
+        TableName: 'test-inquiries',
+        Key: { id: 'inquiry-123' },
+      });
+    });
+
+    it('returns 405 for unsupported methods on inquiry by id', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/inquiries/{id}',
+        pathParameters: { id: 'inquiry-123' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ GALLERY NOTIFY ============
+
+  describe('POST /admin/galleries/{id}/notify', () => {
+    it('sends gallery-ready email to client', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'gallery-1',
+        title: 'Wedding Photos',
+        category: 'events',
+        passwordHash: 'hashed',
+        images: [],
+        createdAt: '2026-01-01T00:00:00Z',
+      }));
+      mockSendTemplatedEmail.mockImplementation(async () => {});
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/notify',
+        pathParameters: { id: 'gallery-1' },
+        body: JSON.stringify({
+          clientEmail: 'client@example.com',
+          clientName: 'Jane Doe',
+          expirationDays: 14,
+        }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.notified).toBe(true);
+      expect(mockSendTemplatedEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'client@example.com',
+          template: 'gallery-ready',
+          data: expect.objectContaining({
+            name: 'Jane Doe',
+            sessionType: 'events',
+            expirationDays: '14',
+          }),
+        })
+      );
+    });
+
+    it('returns 404 if gallery not found', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => null);
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/notify',
+        pathParameters: { id: 'nonexistent' },
+        body: JSON.stringify({
+          clientEmail: 'client@example.com',
+          clientName: 'Jane Doe',
+        }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(404);
+      expect(mockSendTemplatedEmail).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 if clientEmail missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/notify',
+        pathParameters: { id: 'gallery-1' },
+        body: JSON.stringify({ clientName: 'Jane Doe' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 400 if clientName missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/notify',
+        pathParameters: { id: 'gallery-1' },
+        body: JSON.stringify({ clientEmail: 'client@example.com' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 405 for non-POST methods', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/galleries/{id}/notify',
+        pathParameters: { id: 'gallery-1' },
       });
       const result = await handler(event, mockContext, () => {});
 

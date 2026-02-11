@@ -1081,7 +1081,96 @@ By default, SES is in sandbox mode. To send to any email:
 
 ---
 
-## 8. Troubleshooting
+## 8. Image Management
+
+All images on the site (hero, about, services, portfolio, galleries) are served from the S3 media bucket through CloudFront. No images live in the `public/` directory.
+
+### How It Works
+
+1. Images are stored in `s3://pitfal-prod-media/` under the `finished/` prefix
+2. CloudFront serves them at `https://<cloudfront-domain>/media/<key>`
+3. A CloudFront function strips the `/media` prefix before forwarding to S3
+4. Components use `getImageUrl(key)` from `src/lib/utils.ts` to build the full URL
+5. `NEXT_PUBLIC_MEDIA_URL` controls the base URL (set in `.env.local` for local dev)
+
+### Image Categories
+
+| Category | S3 Key Pattern | Where Used | Config Location |
+|----------|---------------|------------|-----------------|
+| **Site images** | `finished/site/hero-bg.jpg` | Homepage hero, about portrait | `src/lib/constants.ts` → `SITE_IMAGES` |
+| **Service images** | `finished/site/services-brand.jpg` | Services section | `src/lib/constants.ts` → `SERVICES.*.image` |
+| **Portfolio covers** | `finished/site/portfolio-brands.jpg` | Portfolio category page | `src/lib/constants.ts` → `PORTFOLIO_CATEGORIES.*.image` |
+| **Gallery images** | `finished/{category}/{filename}.jpg` | Portfolio gallery pages | `content/galleries/{category}/{slug}.json` |
+
+### Upload Site Images
+
+```bash
+# Hero background
+aws s3 cp hero.jpg s3://pitfal-prod-media/finished/site/hero-bg.jpg
+
+# About page portrait
+aws s3 cp portrait.jpg s3://pitfal-prod-media/finished/site/about-portrait.jpg
+
+# Portfolio category covers
+aws s3 cp brands.jpg s3://pitfal-prod-media/finished/site/portfolio-brands.jpg
+aws s3 cp portraits.jpg s3://pitfal-prod-media/finished/site/portfolio-portraits.jpg
+aws s3 cp events.jpg s3://pitfal-prod-media/finished/site/portfolio-events.jpg
+
+# Service section images
+aws s3 cp brand-svc.jpg s3://pitfal-prod-media/finished/site/services-brand.jpg
+aws s3 cp portrait-svc.jpg s3://pitfal-prod-media/finished/site/services-portraits.jpg
+aws s3 cp event-svc.jpg s3://pitfal-prod-media/finished/site/services-events.jpg
+```
+
+Site images are referenced by S3 key in `src/lib/constants.ts`. To change an image, either:
+- Replace the file in S3 (same key) and invalidate CloudFront cache
+- Upload with a new key and update `constants.ts`, then rebuild + deploy
+
+### Upload Gallery Images
+
+Gallery images are referenced in JSON manifests at `content/galleries/{category}/{slug}.json`.
+
+```bash
+# Upload gallery photos
+aws s3 cp photo1.jpg s3://pitfal-prod-media/finished/brands/photo1.jpg
+aws s3 cp photo2.jpg s3://pitfal-prod-media/finished/brands/photo2.jpg
+```
+
+Then update the gallery manifest:
+
+```json
+{
+  "slug": "tech-startup-rebrand",
+  "title": "Tech Startup Rebrand",
+  "description": "Complete visual identity for a tech startup",
+  "date": "2026-01-15",
+  "featured": true,
+  "images": [
+    { "key": "finished/brands/photo1.jpg", "alt": "Team collaboration shot" },
+    { "key": "finished/brands/photo2.jpg", "alt": "Product on desk" }
+  ]
+}
+```
+
+**Notes:**
+- The **first image** in the `images` array becomes the gallery thumbnail on portfolio pages
+- Galleries with `"featured": true` appear on the homepage (top 3 by date)
+- After updating manifests, rebuild the site (`pnpm build`) and redeploy to S3
+- Gallery manifests are NOT connected to admin dashboard galleries (those are for client proofing via DynamoDB)
+
+### Portfolio vs Admin Galleries
+
+| | Public Portfolio | Admin Galleries |
+|--|---|---|
+| **Purpose** | Public showcase | Client proofing (password-protected) |
+| **Data source** | JSON files in `content/galleries/` | DynamoDB |
+| **Image source** | S3 keys in JSON manifests | S3 keys via admin upload UI |
+| **When to use** | Showcasing past work | Delivering photos to clients |
+| **Visible at** | `/portfolio` | `/admin/galleries` |
+
+---
+
+## 9. Troubleshooting
 
 ### Common Issues and Solutions
 

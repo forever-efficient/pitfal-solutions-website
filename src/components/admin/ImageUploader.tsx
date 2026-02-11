@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Image from 'next/image';
 import { adminImages, adminGalleries } from '@/lib/api';
+import { useToast } from './Toast';
 
 interface GalleryImage {
   key: string;
@@ -22,6 +22,7 @@ export function ImageUploader({
   images,
   onUpdate,
 }: ImageUploaderProps) {
+  const { showError } = useToast();
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
 
@@ -50,7 +51,7 @@ export function ImageUploader({
 
           newImages.push({ key, alt: '' });
         } catch {
-          // Skip failed uploads
+          showError(`Failed to upload ${file.name}`);
         }
       }
 
@@ -72,7 +73,7 @@ export function ImageUploader({
       const updated = images.filter((img) => img.key !== imageKey);
       onUpdate(updated);
     } catch {
-      // Delete failed silently
+      showError('Failed to delete image');
     }
   }
 
@@ -136,11 +137,10 @@ export function ImageUploader({
               key={image.key}
               className="group relative rounded-lg overflow-hidden bg-neutral-100"
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={`${MEDIA_URL}/${image.key}`}
                 alt={image.alt || 'Gallery image'}
-                width={300}
-                height={200}
                 className="w-full h-32 object-cover"
               />
               <button

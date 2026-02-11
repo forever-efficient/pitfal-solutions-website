@@ -951,6 +951,156 @@ resource "aws_api_gateway_integration_response" "admin_inquiries_options" {
   }
 }
 
+# /api/admin/inquiries/{id}
+resource "aws_api_gateway_resource" "admin_inquiry_id" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_inquiries.id
+  path_part   = "{id}"
+}
+
+# ANY /api/admin/inquiries/{id} → admin Lambda
+resource "aws_api_gateway_method" "admin_inquiry_id_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_inquiry_id_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method             = aws_api_gateway_method.admin_inquiry_id_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/inquiries/{id} (CORS)
+resource "aws_api_gateway_method" "admin_inquiry_id_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_inquiry_id_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method = aws_api_gateway_method.admin_inquiry_id_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "admin_inquiry_id_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method = aws_api_gateway_method.admin_inquiry_id_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "admin_inquiry_id_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_inquiry_id.id
+  http_method = aws_api_gateway_method.admin_inquiry_id_options.http_method
+  status_code = aws_api_gateway_method_response.admin_inquiry_id_options.status_code
+
+  depends_on = [aws_api_gateway_integration.admin_inquiry_id_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/galleries/{id}/notify
+resource "aws_api_gateway_resource" "admin_gallery_notify" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_gallery_id.id
+  path_part   = "notify"
+}
+
+# ANY /api/admin/galleries/{id}/notify → admin Lambda
+resource "aws_api_gateway_method" "admin_gallery_notify_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_gallery_notify_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method             = aws_api_gateway_method.admin_gallery_notify_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/galleries/{id}/notify (CORS)
+resource "aws_api_gateway_method" "admin_gallery_notify_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_gallery_notify_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method = aws_api_gateway_method.admin_gallery_notify_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "admin_gallery_notify_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method = aws_api_gateway_method.admin_gallery_notify_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "admin_gallery_notify_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_gallery_notify.id
+  http_method = aws_api_gateway_method.admin_gallery_notify_options.http_method
+  status_code = aws_api_gateway_method_response.admin_gallery_notify_options.status_code
+
+  depends_on = [aws_api_gateway_integration.admin_gallery_notify_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # API Gateway deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -1009,6 +1159,14 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.admin_inquiries.id,
       aws_api_gateway_method.admin_inquiries_any.id,
       aws_api_gateway_integration.admin_inquiries_any.id,
+      # Admin inquiry by id
+      aws_api_gateway_resource.admin_inquiry_id.id,
+      aws_api_gateway_method.admin_inquiry_id_any.id,
+      aws_api_gateway_integration.admin_inquiry_id_any.id,
+      # Admin gallery notify
+      aws_api_gateway_resource.admin_gallery_notify.id,
+      aws_api_gateway_method.admin_gallery_notify_any.id,
+      aws_api_gateway_integration.admin_gallery_notify_any.id,
     ]))
   }
 

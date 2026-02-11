@@ -45,7 +45,7 @@ export const SERVICES = {
       'Social media content',
       'Brand storytelling',
     ],
-    image: '/images/services/brand.jpg',
+    image: 'finished/site/services-brand.jpg',
     href: '/services#brand',
   },
   portraits: {
@@ -61,7 +61,7 @@ export const SERVICES = {
       'Senior portraits',
       'Personal branding',
     ],
-    image: '/images/services/portraits.jpg',
+    image: 'finished/site/services-portraits.jpg',
     href: '/services#portraits',
   },
   events: {
@@ -77,7 +77,7 @@ export const SERVICES = {
       'Private parties',
       'Live performances',
     ],
-    image: '/images/services/events.jpg',
+    image: 'finished/site/services-events.jpg',
     href: '/services#events',
   },
 } as const;
@@ -297,20 +297,29 @@ export const PORTFOLIO_CATEGORIES = {
     slug: 'brands',
     title: SERVICES.brand.title,
     description: 'Commercial and brand photography for businesses',
-    image: '/images/portfolio/brands-cover.jpg',
+    image: 'finished/site/portfolio-brands.jpg',
   },
   portraits: {
     slug: 'portraits',
     title: 'Portraits',
     description: 'Headshots, family portraits, and personal branding',
-    image: '/images/portfolio/portraits-cover.jpg',
+    image: 'finished/site/portfolio-portraits.jpg',
   },
   events: {
     slug: 'events',
     title: 'Events',
     description: 'Corporate events, weddings, and special occasions',
-    image: '/images/portfolio/events-cover.jpg',
+    image: 'finished/site/portfolio-events.jpg',
   },
 } as const;
 
 export type PortfolioCategorySlug = keyof typeof PORTFOLIO_CATEGORIES;
+
+// =============================================================================
+// SITE IMAGES (S3 keys — upload to s3://pitfal-prod-media/finished/site/...)
+// =============================================================================
+
+export const SITE_IMAGES = {
+  hero: 'finished/site/hero-bg.jpg',
+  about: 'finished/site/about-portrait.jpg',
+} as const;

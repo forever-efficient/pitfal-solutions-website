@@ -142,29 +142,34 @@ resource "aws_s3_bucket_policy" "media" {
 resource "aws_s3_bucket_cors_configuration" "media" {
   bucket = aws_s3_bucket.media.id
 
+  # Read-only access (GET/HEAD) for image delivery
   cors_rule {
     allowed_headers = ["*"]
     allowed_methods = ["GET", "HEAD"]
-    # Dynamic CORS origins based on custom domain usage and environment
-    # When using custom domain: specific origins for security
-    # When using CloudFront default: allow all cloudfront.net domains (S3 CORS doesn't support circular refs)
-    allowed_origins = var.use_custom_domain ? (
-      var.environment == "prod" ? [
-        "https://${var.domain_name}",
-        "https://www.${var.domain_name}"
-        ] : [
-        "https://${var.domain_name}",
-        "https://www.${var.domain_name}",
-        "http://localhost:3000"
-      ]
-      ) : (
-      var.environment == "prod" ? [
-        "https://${aws_cloudfront_distribution.website.domain_name}"
-        ] : [
-        "https://${aws_cloudfront_distribution.website.domain_name}",
-        "http://localhost:3000"
-      ]
-    )
+    allowed_origins = var.use_custom_domain ? [
+      "https://${var.domain_name}",
+      "https://www.${var.domain_name}",
+      "http://localhost:3000"
+      ] : [
+      "https://${aws_cloudfront_distribution.website.domain_name}",
+      "http://localhost:3000"
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+
+  # Upload access (PUT) for presigned URL uploads from admin UI
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT"]
+    allowed_origins = var.use_custom_domain ? [
+      "https://${var.domain_name}",
+      "https://www.${var.domain_name}",
+      "http://localhost:3000"
+      ] : [
+      "https://${aws_cloudfront_distribution.website.domain_name}",
+      "http://localhost:3000"
+    ]
     expose_headers  = ["ETag"]
     max_age_seconds = 3600
   }

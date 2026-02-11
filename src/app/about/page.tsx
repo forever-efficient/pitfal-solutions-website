@@ -1,9 +1,11 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { HeartIcon, ShieldCheckIcon, UsersIcon } from '@/components/icons';
-import { BUSINESS, PAGE_META } from '@/lib/constants';
+import { BUSINESS, PAGE_META, SITE_IMAGES } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: PAGE_META.about.title,
@@ -36,16 +38,15 @@ export default function AboutPage() {
       <Section size="lg" background="white">
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Image placeholder */}
-            <figure
-              className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative"
-              role="img"
-              aria-label="Portrait of the Pitfal Solutions photographer"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" aria-hidden="true" />
-              <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                <span className="text-neutral-400 text-lg">Photographer Portrait</span>
-              </div>
+            {/* Photographer portrait */}
+            <figure className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
+              <Image
+                src={getImageUrl(SITE_IMAGES.about)}
+                alt="Portrait of the Pitfal Solutions photographer"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
             </figure>
 
             {/* Content */}

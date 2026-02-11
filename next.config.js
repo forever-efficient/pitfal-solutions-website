@@ -18,6 +18,11 @@ const nextConfig = {
         hostname: 'media.pitfal.solutions',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'dprk6phv6ds9x.cloudfront.net',
+        pathname: '/media/**',
+      },
     ],
   },
 

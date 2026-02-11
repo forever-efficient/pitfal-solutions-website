@@ -1,10 +1,12 @@
 import { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { ArrowRightIcon } from '@/components/icons';
 import { PAGE_META, PORTFOLIO_CATEGORIES, SERVICES } from '@/lib/constants';
 import { getCategoryCounts } from '@/lib/galleries';
+import { getImageUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: PAGE_META.portfolio.title,
@@ -75,11 +77,13 @@ export default function PortfolioPage() {
                 aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
               >
                 <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  {/* Gradient placeholder */}
-                  <div
-                    className="absolute inset-0 bg-gradient-to-br from-neutral-300 to-neutral-400"
-                    role="img"
-                    aria-label={`${category.title} category preview image`}
+                  {/* Category cover image */}
+                  <Image
+                    src={getImageUrl(category.image)}
+                    alt={`${category.title} category preview`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
                   />
 
                   {/* Overlay */}

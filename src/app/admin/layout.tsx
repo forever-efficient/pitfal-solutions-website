@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { ToastProvider } from '@/components/admin/Toast';
 import { adminAuth } from '@/lib/api';
 
 export default function AdminLayout({
@@ -63,9 +64,11 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex">
-      <AdminSidebar username={username} />
-      <main className="flex-1 p-8 overflow-y-auto">{children}</main>
-    </div>
+    <ToastProvider>
+      <div className="min-h-screen bg-neutral-100 flex">
+        <AdminSidebar username={username} />
+        <main className="flex-1 p-8 overflow-y-auto">{children}</main>
+      </div>
+    </ToastProvider>
   );
 }
