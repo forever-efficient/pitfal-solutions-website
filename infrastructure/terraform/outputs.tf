@@ -70,6 +70,21 @@ output "lambda_contact_arn" {
   value       = aws_lambda_function.contact.arn
 }
 
+output "lambda_client_auth_arn" {
+  description = "ARN of the client auth Lambda function"
+  value       = aws_lambda_function.client_auth.arn
+}
+
+output "lambda_client_gallery_arn" {
+  description = "ARN of the client gallery Lambda function"
+  value       = aws_lambda_function.client_gallery.arn
+}
+
+output "lambda_admin_arn" {
+  description = "ARN of the admin Lambda function"
+  value       = aws_lambda_function.admin.arn
+}
+
 # SSL Certificate (only when using custom domain)
 output "acm_certificate_arn" {
   description = "ARN of the ACM SSL certificate (only set when use_custom_domain = true)"

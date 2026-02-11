@@ -148,3 +148,215 @@ resource "aws_lambda_permission" "contact_api_gateway" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/${aws_api_gateway_method.contact_post.http_method}${aws_api_gateway_resource.contact.path}"
 }
+
+# ─────────────────────────────────────────────
+# Client Auth Lambda
+# ─────────────────────────────────────────────
+
+resource "null_resource" "client_auth_build" {
+  triggers = {
+    source_hash  = filesha256("${path.module}/../../lambda/client-auth/index.ts")
+    package_hash = filesha256("${path.module}/../../lambda/client-auth/package.json")
+    shared_hash  = null_resource.shared_build.id
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/client-auth && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+data "archive_file" "client_auth" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambda/client-auth/dist"
+  output_path = "${path.module}/builds/client-auth.zip"
+  depends_on  = [null_resource.client_auth_build]
+}
+
+resource "aws_lambda_function" "client_auth" {
+  function_name    = "${local.name_prefix}-client-auth"
+  filename         = data.archive_file.client_auth.output_path
+  source_code_hash = data.archive_file.client_auth.output_base64sha256
+  handler          = "index.handler"
+  runtime          = var.lambda_runtime
+  role             = aws_iam_role.client_auth_lambda.arn
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  environment {
+    variables = {
+      GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
+      ADMIN_TABLE          = aws_dynamodb_table.admin.name
+      ENVIRONMENT          = var.environment
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+    }
+  }
+
+  layers = [aws_lambda_layer_version.shared.arn]
+
+  tags = {
+    Name = "${local.name_prefix}-client-auth"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "client_auth" {
+  name              = "/aws/lambda/${aws_lambda_function.client_auth.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_permission" "client_auth_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.client_auth.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+# ─────────────────────────────────────────────
+# Client Gallery Lambda
+# ─────────────────────────────────────────────
+
+resource "null_resource" "client_gallery_build" {
+  triggers = {
+    source_hash  = filesha256("${path.module}/../../lambda/client-gallery/index.ts")
+    package_hash = filesha256("${path.module}/../../lambda/client-gallery/package.json")
+    shared_hash  = null_resource.shared_build.id
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/client-gallery && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+data "archive_file" "client_gallery" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambda/client-gallery/dist"
+  output_path = "${path.module}/builds/client-gallery.zip"
+  depends_on  = [null_resource.client_gallery_build]
+}
+
+resource "aws_lambda_function" "client_gallery" {
+  function_name    = "${local.name_prefix}-client-gallery"
+  filename         = data.archive_file.client_gallery.output_path
+  source_code_hash = data.archive_file.client_gallery.output_base64sha256
+  handler          = "index.handler"
+  runtime          = var.lambda_runtime
+  role             = aws_iam_role.client_gallery_lambda.arn
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  environment {
+    variables = {
+      GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
+      ADMIN_TABLE          = aws_dynamodb_table.admin.name
+      MEDIA_BUCKET         = aws_s3_bucket.media.id
+      ENVIRONMENT          = var.environment
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+    }
+  }
+
+  layers = [aws_lambda_layer_version.shared.arn]
+
+  tags = {
+    Name = "${local.name_prefix}-client-gallery"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "client_gallery" {
+  name              = "/aws/lambda/${aws_lambda_function.client_gallery.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_permission" "client_gallery_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.client_gallery.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}
+
+# ─────────────────────────────────────────────
+# Admin Lambda
+# ─────────────────────────────────────────────
+
+resource "null_resource" "admin_build" {
+  triggers = {
+    source_hash  = filesha256("${path.module}/../../lambda/admin/index.ts")
+    package_hash = filesha256("${path.module}/../../lambda/admin/package.json")
+    shared_hash  = null_resource.shared_build.id
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/admin && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+data "archive_file" "admin" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambda/admin/dist"
+  output_path = "${path.module}/builds/admin.zip"
+  depends_on  = [null_resource.admin_build]
+}
+
+resource "aws_lambda_function" "admin" {
+  function_name    = "${local.name_prefix}-admin"
+  filename         = data.archive_file.admin.output_path
+  source_code_hash = data.archive_file.admin.output_base64sha256
+  handler          = "index.handler"
+  runtime          = var.lambda_runtime
+  role             = aws_iam_role.admin_lambda.arn
+  memory_size      = var.lambda_memory_size
+  timeout          = var.lambda_timeout
+
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  environment {
+    variables = {
+      ADMIN_TABLE          = aws_dynamodb_table.admin.name
+      GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
+      INQUIRIES_TABLE      = aws_dynamodb_table.inquiries.name
+      MEDIA_BUCKET         = aws_s3_bucket.media.id
+      FROM_EMAIL           = var.from_email
+      CONTACT_EMAIL        = var.contact_email
+      ENVIRONMENT          = var.environment
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+    }
+  }
+
+  layers = [aws_lambda_layer_version.shared.arn]
+
+  tags = {
+    Name = "${local.name_prefix}-admin"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "admin" {
+  name              = "/aws/lambda/${aws_lambda_function.admin.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_permission" "admin_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.admin.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}

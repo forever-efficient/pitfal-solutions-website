@@ -42,6 +42,9 @@ export default defineConfig({
       '@aws-sdk/client-ses': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-ses'),
       '@aws-sdk/client-dynamodb': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-dynamodb'),
       '@aws-sdk/lib-dynamodb': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/lib-dynamodb'),
+      '@aws-sdk/client-s3': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-s3'),
+      '@aws-sdk/s3-request-presigner': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/s3-request-presigner'),
+      'bcryptjs': path.resolve(__dirname, 'lambda/client-auth/node_modules/bcryptjs'),
     },
   },
 });

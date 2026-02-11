@@ -72,8 +72,7 @@ locals {
   }
 
   # CORS configuration for API Gateway MOCK responses (OPTIONS preflight)
-  # When using custom domain: use www subdomain as canonical origin
-  # When using CloudFront default: use wildcard for preflight (Lambda handles actual CORS validation)
-  # Note: Using wildcard for preflight is safe because actual POST responses are controlled by Lambda
+  # Uses wildcard since we use token-based auth (Authorization header), not credentials: 'include'.
+  # Lambda dynamically handles CORS for actual requests; this only covers OPTIONS preflight.
   api_gateway_cors_origin = var.use_custom_domain ? "https://www.${var.domain_name}" : "*"
 }

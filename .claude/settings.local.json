@@ -46,7 +46,12 @@
       "Bash(chmod:*)",
       "Bash(npx vitest:*)",
       "Bash(xargs:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(tmux:*)",
+      "Bash(done)",
+      "Bash(AWS_PROFILE=pitfal terraform output:*)",
+      "Bash(AWS_PROFILE=pitfal aws lambda get-function-configuration:*)",
+      "Bash(./scripts/build-lambdas.sh:*)"
     ]
   },
   "enabledMcpjsonServers": [

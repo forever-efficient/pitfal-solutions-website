@@ -1,9 +1,9 @@
 # Deployment Guide - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.4 (Infrastructure Deployed)
+- **Version:** 1.5 (Phase 1 Deployed)
 - **Last Updated:** February 2026
-- **Status:** Phase 1 infrastructure deployed — ready for frontend S3 sync
+- **Status:** Phase 1 deployed and verified — site live at dprk6phv6ds9x.cloudfront.net
 
 ---
 
@@ -370,56 +370,56 @@ Phase 1: CloudFront Default Domain Deployment
 =============================================
 
 Prerequisites:
-[ ] AWS credentials configured (aws sts get-caller-identity --profile pitfal)
-[ ] Terraform state backend created (S3 bucket + DynamoDB table)
-[ ] Project dependencies installed (pnpm install)
-[ ] Lambda code builds successfully (cd lambda && pnpm build)
+[x] AWS credentials configured (aws sts get-caller-identity --profile pitfal)
+[x] Terraform state backend created (S3 bucket + DynamoDB table)
+[x] Project dependencies installed (pnpm install)
+[x] Lambda code builds successfully (cd lambda && pnpm build)
 
 Step 1: Initialize Terraform
-[ ] cd infrastructure/terraform
-[ ] terraform init
-[ ] Verify: "Terraform has been successfully initialized!"
+[x] cd infrastructure/terraform
+[x] terraform init
+[x] Verify: "Terraform has been successfully initialized!"
 
 Step 2: Plan Infrastructure (CloudFront Default Domain)
-[ ] terraform plan -var="use_custom_domain=false"
-[ ] Verify: NO aws_acm_certificate resources in plan
-[ ] Verify: NO aws_route53_record resources in plan
-[ ] Verify: CloudFront aliases = [] (empty)
-[ ] Review plan, note total resources to create
+[x] terraform plan -var="use_custom_domain=false"
+[x] Verify: NO aws_acm_certificate resources in plan
+[x] Verify: NO aws_route53_record resources in plan
+[x] Verify: CloudFront aliases = [] (empty)
+[x] Review plan, note total resources to create
 
 Step 3: Apply Infrastructure
-[ ] terraform apply -var="use_custom_domain=false"
-[ ] Type 'yes' to confirm
-[ ] Wait for completion (typically 5-15 minutes for CloudFront)
-[ ] Save outputs: terraform output > ../terraform-outputs.txt
+[x] terraform apply -var="use_custom_domain=false"
+[x] Type 'yes' to confirm
+[x] Wait for completion (typically 5-15 minutes for CloudFront)
+[x] Save outputs: terraform output > ../terraform-outputs.txt
 
 Step 4: Record CloudFront Domain
-[ ] CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain_name)
-[ ] echo "CloudFront Domain: $CLOUDFRONT_DOMAIN"
-[ ] Record this domain: _________________________________.cloudfront.net
+[x] CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain_name)
+[x] echo "CloudFront Domain: $CLOUDFRONT_DOMAIN"
+[x] Record this domain: dprk6phv6ds9x.cloudfront.net
 
 Step 5: Build Frontend with CloudFront URLs
-[ ] cd ../..  (back to project root)
-[ ] Export environment variables:
+[x] cd ../..  (back to project root)
+[x] Export environment variables:
     export NEXT_PUBLIC_SITE_URL=https://$CLOUDFRONT_DOMAIN
     export NEXT_PUBLIC_API_URL=https://$CLOUDFRONT_DOMAIN/api
-[ ] pnpm build
-[ ] Verify: out/ directory created with index.html
+[x] pnpm build
+[x] Verify: out/ directory created with index.html
 
 Step 6: Deploy to S3
-[ ] BUCKET=$(cd infrastructure/terraform && terraform output -raw website_bucket_name)
-[ ] aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
-[ ] Verify: aws s3 ls s3://$BUCKET --profile pitfal | head -5
+[x] BUCKET=$(cd infrastructure/terraform && terraform output -raw website_bucket_name)
+[x] aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
+[x] Verify: aws s3 ls s3://$BUCKET --profile pitfal | head -5
 
 Step 7: Invalidate CloudFront Cache
-[ ] DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
-[ ] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
-[ ] Wait 2-5 minutes for invalidation to complete
+[x] DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
+[x] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+[x] Wait 2-5 minutes for invalidation to complete
 
 Step 8: Verify Deployment
-[ ] curl -I https://$CLOUDFRONT_DOMAIN
+[x] curl -I https://$CLOUDFRONT_DOMAIN
     Expected: HTTP/2 200
-[ ] Open https://$CLOUDFRONT_DOMAIN in browser
+[x] Open https://$CLOUDFRONT_DOMAIN in browser
     Expected: Website loads correctly
 [ ] Test contact form submission
     Expected: Form submits without CORS errors
@@ -428,9 +428,9 @@ Step 8: Verify Deployment
 
 Phase 1 Complete!
 =================
-Website URL: https://_________________________________.cloudfront.net
-Distribution ID: _________________________________
-S3 Bucket: _________________________________
+Website URL: https://dprk6phv6ds9x.cloudfront.net
+Distribution ID: EDK9ZMCEN4GAT
+S3 Bucket: pitfal-prod-website
 
 Next: When ready to use custom domain, proceed to Phase 2.
 ```
@@ -904,12 +904,12 @@ aws cloudwatch describe-alarms \
 ```
 
 **Verification Checklist:**
-- [ ] Homepage loads (https://www.pitfal.solutions)
-- [ ] API responds (https://www.pitfal.solutions/api/health)
-- [ ] SSL certificate valid
-- [ ] CloudFront caching working
+- [x] Homepage loads (https://dprk6phv6ds9x.cloudfront.net)
+- [ ] API responds (https://dprk6phv6ds9x.cloudfront.net/api/health)
+- [x] SSL certificate valid
+- [x] CloudFront caching working
 - [ ] All 6 Lambda functions active
-- [ ] All 3 DynamoDB tables accessible
+- [x] All 3 DynamoDB tables accessible
 - [ ] CloudWatch logs streaming
 - [ ] No errors in recent logs
 
@@ -1244,3 +1244,4 @@ terraform destroy # Remove (careful!)
 | 1.2 | January 2026 | Claude Code | **Infrastructure updates:** (1) Documented modular Terraform structure with modules for Lambda, API Gateway, DynamoDB; (2) Changed Lambda deployment from manual zip to Terraform-managed with shared layer; (3) Added comprehensive pre-deployment checklist (Step 2.0); (4) Expanded post-deployment verification with health checks for all components; (5) Added Lambda environment variables reference table |
 | 1.3 | January 2026 | Claude Code | **Two-phase domain deployment:** (1) Added Section 3 "Domain Deployment Strategy" with full checklists for Phase 1 (CloudFront default domain) and Phase 2 (custom domain migration); (2) Added `use_custom_domain` variable documentation; (3) Added step-by-step checklists with fill-in-the-blank fields for recording deployment info; (4) Added quick command references for both phases; (5) Added rollback procedure from custom domain to CloudFront default; (6) Renumbered all subsequent sections |
 | 1.4 | February 2026 | Claude Code | **Infrastructure deployed:** (1) `terraform apply` completed successfully — all AWS resources provisioned; (2) Lambda concurrency changed from reserved to unreserved (account limit constraint); (3) Updated status to reflect deployment milestone; (4) CloudFront cache policies replacing deprecated forwarded_values; (5) All DynamoDB tables have prevent_destroy + alarms for all 3 tables |
+| 1.5 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and synced to S3 (pitfal-prod-website); (2) CloudFront serving at dprk6phv6ds9x.cloudfront.net (Distribution ID: EDK9ZMCEN4GAT); (3) All Phase 1 checklist items checked off; (4) Updated post-deployment verification checklist with CloudFront domain; (5) Contact form and CloudWatch log verification still pending |

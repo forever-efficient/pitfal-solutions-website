@@ -28,18 +28,48 @@ build_shared() {
   echo "    ✓ shared layer built → lambda/shared/dist/"
 }
 
+build_client_auth() {
+  echo "==> Building client-auth Lambda..."
+  cd "$LAMBDA_DIR/client-auth"
+  npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+  npm run build
+  echo "    ✓ client-auth Lambda built → lambda/client-auth/dist/"
+}
+
+build_client_gallery() {
+  echo "==> Building client-gallery Lambda..."
+  cd "$LAMBDA_DIR/client-gallery"
+  npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+  npm run build
+  echo "    ✓ client-gallery Lambda built → lambda/client-gallery/dist/"
+}
+
+build_admin() {
+  echo "==> Building admin Lambda..."
+  cd "$LAMBDA_DIR/admin"
+  npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+  npm run build
+  echo "    ✓ admin Lambda built → lambda/admin/dist/"
+}
+
 TARGET="${1:-all}"
 
 case "$TARGET" in
-  contact) build_contact ;;
-  shared)  build_shared ;;
+  contact)        build_contact ;;
+  shared)         build_shared ;;
+  client-auth)    build_client_auth ;;
+  client-gallery) build_client_gallery ;;
+  admin)          build_admin ;;
   all)
     build_shared
     build_contact
+    build_client_auth
+    build_client_gallery
+    build_admin
     ;;
   *)
     echo "Unknown target: $TARGET"
-    echo "Usage: $0 [contact|shared|all]"
+    echo "Usage: $0 [contact|shared|client-auth|client-gallery|admin|all]"
     exit 1
     ;;
 esac

@@ -116,3 +116,230 @@ resource "aws_iam_role_policy" "lambda_dlq" {
     ]
   })
 }
+
+# ─────────────────────────────────────────────
+# Client Auth Lambda Role
+# ─────────────────────────────────────────────
+
+resource "aws_iam_role" "client_auth_lambda" {
+  name = "${local.name_prefix}-client-auth-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "client_auth_logs" {
+  role       = aws_iam_role.client_auth_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "client_auth_dynamodb" {
+  name = "${local.name_prefix}-client-auth-dynamodb"
+  role = aws_iam_role.client_auth_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem"]
+        Resource = [aws_dynamodb_table.galleries.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:DeleteItem"]
+        Resource = [aws_dynamodb_table.admin.arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "client_auth_dlq" {
+  name = "${local.name_prefix}-client-auth-dlq"
+  role = aws_iam_role.client_auth_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
+}
+
+# ─────────────────────────────────────────────
+# Client Gallery Lambda Role
+# ─────────────────────────────────────────────
+
+resource "aws_iam_role" "client_gallery_lambda" {
+  name = "${local.name_prefix}-client-gallery-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "client_gallery_logs" {
+  role       = aws_iam_role.client_gallery_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "client_gallery_dynamodb" {
+  name = "${local.name_prefix}-client-gallery-dynamodb"
+  role = aws_iam_role.client_gallery_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem"]
+        Resource = [aws_dynamodb_table.galleries.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"]
+        Resource = [aws_dynamodb_table.admin.arn]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "client_gallery_s3" {
+  name = "${local.name_prefix}-client-gallery-s3"
+  role = aws_iam_role.client_gallery_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:GetObject"]
+      Resource = "${aws_s3_bucket.media.arn}/*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "client_gallery_dlq" {
+  name = "${local.name_prefix}-client-gallery-dlq"
+  role = aws_iam_role.client_gallery_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
+}
+
+# ─────────────────────────────────────────────
+# Admin Lambda Role
+# ─────────────────────────────────────────────
+
+resource "aws_iam_role" "admin_lambda" {
+  name = "${local.name_prefix}-admin-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "admin_logs" {
+  role       = aws_iam_role.admin_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "admin_dynamodb" {
+  name = "${local.name_prefix}-admin-dynamodb"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.admin.arn,
+          "${aws_dynamodb_table.admin.arn}/index/*",
+          aws_dynamodb_table.galleries.arn,
+          "${aws_dynamodb_table.galleries.arn}/index/*",
+          aws_dynamodb_table.inquiries.arn,
+          "${aws_dynamodb_table.inquiries.arn}/index/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "admin_s3" {
+  name = "${local.name_prefix}-admin-s3"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+      Resource = "${aws_s3_bucket.media.arn}/*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "admin_ses" {
+  name = "${local.name_prefix}-admin-ses"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["ses:SendEmail", "ses:SendRawEmail"]
+      Resource = "arn:aws:ses:${var.aws_region}:*:identity/${var.domain_name}"
+      Condition = {
+        StringEquals = {
+          "ses:FromAddress" = var.from_email
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "admin_dlq" {
+  name = "${local.name_prefix}-admin-dlq"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
+}

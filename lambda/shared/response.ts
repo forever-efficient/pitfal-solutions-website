@@ -23,6 +23,9 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || 'https://www.pitfal.solutions';
  * If the request origin is in the allowed list, it's returned; otherwise returns default.
  */
 export function getCorsOrigin(requestOrigin?: string): string {
+  if (CORS_ALLOWED_ORIGINS.includes('*') && requestOrigin) {
+    return requestOrigin;
+  }
   if (requestOrigin && CORS_ALLOWED_ORIGINS.includes(requestOrigin)) {
     return requestOrigin;
   }

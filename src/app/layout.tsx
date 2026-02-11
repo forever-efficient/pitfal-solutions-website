@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { BUSINESS, SEO } from '@/lib/constants';
+import { LocalBusinessJsonLd } from '@/components/seo';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -93,6 +94,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-white font-sans text-neutral-900 antialiased">
+        <LocalBusinessJsonLd />
         {/* Skip to main content link for accessibility */}
         <a
           href="#main-content"

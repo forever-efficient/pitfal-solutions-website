@@ -4,9 +4,9 @@
 | Field | Value |
 |-------|-------|
 | **Product Name** | Pitfal Solutions Website |
-| **Version** | 1.5 (Warning Fixes Complete) |
+| **Version** | 1.6 (Phase 1 Deployed) |
 | **Last Updated** | February 2026 |
-| **Status** | MVP Build In Progress - All Critical & Warnings Resolved |
+| **Status** | Phase 1 Deployed — CloudFront default domain live |
 | **Owner** | Thomas Archuleta |
 | **Domain** | https://www.pitfal.solutions |
 
@@ -622,6 +622,7 @@ The following integrations are planned for Phase 2:
 | Critical bug fixes from review | Done | 17/17 critical items fixed |
 | Warning fixes from review | Done | 37/38 warning items fixed (1 deferred: W-FE-4 build-time year) |
 | Terraform deployed to AWS | Done | `terraform apply` successful — all resources provisioned |
+| Frontend deployed to CloudFront | Done | S3 sync + CloudFront at dprk6phv6ds9x.cloudfront.net |
 | Frontend gallery integration | **TODO** | Connect finished/ images to gallery UI |
 | Client proofing system | **TODO** | Password-protected galleries |
 | Admin dashboard | **TODO** | Gallery management, inquiry viewing |
@@ -972,6 +973,7 @@ The following integrations are planned for Phase 2:
 | 1.3 | January 2026 | Claude Code | **Static content & security updates:** (1) Testimonials, FAQ, Style Guide now static content (JSON/MDX files); (2) Client auth uses HttpOnly cookies (7-day sessions); (3) Admin inquiry view is read-only for MVP; (4) Added API Gateway throttling for rate limiting |
 | 1.4 | February 2026 | Claude Code | **Image pipeline + code review:** (1) Added image auto-editing pipeline (S3 staging → Lambda → finished); (2) Comprehensive 5-domain code review with 17 critical, 38 warning, 33 suggestion findings; (3) Added Section 15 remediation checklist; (4) Updated architecture diagram with pipeline; (5) Updated S3 bucket structure; (6) Updated cost breakdown with WAF/ECR/pipeline costs; (7) Added image pipeline functional requirements (REQ-IMG-001 through REQ-IMG-010) |
 | 1.5 | February 2026 | Claude Code | **Warning fixes complete:** (1) Fixed 37/38 warnings across all 5 domains (1 deferred: W-FE-4 build-time year); (2) Removed unused deps (framer-motion, react-hook-form, @hookform/resolvers, swr, zod); (3) Removed placeholder phone number from site; (4) Removed dead Blog links; (5) Added MobileMenu focus trap + Escape key + reduced-motion support; (6) Hardened Terraform: S3 lifecycle rules, logs encryption, DMARC, prevent_destroy, cache policies; (7) Improved backend: Promise.allSettled, pagination limits, filename sanitization; (8) Strengthened tests: 500 unit tests, removed tautological/soft assertions; (9) Updated tech stack (removed SWR, React Hook Form, Zod rows) |
+| 1.6 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and deployed to S3 + CloudFront (dprk6phv6ds9x.cloudfront.net); (2) All Phase 1 checklist items verified; (3) Updated all documentation to reflect deployment status; (4) Consolidated next steps: gallery integration → client proofing → admin → blog → SES → real images → custom domain |
 
 ---
 

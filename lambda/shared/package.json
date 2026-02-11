@@ -6,15 +6,19 @@
   "exports": {
     "./db": "./db.js",
     "./email": "./email.js",
-    "./response": "./response.js"
+    "./response": "./response.js",
+    "./session": "./session.js",
+    "./s3": "./s3.js"
   },
   "scripts": {
     "build": "tsc"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/client-s3": "^3.0.0",
     "@aws-sdk/client-ses": "^3.0.0",
-    "@aws-sdk/lib-dynamodb": "^3.0.0"
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",

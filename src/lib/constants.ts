@@ -145,6 +145,18 @@ export const PAGE_META = {
     title: 'FAQ',
     description: `Frequently asked questions about ${BUSINESS.name} photography and videography services, pricing, booking, and more.`,
   },
+  blog: {
+    title: 'Blog',
+    description: `Tips, guides, and stories from ${BUSINESS.name}. Photography insights, session prep guides, and behind-the-scenes content.`,
+  },
+  privacy: {
+    title: 'Privacy Policy',
+    description: `Privacy policy for ${BUSINESS.name}. Learn how we handle your data and protect your privacy.`,
+  },
+  terms: {
+    title: 'Terms of Service',
+    description: `Terms of service for ${BUSINESS.name}. Read our terms and conditions for using our services.`,
+  },
 } as const;
 
 // =============================================================================
@@ -272,6 +284,7 @@ export const NAV_LINKS = {
     { label: 'Portfolio', href: '/portfolio' },
     { label: 'Contact', href: '/contact' },
     { label: 'FAQ', href: '/faq' },
+    { label: 'Blog', href: '/blog' },
   ],
 } as const;
 

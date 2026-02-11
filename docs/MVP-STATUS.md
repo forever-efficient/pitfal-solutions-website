@@ -3,6 +3,7 @@
 **Last Updated:** February 2026
 **Build Status:** All 500 unit tests passing, 21 static pages
 **Infrastructure:** Deployed to AWS via `terraform apply`
+**Phase 1 Status:** Live at https://dprk6phv6ds9x.cloudfront.net
 
 ---
 
@@ -81,49 +82,31 @@ All files in `/infrastructure/terraform/`:
 
 ## Immediate Next Steps
 
-### 1. Build & Deploy Frontend to S3
-The infrastructure is deployed. Next: build the static site and sync to S3.
+### ~~1. Build & Deploy Frontend to S3~~ — Done
+Frontend deployed to S3 (`pitfal-prod-website`) and served via CloudFront at `https://dprk6phv6ds9x.cloudfront.net` (Distribution ID: `EDK9ZMCEN4GAT`).
 
-```bash
-# Get CloudFront domain from Terraform
-cd infrastructure/terraform
-CLOUDFRONT_DOMAIN=$(terraform output -raw cloudfront_domain_name)
-BUCKET=$(terraform output -raw website_bucket_name)
-DIST_ID=$(terraform output -raw cloudfront_distribution_id)
+### Priority 1: Build Remaining Features
+Build and test all features on the CloudFront default domain before switching DNS.
 
-# Build with CloudFront URLs
-cd ../..
-NEXT_PUBLIC_SITE_URL=https://$CLOUDFRONT_DOMAIN \
-NEXT_PUBLIC_API_URL=https://$CLOUDFRONT_DOMAIN/api \
-pnpm build
+| # | Feature | Priority | Description |
+|---|---------|----------|-------------|
+| 1 | Frontend gallery integration | P0 | Connect finished/ S3 images to gallery UI |
+| 2 | Client proofing system | P1 | Password-protected galleries with selection workflow |
+| 3 | Admin dashboard | P1 | Gallery management, inquiry viewing, image upload |
+| 4 | Blog (MDX) | P2 | Blog page and posts |
 
-# Deploy to S3
-aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
+### Priority 2: Content & Configuration
+| # | Task | Description |
+|---|------|-------------|
+| 5 | SES email configuration | Add DNS verification records, request production access |
+| 6 | Upload real portfolio images | Use image pipeline (S3 staging/ → Lambda → finished/) |
 
-# Invalidate CloudFront cache
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+### Priority 3: Go Live (after all features tested)
+| # | Task | Description |
+|---|------|-------------|
+| 7 | Custom domain migration | DNS migration from Squarespace to Route 53 (Phase 2 deployment) |
 
-echo "Site URL: https://$CLOUDFRONT_DOMAIN"
-```
-
-### 2. Configure SES (Email)
-1. Add SES verification records (see `terraform output ses_dns_records`)
-2. Request production access in AWS Console if needed
-
-### 3. Add Real Images
-Upload photos via the image pipeline:
-- Upload CR2/CR3 RAW files to `s3://BUCKET/staging/`
-- Lambda auto-processes to `s3://BUCKET/finished/`
-- Update gallery manifests in `content/galleries/`
-
-### 4. Remaining TODO Features
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Frontend gallery integration | P0 | Connect finished/ images to gallery UI |
-| Client proofing system | P1 | Password-protected galleries |
-| Admin dashboard | P1 | Gallery management, inquiry viewing |
-| Blog (MDX) | P2 | Blog page and posts |
-| Custom domain (Phase 2) | P1 | DNS migration from Squarespace |
+> **Key decision:** All features must be built and tested on the CloudFront default domain before switching DNS to the custom domain.
 
 ---
 
@@ -140,13 +123,13 @@ Upload photos via the image pipeline:
 - [x] `terraform validate` passes
 
 ### Post-Deploy (After S3 sync)
-- [ ] Homepage loads at CloudFront URL
-- [ ] All navigation links work
+- [x] Homepage loads at CloudFront URL (https://dprk6phv6ds9x.cloudfront.net)
+- [x] All navigation links work
 - [ ] Contact form submits successfully
-- [ ] SSL certificate valid (green lock)
-- [ ] CloudFront serving content (check x-cache header)
+- [x] SSL certificate valid (green lock)
+- [x] CloudFront serving content (check x-cache header)
 - [ ] Mobile responsive (320px - 1440px+)
-- [ ] Images loading correctly
+- [x] Images loading correctly
 - [ ] No console errors in browser
 
 ---
@@ -199,5 +182,5 @@ website/
 - **Full deployment guide:** `docs/DEPLOYMENT.md`
 - **Architecture:** `docs/ARCHITECTURE.md`
 - **Requirements:** `docs/REQUIREMENTS.md`
-- **PRD:** `docs/PRD.md` (v1.5)
+- **PRD:** `docs/PRD.md` (v1.6)
 - **Project overview:** `CLAUDE.md`

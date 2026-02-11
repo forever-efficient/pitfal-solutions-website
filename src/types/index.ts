@@ -226,3 +226,71 @@ export interface SocialLinks {
   youtube?: string;
   tiktok?: string;
 }
+
+// =============================================================================
+// API Client Types (matches backend API contracts)
+// =============================================================================
+
+/** Generic API response wrapper used by the API client layer */
+export interface ApiClientResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  code?: string;
+  errors?: Array<{ field: string; message: string }>;
+}
+
+/** Image reference as returned by the API (key-based, not id-based) */
+export interface ApiGalleryImage {
+  key: string;
+  alt?: string;
+}
+
+/** Full gallery object as returned by the API */
+export interface ApiGallery {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  type: string;
+  slug: string;
+  images: ApiGalleryImage[];
+  featured?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Gallery list item (summary) as returned by the API */
+export interface ApiGallerySummary {
+  id: string;
+  title: string;
+  category: string;
+  type: string;
+  slug: string;
+  imageCount: number;
+  featured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Comment on an image in a client gallery */
+export interface ApiComment {
+  id: string;
+  imageKey: string;
+  author: string;
+  text: string;
+  createdAt: string;
+}
+
+/** Inquiry as returned by the admin API */
+export interface ApiInquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  sessionType: string;
+  message: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
