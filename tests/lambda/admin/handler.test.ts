@@ -6,6 +6,7 @@ import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
 vi.stubEnv('ADMIN_TABLE', 'test-admin');
 vi.stubEnv('GALLERIES_TABLE', 'test-galleries');
 vi.stubEnv('INQUIRIES_TABLE', 'test-inquiries');
+vi.stubEnv('BOOKINGS_TABLE', 'test-bookings');
 vi.stubEnv('MEDIA_BUCKET', 'test-media');
 vi.stubEnv('CORS_ALLOWED_ORIGINS', 'https://test.com');
 vi.stubEnv('CORS_ORIGIN', 'https://test.com');
