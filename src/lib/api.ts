@@ -170,10 +170,10 @@ export const clientGallery = {
       body: JSON.stringify({ imageKey, author, text }),
     }),
 
-  getDownloadUrl: (galleryId: string, imageKey: string) =>
+  getDownloadUrl: (galleryId: string, imageKey: string, size: 'full' | 'web' = 'full') =>
     request<{ downloadUrl: string }>(`/api/client/${galleryId}/download`, {
       method: 'POST',
-      body: JSON.stringify({ imageKey }),
+      body: JSON.stringify({ imageKey, size }),
     }),
 
   bulkDownload: (galleryId: string, imageKeys?: string[]) =>

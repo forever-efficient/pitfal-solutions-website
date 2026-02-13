@@ -222,6 +222,33 @@ resource "aws_lambda_permission" "client_auth_api_gateway" {
 # Client Gallery Lambda
 # ─────────────────────────────────────────────
 
+# Sharp image processing Lambda Layer
+resource "null_resource" "sharp_layer_build" {
+  triggers = {
+    build_script_hash = filesha256("${path.module}/../../lambda/layers/sharp/build.sh")
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/layers/sharp && bash build.sh"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+data "archive_file" "sharp_layer" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambda/layers/sharp/layer"
+  output_path = "${path.module}/builds/sharp-layer.zip"
+  depends_on  = [null_resource.sharp_layer_build]
+}
+
+resource "aws_lambda_layer_version" "sharp" {
+  filename            = data.archive_file.sharp_layer.output_path
+  source_code_hash    = data.archive_file.sharp_layer.output_base64sha256
+  layer_name          = "${local.name_prefix}-sharp"
+  compatible_runtimes = [var.lambda_runtime]
+  description         = "Sharp image processing library for on-demand image resizing"
+}
+
 resource "null_resource" "client_gallery_build" {
   triggers = {
     source_hash  = filesha256("${path.module}/../../lambda/client-gallery/index.ts")
@@ -249,8 +276,8 @@ resource "aws_lambda_function" "client_gallery" {
   handler          = "index.handler"
   runtime          = var.lambda_runtime
   role             = aws_iam_role.client_gallery_lambda.arn
-  memory_size      = var.lambda_memory_size
-  timeout          = var.lambda_timeout
+  memory_size      = 512  # Increased for sharp image processing
+  timeout          = 60   # Increased for on-demand image resizing
 
   reserved_concurrent_executions = var.lambda_reserved_concurrency
 
@@ -268,7 +295,10 @@ resource "aws_lambda_function" "client_gallery" {
     }
   }
 
-  layers = [aws_lambda_layer_version.shared.arn]
+  layers = [
+    aws_lambda_layer_version.shared.arn,
+    aws_lambda_layer_version.sharp.arn,
+  ]
 
   tags = {
     Name = "${local.name_prefix}-client-gallery"

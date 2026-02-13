@@ -1,14 +1,29 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({});
 
+export async function objectExists(bucket: string, key: string): Promise<boolean> {
+  try {
+    await s3Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function generatePresignedDownloadUrl(
   bucket: string,
   key: string,
-  expiresIn = 3600
+  expiresIn = 3600,
+  filename?: string
 ): Promise<string> {
-  const command = new GetObjectCommand({ Bucket: bucket, Key: key });
+  const dispositionFilename = filename || key.split('/').pop() || 'download';
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ResponseContentDisposition: `attachment; filename="${dispositionFilename}"`,
+  });
   return getSignedUrl(s3Client, command, { expiresIn });
 }
 

@@ -12,7 +12,7 @@ import {
   ErrorCode,
 } from '../shared/response';
 import { validateSession, parseAuthToken, decodeToken } from '../shared/session';
-import { generatePresignedDownloadUrl } from '../shared/s3';
+import { generatePresignedDownloadUrl, objectExists } from '../shared/s3';
 
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
@@ -298,7 +298,7 @@ async function handleDownload(
   ctx: LogContext,
   requestOrigin?: string
 ) {
-  let body: { imageKey?: string };
+  let body: { imageKey?: string; size?: 'full' | 'web' };
   try {
     body = JSON.parse(event.body || '{}');
   } catch {
@@ -324,9 +324,100 @@ async function handleDownload(
     return notFound('Image not found in gallery', requestOrigin);
   }
 
-  const downloadUrl = await generatePresignedDownloadUrl(MEDIA_BUCKET!, body.imageKey, 3600);
+  const size = body.size || 'full';
+  let downloadKey = body.imageKey;
+  const originalFilename = body.imageKey.split('/').pop() || 'photo';
 
-  log('INFO', 'Download URL generated', ctx, { imageKey: body.imageKey });
+  if (size === 'web') {
+    // Web-sized: check cache first, generate on-demand if needed
+    const baseName = body.imageKey.replace(/\.[^/.]+$/, '');
+    const webKey = `processed/${baseName}/1920w.webp`;
+    const cached = await objectExists(MEDIA_BUCKET!, webKey);
+
+    if (cached) {
+      log('INFO', 'Web-sized version found in cache', ctx, { webKey });
+      downloadKey = webKey;
+    } else {
+      // Generate web-sized version on-demand
+      log('INFO', 'Generating web-sized version on-demand', ctx, { webKey });
+      try {
+        downloadKey = await generateWebVersion(body.imageKey, webKey, ctx);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        log('ERROR', 'Failed to generate web-sized version', ctx, { error: msg });
+        return error('Failed to generate web-sized image', 500, { requestOrigin });
+      }
+    }
+  }
+
+  const filenamePrefix = size === 'web' ? 'web_' : '';
+  const webFilename = originalFilename.replace(/\.[^/.]+$/, '.webp');
+  const downloadFilename = size === 'web'
+    ? filenamePrefix + webFilename
+    : originalFilename;
+
+  const downloadUrl = await generatePresignedDownloadUrl(
+    MEDIA_BUCKET!,
+    downloadKey,
+    3600,
+    downloadFilename
+  );
+
+  log('INFO', 'Download URL generated', ctx, { imageKey: body.imageKey, size });
 
   return success({ downloadUrl }, 200, requestOrigin);
 }
+
+/**
+ * Fetch the original image from S3, resize to 1920px wide using sharp,
+ * upload the result to S3 for caching, and return the S3 key.
+ */
+async function generateWebVersion(
+  originalKey: string,
+  webKey: string,
+  ctx: LogContext
+): Promise<string> {
+  const { S3Client: S3, GetObjectCommand: GetCmd, PutObjectCommand: PutCmd } = await import('@aws-sdk/client-s3');
+  const sharp = (await import('sharp')).default;
+  const s3 = new S3({});
+
+  // Fetch original
+  log('INFO', 'Fetching original image for resize', ctx, { originalKey });
+  const getResult = await s3.send(new GetCmd({
+    Bucket: MEDIA_BUCKET!,
+    Key: originalKey,
+  }));
+
+  const chunks: Buffer[] = [];
+  const stream = getResult.Body as NodeJS.ReadableStream;
+  for await (const chunk of stream) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as unknown as ArrayBuffer));
+  }
+  const originalBuffer = Buffer.concat(chunks);
+  log('INFO', `Original image fetched (${(originalBuffer.length / 1024 / 1024).toFixed(1)}MB)`, ctx);
+
+  // Resize to 1920px wide, maintaining aspect ratio
+  const resizedBuffer = await sharp(originalBuffer)
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+
+  log('INFO', `Resized to web version (${(resizedBuffer.length / 1024).toFixed(0)}KB)`, ctx);
+
+  // Upload to S3 for caching
+  await s3.send(new PutCmd({
+    Bucket: MEDIA_BUCKET!,
+    Key: webKey,
+    Body: resizedBuffer,
+    ContentType: 'image/webp',
+    Metadata: {
+      'source-key': originalKey,
+      'generated-at': new Date().toISOString(),
+      'resize-width': '1920',
+    },
+  }));
+
+  log('INFO', 'Web-sized version cached to S3', ctx, { webKey });
+  return webKey;
+}
+

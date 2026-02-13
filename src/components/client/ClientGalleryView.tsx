@@ -221,6 +221,7 @@ export function ClientGalleryView({
                     startIndex={firstImageIndex}
                     onImageClick={setLightboxIndex}
                     comments={comments}
+                    galleryId={galleryId}
                   />
                 </div>
               );
@@ -246,6 +247,7 @@ export function ClientGalleryView({
                       startIndex={firstIndex}
                       onImageClick={setLightboxIndex}
                       comments={comments}
+                      galleryId={galleryId}
                     />
                   </div>
                 );
@@ -259,6 +261,7 @@ export function ClientGalleryView({
             startIndex={0}
             onImageClick={setLightboxIndex}
             comments={comments}
+            galleryId={galleryId}
           />
         )}
       </div>
@@ -396,37 +399,51 @@ interface ImageGridProps {
   startIndex: number;
   onImageClick: (index: number) => void;
   comments: Comment[];
+  galleryId: string;
 }
 
-function ImageGrid({ images, startIndex, onImageClick, comments }: ImageGridProps) {
+function ImageGrid({ images, startIndex, onImageClick, comments, galleryId }: ImageGridProps) {
   return (
-    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {images.map((image, index) => {
         const globalIndex = startIndex + index;
         return (
-          <button
+          <div
             key={image.key}
-            onClick={() => onImageClick(globalIndex)}
-            className="block w-full break-inside-avoid group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden"
+            className="relative group rounded-lg overflow-hidden"
           >
-            <div className="relative bg-neutral-200 rounded-lg overflow-hidden">
-              <Image
-                src={getImageUrl(image.key)}
-                alt={image.alt || `Photo ${globalIndex + 1}`}
-                width={640}
-                height={480}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                loading="lazy"
-                unoptimized={true}
+            <button
+              onClick={() => onImageClick(globalIndex)}
+              className="block w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden text-left relative"
+            >
+              <div className="relative bg-neutral-200 rounded-lg overflow-hidden aspect-video z-0">
+                {/* Using standard img tag with z-index fixes that resolved visibility issues */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getImageUrl(image.key)}
+                  alt={image.alt || `Photo ${globalIndex + 1}`}
+                  width={640}
+                  height={480}
+                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 relative z-10"
+                  loading="eager"
+                />
+              </div>
+            </button>
+            {/* Download icon overlay - bottom right */}
+            <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <DownloadButton
+                galleryId={galleryId}
+                imageKey={image.key}
+                variant="icon"
               />
-              {comments.some((c) => c.imageKey === image.key) && (
-                <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                  {comments.filter((c) => c.imageKey === image.key).length}
-                </div>
-              )}
             </div>
-          </button>
+            {/* Comment badge - top right */}
+            {comments.some((c) => c.imageKey === image.key) && (
+              <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center z-20">
+                {comments.filter((c) => c.imageKey === image.key).length}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

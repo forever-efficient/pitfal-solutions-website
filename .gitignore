@@ -71,6 +71,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 infrastructure/terraform/builds/
+lambda/layers/*/layer/
 
 # =============================================================================
 # AWS
