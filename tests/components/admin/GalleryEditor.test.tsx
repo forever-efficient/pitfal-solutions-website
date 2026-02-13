@@ -33,22 +33,21 @@ function renderEditor(
 }
 
 // Labels don't have htmlFor, so we use role-based queries.
-// The form has: 2 text inputs (Title, Slug), 2 selects (Category, Type),
-// 1 textarea (Description), 1 checkbox (Featured gallery).
+// The form has: Title, Slug, Access Password (Security), Description (textarea), 2 selects, 1 checkbox.
 function getTitleInput() {
-  return screen.getAllByRole('textbox')[0]; // first text input = Title
+  return screen.getAllByRole('textbox')[0]; // Title
 }
 function getSlugInput() {
-  return screen.getAllByRole('textbox')[1]; // second text input = Slug
+  return screen.getAllByRole('textbox')[1]; // Slug
 }
 function getCategorySelect() {
-  return screen.getAllByRole('combobox')[0]; // first select = Category
+  return screen.getAllByRole('combobox')[0]; // Category
 }
 function getTypeSelect() {
-  return screen.getAllByRole('combobox')[1]; // second select = Type
+  return screen.getAllByRole('combobox')[1]; // Type
 }
 function getDescriptionTextarea() {
-  return screen.getAllByRole('textbox')[2]; // third textbox = Description (textarea)
+  return screen.getAllByRole('textbox')[3]; // Description (textarea; index 2 is Access Password)
 }
 function getFeaturedCheckbox() {
   return screen.getByRole('checkbox');
@@ -169,6 +168,7 @@ describe('GalleryEditor', () => {
         type: 'client',
         slug: 'summer-portraits',
         featured: true,
+        password: '',
       });
     });
   });
