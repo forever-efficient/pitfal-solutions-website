@@ -31,10 +31,6 @@
       "env": {
         "STRIPE_SECRET_KEY": "${STRIPE_SECRET_KEY}"
       }
-    },
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "./"]
     }
   }
 }

@@ -34,15 +34,17 @@ import { sendTemplatedEmail } from '../shared/email';
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE;
+const BOOKINGS_TABLE = process.env.BOOKINGS_TABLE;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
 const COOKIE_NAME = 'pitfal_admin_session';
 
-if (!ADMIN_TABLE || !GALLERIES_TABLE || !INQUIRIES_TABLE || !MEDIA_BUCKET) {
+if (!ADMIN_TABLE || !GALLERIES_TABLE || !INQUIRIES_TABLE || !BOOKINGS_TABLE || !MEDIA_BUCKET) {
   throw new Error(
     `Missing required environment variables: ${[
       !ADMIN_TABLE && 'ADMIN_TABLE',
       !GALLERIES_TABLE && 'GALLERIES_TABLE',
       !INQUIRIES_TABLE && 'INQUIRIES_TABLE',
+      !BOOKINGS_TABLE && 'BOOKINGS_TABLE',
       !MEDIA_BUCKET && 'MEDIA_BUCKET',
     ].filter(Boolean).join(', ')}`
   );
@@ -86,6 +88,13 @@ interface AdminUser {
   createdAt: string;
 }
 
+interface GallerySection {
+  id: string;
+  title: string;
+  description?: string;
+  images: string[]; // S3 keys referencing images in the gallery's images array
+}
+
 interface GalleryRecord {
   id: string;
   title: string;
@@ -94,6 +103,8 @@ interface GalleryRecord {
   type: string;
   slug: string;
   images: Array<{ key: string; alt?: string }>;
+  heroImage?: string; // S3 key for gallery cover/hero image
+  sections?: GallerySection[];
   passwordHash?: string;
   featured?: boolean;
   createdAt: string;
@@ -131,6 +142,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return handleGalleryNotify(event, method, galleryId, ctx, requestOrigin);
   }
 
+  // Gallery bulk-download route (must check before generic galleries route)
+  if (resource.includes('/admin/galleries') && resource.includes('/bulk-download')) {
+    const galleryId = event.pathParameters?.id;
+    if (!galleryId) return badRequest('Gallery ID is required', requestOrigin);
+    return handleBulkDownload(event, method, galleryId, ctx, requestOrigin);
+  }
+
   // Gallery routes
   if (resource.includes('/admin/galleries')) {
     const galleryId = event.pathParameters?.id;
@@ -152,6 +170,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return handleInquiryById(event, method, inquiryId, ctx, requestOrigin);
     }
     return handleInquiries(event, method, ctx, requestOrigin);
+  }
+
+  // Booking availability routes (must check before generic bookings route)
+  if (resource.includes('/admin/bookings') && resource.includes('/availability')) {
+    return handleAvailability(event, method, ctx, requestOrigin);
+  }
+
+  // Booking routes
+  if (resource.includes('/admin/bookings')) {
+    const bookingId = event.pathParameters?.id;
+    if (bookingId) {
+      return handleBookingById(event, method, bookingId, ctx, requestOrigin);
+    }
+    return handleBookings(event, method, ctx, requestOrigin);
   }
 
   return notFound('Route not found', requestOrigin);
@@ -275,6 +307,8 @@ async function handleGalleries(
         type: g.type,
         slug: g.slug,
         imageCount: g.images?.length || 0,
+        sectionCount: g.sections?.length || 0,
+        heroImage: g.heroImage || null,
         featured: g.featured || false,
         createdAt: g.createdAt,
         updatedAt: g.updatedAt,
@@ -291,6 +325,8 @@ async function handleGalleries(
       slug?: string;
       password?: string;
       featured?: boolean;
+      heroImage?: string;
+      sections?: GallerySection[];
     };
     try {
       body = JSON.parse(event.body || '{}');
@@ -300,6 +336,11 @@ async function handleGalleries(
 
     if (!body.title || !body.category || !body.type || !body.slug) {
       return badRequest('title, category, type, and slug are required', requestOrigin);
+    }
+
+    // Validate sections if provided
+    if (body.sections && !validateSections(body.sections)) {
+      return badRequest('Invalid sections: each section must have id, title, and images array', requestOrigin);
     }
 
     const id = randomUUID();
@@ -319,6 +360,8 @@ async function handleGalleries(
       updatedAt: timestamp,
     };
     if (passwordHash) gallery.passwordHash = passwordHash;
+    if (body.heroImage) gallery.heroImage = body.heroImage;
+    if (body.sections) gallery.sections = body.sections;
 
     await putItem({
       TableName: GALLERIES_TABLE,
@@ -359,8 +402,13 @@ async function handleGalleryById(
       return badRequest('Invalid JSON', requestOrigin);
     }
 
+    // Validate sections if provided
+    if (body.sections !== undefined && body.sections !== null && !validateSections(body.sections as GallerySection[])) {
+      return badRequest('Invalid sections: each section must have id, title, and images array', requestOrigin);
+    }
+
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'type', 'slug', 'featured', 'images'];
+    const allowedFields = ['title', 'description', 'category', 'type', 'slug', 'featured', 'images', 'heroImage', 'sections'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -592,6 +640,84 @@ async function handleInquiryById(
   }
 
   return methodNotAllowed(undefined, requestOrigin);
+}
+
+// ============ VALIDATION HELPERS ============
+
+function validateSections(sections: GallerySection[]): boolean {
+  if (!Array.isArray(sections)) return false;
+  return sections.every(
+    s => typeof s.id === 'string' && s.id.length > 0
+      && typeof s.title === 'string' && s.title.length > 0
+      && Array.isArray(s.images)
+      && s.images.every((key: unknown) => typeof key === 'string')
+  );
+}
+
+// ============ BULK DOWNLOAD HANDLER ============
+
+async function handleBulkDownload(
+  event: APIGatewayProxyEvent,
+  method: string,
+  galleryId: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  let body: { imageKeys?: string[] };
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
+
+  // Fetch gallery to verify existence and image ownership
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE,
+    Key: { id: galleryId },
+  });
+
+  if (!gallery) return notFound('Gallery not found', requestOrigin);
+
+  // Determine which images to generate download URLs for
+  const galleryImageKeys = new Set(gallery.images?.map(img => img.key) || []);
+  let requestedKeys: string[];
+
+  if (body.imageKeys && Array.isArray(body.imageKeys) && body.imageKeys.length > 0) {
+    // Validate that all requested keys belong to this gallery
+    const invalidKeys = body.imageKeys.filter(key => !galleryImageKeys.has(key));
+    if (invalidKeys.length > 0) {
+      return badRequest('Some image keys do not belong to this gallery', requestOrigin);
+    }
+    requestedKeys = body.imageKeys;
+  } else {
+    // Download all gallery images
+    requestedKeys = Array.from(galleryImageKeys);
+  }
+
+  if (requestedKeys.length === 0) {
+    return badRequest('No images to download', requestOrigin);
+  }
+
+  // Cap at 100 images per request to avoid Lambda timeout
+  const MAX_BULK_DOWNLOAD = 100;
+  if (requestedKeys.length > MAX_BULK_DOWNLOAD) {
+    return badRequest(`Maximum ${MAX_BULK_DOWNLOAD} images per bulk download request`, requestOrigin);
+  }
+
+  // Generate presigned download URLs for all requested images
+  const downloads = await Promise.all(
+    requestedKeys.map(async (key) => ({
+      key,
+      downloadUrl: await generatePresignedDownloadUrl(MEDIA_BUCKET!, key, 3600),
+    }))
+  );
+
+  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length });
+  return success({ downloads }, 200, requestOrigin);
 }
 
 // ============ GALLERY NOTIFY HANDLER ============

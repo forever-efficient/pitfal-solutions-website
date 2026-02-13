@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import html from 'remark-html';
+import { BLOG_CATEGORIES } from '@/lib/constants';
 
 const BLOG_DIR = path.join(process.cwd(), 'content/blog');
 
@@ -13,6 +14,7 @@ export interface BlogPost {
   date: string;
   category: string;
   featured: boolean;
+  coverImage?: string;
   content: string; // HTML rendered from markdown
 }
 
@@ -23,6 +25,13 @@ export interface BlogPostMeta {
   date: string;
   category: string;
   featured: boolean;
+  coverImage?: string;
+  readingTime: number;
+}
+
+function estimateReadingTime(content: string): number {
+  const words = content.trim().split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / 200));
 }
 
 export function getPostSlugs(): string[] {
@@ -37,20 +46,34 @@ export function getAllPosts(): BlogPostMeta[] {
     .map(slug => {
       const file = fs.readdirSync(BLOG_DIR).find(f => f.replace(/\.mdx?$/, '') === slug)!;
       const raw = fs.readFileSync(path.join(BLOG_DIR, file), 'utf-8');
-      const { data } = matter(raw);
+      const { data, content } = matter(raw);
       return {
         slug,
         title: data.title || slug,
         description: data.description || '',
         date: data.date || '',
-        category: data.category || 'general',
+        category: data.category || 'guides',
         featured: data.featured || false,
+        coverImage: data.coverImage || undefined,
+        readingTime: estimateReadingTime(content),
       };
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
+export function getCategories(): { slug: string; label: string; count: number }[] {
+  const posts = getAllPosts();
+  const categorySlugs = Object.keys(BLOG_CATEGORIES) as Array<keyof typeof BLOG_CATEGORIES>;
+
+  return categorySlugs.map(slug => ({
+    slug: BLOG_CATEGORIES[slug].slug,
+    label: BLOG_CATEGORIES[slug].label,
+    count: slug === 'all' ? posts.length : posts.filter(p => p.category === slug).length,
+  }));
+}
+
 export async function getPost(slug: string): Promise<BlogPost | null> {
+  if (!fs.existsSync(BLOG_DIR)) return null;
   const file = fs.readdirSync(BLOG_DIR).find(f => f.replace(/\.mdx?$/, '') === slug);
   if (!file) return null;
 
@@ -64,8 +87,9 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
     title: data.title || slug,
     description: data.description || '',
     date: data.date || '',
-    category: data.category || 'general',
+    category: data.category || 'guides',
     featured: data.featured || false,
+    coverImage: data.coverImage || undefined,
     content: result.toString(),
   };
 }

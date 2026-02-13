@@ -9,6 +9,24 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+// =============================================================================
+// Shared Types
+// =============================================================================
+
+export interface GallerySection {
+  id: string;
+  title: string;
+  description?: string;
+  images: string[];
+}
+
+export interface BulkDownloadResult {
+  downloads: Array<{
+    key: string;
+    downloadUrl: string;
+  }>;
+}
+
 // Token storage keys
 const ADMIN_TOKEN_KEY = 'pitfal_admin_token';
 const CLIENT_TOKEN_KEY = 'pitfal_client_token';
@@ -120,6 +138,8 @@ export const clientGallery = {
         title: string;
         description?: string;
         images: Array<{ key: string; alt?: string }>;
+        heroImage: string | null;
+        sections: GallerySection[];
         category: string;
       };
       comments: Array<{
@@ -154,6 +174,12 @@ export const clientGallery = {
     request<{ downloadUrl: string }>(`/api/client/${galleryId}/download`, {
       method: 'POST',
       body: JSON.stringify({ imageKey }),
+    }),
+
+  bulkDownload: (galleryId: string, imageKeys?: string[]) =>
+    request<BulkDownloadResult>(`/api/client/${galleryId}/bulk-download`, {
+      method: 'POST',
+      body: JSON.stringify(imageKeys ? { imageKeys } : {}),
     }),
 };
 
@@ -201,6 +227,8 @@ export const adminGalleries = {
         type: string;
         slug: string;
         imageCount: number;
+        sectionCount: number;
+        heroImage: string | null;
         featured: boolean;
         createdAt: string;
         updatedAt: string;
@@ -208,7 +236,22 @@ export const adminGalleries = {
     }>('/api/admin/galleries'),
 
   get: (id: string) =>
-    request<{ gallery: Record<string, unknown> }>(`/api/admin/galleries/${id}`),
+    request<{
+      gallery: {
+        id: string;
+        title: string;
+        description?: string;
+        category: string;
+        type: string;
+        slug: string;
+        images: Array<{ key: string; alt?: string }>;
+        heroImage?: string;
+        sections?: GallerySection[];
+        featured?: boolean;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>(`/api/admin/galleries/${id}`),
 
   create: (data: {
     title: string;
@@ -218,13 +261,39 @@ export const adminGalleries = {
     slug: string;
     password?: string;
     featured?: boolean;
+    heroImage?: string;
+    sections?: GallerySection[];
   }) =>
-    request<{ gallery: Record<string, unknown> }>('/api/admin/galleries', {
+    request<{
+      gallery: {
+        id: string;
+        title: string;
+        category: string;
+        type: string;
+        slug: string;
+        createdAt: string;
+        updatedAt: string;
+      };
+    }>('/api/admin/galleries', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: Record<string, unknown>) =>
+  update: (
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      category?: string;
+      type?: string;
+      slug?: string;
+      featured?: boolean;
+      images?: Array<{ key: string; alt?: string }>;
+      heroImage?: string | null;
+      sections?: GallerySection[];
+      password?: string;
+    }
+  ) =>
     request<{ updated: boolean }>(`/api/admin/galleries/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -234,6 +303,15 @@ export const adminGalleries = {
     request<{ deleted: boolean }>(`/api/admin/galleries/${id}`, {
       method: 'DELETE',
     }),
+
+  bulkDownload: (galleryId: string, imageKeys?: string[]) =>
+    request<BulkDownloadResult>(
+      `/api/admin/galleries/${galleryId}/bulk-download`,
+      {
+        method: 'POST',
+        body: JSON.stringify(imageKeys ? { imageKeys } : {}),
+      }
+    ),
 };
 
 // =============================================================================

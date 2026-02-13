@@ -290,7 +290,9 @@ resource "aws_iam_role_policy" "admin_dynamodb" {
           aws_dynamodb_table.galleries.arn,
           "${aws_dynamodb_table.galleries.arn}/index/*",
           aws_dynamodb_table.inquiries.arn,
-          "${aws_dynamodb_table.inquiries.arn}/index/*"
+          "${aws_dynamodb_table.inquiries.arn}/index/*",
+          aws_dynamodb_table.bookings.arn,
+          "${aws_dynamodb_table.bookings.arn}/index/*"
         ]
       }
     ]

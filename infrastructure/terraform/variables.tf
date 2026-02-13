@@ -86,7 +86,7 @@ variable "dynamodb_billing_mode" {
 variable "lambda_runtime" {
   description = "Lambda runtime version"
   type        = string
-  default     = "nodejs20.x"
+  default     = "nodejs22.x"
 }
 
 variable "lambda_memory_size" {

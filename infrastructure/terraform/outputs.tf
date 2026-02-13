@@ -64,6 +64,11 @@ output "dynamodb_admin_table" {
   value       = aws_dynamodb_table.admin.name
 }
 
+output "dynamodb_bookings_table" {
+  description = "DynamoDB bookings table name"
+  value       = aws_dynamodb_table.bookings.name
+}
+
 # Lambda Functions
 output "lambda_contact_arn" {
   description = "ARN of the contact Lambda function"

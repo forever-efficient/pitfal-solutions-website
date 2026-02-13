@@ -21,7 +21,11 @@ export default function AdminLoginPage() {
       await adminAuth.login(username, password);
       router.push('/admin');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed');
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError('Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -29,17 +33,15 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100 px-4">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-neutral-200 p-8">
         <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-bold text-neutral-900 mb-1">
-            Admin
+          <h1 className="font-display text-2xl font-bold text-neutral-900 mb-2">
+            Admin Login
           </h1>
-          <p className="text-neutral-500 text-sm">{BUSINESS.name}</p>
+          <p className="text-neutral-600">{BUSINESS.name}</p>
         </div>
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 space-y-4"
-        >
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="username"
@@ -52,11 +54,12 @@ export default function AdminLoginPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
               required
               autoFocus
             />
           </div>
+
           <div>
             <label
               htmlFor="password"
@@ -69,15 +72,21 @@ export default function AdminLoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors"
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-neutral-900 text-white py-2.5 rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 transition-colors"
+            className="w-full bg-neutral-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-neutral-800 focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

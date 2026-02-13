@@ -1,23 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminInquiries } from '@/lib/api';
 import { InquiryList } from '@/components/admin/InquiryList';
 import { useToast } from '@/components/admin/Toast';
-import { adminInquiries } from '@/lib/api';
 
-export default function AdminInquiriesPage() {
+export default function InquiriesPage() {
   const { showSuccess, showError } = useToast();
-  const [inquiries, setInquiries] = useState<Array<Record<string, unknown>>>(
-    []
-  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [inquiries, setInquiries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('');
 
   function loadInquiries() {
     setLoading(true);
     adminInquiries
-      .list(filter || undefined)
-      .then((data) => setInquiries(data.inquiries))
+      .list()
+      .then((data) => {
+        setInquiries(data.inquiries);
+      })
       .catch(() => {
         showError('Failed to load inquiries');
       })
@@ -26,53 +26,46 @@ export default function AdminInquiriesPage() {
 
   useEffect(() => {
     loadInquiries();
-  }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleStatusChange(id: string, status: string) {
     try {
       await adminInquiries.update(id, status);
-      showSuccess(`Marked as ${status}`);
+      showSuccess('Status updated');
       loadInquiries();
     } catch {
-      showError('Failed to update inquiry');
+      showError('Failed to update status');
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this inquiry?')) return;
+    if (!confirm('Are you sure you want to delete this inquiry?')) return;
     try {
       await adminInquiries.delete(id);
       showSuccess('Inquiry deleted');
-      setInquiries((prev) => prev.filter((i) => i.id !== id));
+      loadInquiries();
     } catch {
       showError('Failed to delete inquiry');
     }
   }
 
+  if (loading) {
+    return (
+      <div className="animate-pulse space-y-4">
+        <div className="h-8 bg-neutral-200 rounded w-1/4"></div>
+        <div className="h-64 bg-neutral-200 rounded"></div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-neutral-900">Inquiries</h1>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="px-3 py-2 border border-neutral-300 rounded-lg text-sm"
-        >
-          <option value="">All</option>
-          <option value="new">New</option>
-          <option value="read">Read</option>
-          <option value="replied">Replied</option>
-        </select>
-      </div>
-      {loading ? (
-        <div className="text-neutral-400">Loading...</div>
-      ) : (
-        <InquiryList
-          inquiries={inquiries}
-          onStatusChange={handleStatusChange}
-          onDelete={handleDelete}
-        />
-      )}
+      <h1 className="text-2xl font-bold text-neutral-900 mb-6">Inquiries</h1>
+      <InquiryList
+        inquiries={inquiries}
+        onStatusChange={handleStatusChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

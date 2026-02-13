@@ -5,3 +5,5 @@ export { ImageUploader } from './ImageUploader';
 export { InquiryList } from './InquiryList';
 export { ToastProvider, useToast } from './Toast';
 export { NotifyClient } from './NotifyClient';
+export { SectionManager } from './SectionManager';
+export { HeroImagePicker } from './HeroImagePicker';

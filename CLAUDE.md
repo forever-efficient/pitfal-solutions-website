@@ -153,6 +153,13 @@ website/
 
 ### Local Development
 
+> [!CAUTION]
+> **Live Backend Connection**: The local development environment (`pnpm dev`) connects directly to the **PRODUCTION** AWS backend (DynamoDB, Lambda, S3).
+> - Changes made in the local Admin Dashboard affect **REAL** data.
+> - Backend logic (Lambda functions) runs on AWS, not locally.
+> - If you change backend code (`lambda/`), you **MUST** deploy it (`terraform apply`) for changes to take effect.
+
+
 ```bash
 # Install dependencies
 pnpm install
@@ -223,8 +230,6 @@ MCP servers are configured in `.mcp.json` (project root):
 | `aws-docs` | AWS documentation | Search docs, API reference |
 | `aws-pricing` | AWS pricing | Cost estimates, pricing lookups |
 | `stripe` | Payment management | Customers, products, invoices |
-| `github` | Repository operations | Issues, PRs, actions |
-| `filesystem` | Local file operations | Read, write, search |
 
 Run `/mcp` to check server status and authenticate.
 

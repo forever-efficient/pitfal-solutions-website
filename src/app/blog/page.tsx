@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { BlogCard } from '@/components/blog';
-import { getAllPosts } from '@/lib/blog';
+import { BlogCategoryFilter } from '@/components/blog';
+import { getAllPosts, getCategories } from '@/lib/blog';
 import { PAGE_META } from '@/lib/constants';
+import { Container, Section } from '@/components/ui/Container';
 
 export const metadata: Metadata = {
   title: PAGE_META.blog.title,
@@ -10,26 +11,37 @@ export const metadata: Metadata = {
 
 export default function BlogPage() {
   const posts = getAllPosts();
+  const categories = getCategories();
 
   return (
-    <div className="py-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900 mb-4">Blog</h1>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Tips, guides, and stories from behind the lens.
-          </p>
-        </div>
-        {posts.length > 0 ? (
-          <div className="grid gap-6">
-            {posts.map((post) => (
-              <BlogCard key={post.slug} {...post} />
-            ))}
+    <>
+      {/* Hero */}
+      <Section size="lg" className="pt-32 bg-neutral-50">
+        <Container>
+          <div className="max-w-3xl">
+            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
+              Blog
+            </p>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
+              From Behind the Lens
+            </h1>
+            <p className="text-xl text-neutral-600">
+              Tips, session guides, and stories from our work. Everything you need to prepare for your shoot and get inspired.
+            </p>
           </div>
-        ) : (
-          <p className="text-center text-neutral-500">No posts yet. Check back soon!</p>
-        )}
-      </div>
-    </div>
+        </Container>
+      </Section>
+
+      {/* Posts */}
+      <Section size="lg" background="white">
+        <Container>
+          {posts.length > 0 ? (
+            <BlogCategoryFilter posts={posts} categories={categories} />
+          ) : (
+            <p className="text-center text-neutral-500 py-12">No posts yet. Check back soon!</p>
+          )}
+        </Container>
+      </Section>
+    </>
   );
 }

@@ -5,7 +5,7 @@
 # Push:  docker tag pitfal-image-processor:latest <account>.dkr.ecr.<region>.amazonaws.com/pitfal-image-processor:latest
 #        docker push <account>.dkr.ecr.<region>.amazonaws.com/pitfal-image-processor:latest
 
-FROM public.ecr.aws/lambda/nodejs:20 AS builder
+FROM public.ecr.aws/lambda/nodejs:22 AS builder
 
 # Install build dependencies for LibRaw and Sharp
 RUN dnf install -y \
@@ -35,7 +35,7 @@ RUN cd /tmp && \
     rm -rf /tmp/LibRaw-*
 
 # Production stage
-FROM public.ecr.aws/lambda/nodejs:20
+FROM public.ecr.aws/lambda/nodejs:22
 
 # Copy LibRaw binaries and libraries
 COPY --from=builder /opt/libraw /opt/libraw

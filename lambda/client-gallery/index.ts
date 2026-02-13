@@ -58,11 +58,20 @@ async function authenticateRequest(event: APIGatewayProxyEvent, galleryId: strin
   return session !== null;
 }
 
+interface GallerySection {
+  id: string;
+  title: string;
+  description?: string;
+  images: string[];
+}
+
 interface GalleryRecord {
   id: string;
   title: string;
   description?: string;
   images: Array<{ key: string; alt?: string }>;
+  heroImage?: string;
+  sections?: GallerySection[];
   category: string;
   type: string;
 }
@@ -96,6 +105,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   // Check if there's a sub-resource
   const resourcePath = event.resource || '';
   if (resourcePath.includes('/comment')) action = 'comment';
+  else if (resourcePath.includes('/bulk-download')) action = 'bulk-download';
   else if (resourcePath.includes('/download')) action = 'download';
 
   if (!galleryId) {
@@ -115,6 +125,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   if (action === 'comment' && event.httpMethod === 'POST') {
     return handleAddComment(event, galleryId, ctx, requestOrigin);
+  }
+
+  if (action === 'bulk-download' && event.httpMethod === 'POST') {
+    return handleBulkDownload(event, galleryId, ctx, requestOrigin);
   }
 
   if (action === 'download' && event.httpMethod === 'POST') {
@@ -156,6 +170,8 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
       title: gallery.title,
       description: gallery.description,
       images: gallery.images,
+      heroImage: gallery.heroImage || null,
+      sections: gallery.sections || [],
       category: gallery.category,
     },
     comments: comments.map(c => ({
@@ -221,6 +237,59 @@ async function handleAddComment(
       createdAt: timestamp,
     },
   }, 201, requestOrigin);
+}
+
+async function handleBulkDownload(
+  event: APIGatewayProxyEvent,
+  galleryId: string,
+  ctx: LogContext,
+  requestOrigin?: string
+) {
+  let body: { imageKeys?: string[] };
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
+
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE,
+    Key: { id: galleryId },
+  });
+
+  if (!gallery) return notFound('Gallery not found', requestOrigin);
+
+  const galleryImageKeys = new Set(gallery.images?.map(img => img.key) || []);
+  let requestedKeys: string[];
+
+  if (body.imageKeys && Array.isArray(body.imageKeys) && body.imageKeys.length > 0) {
+    const invalidKeys = body.imageKeys.filter(key => !galleryImageKeys.has(key));
+    if (invalidKeys.length > 0) {
+      return badRequest('Some image keys do not belong to this gallery', requestOrigin);
+    }
+    requestedKeys = body.imageKeys;
+  } else {
+    requestedKeys = Array.from(galleryImageKeys);
+  }
+
+  if (requestedKeys.length === 0) {
+    return badRequest('No images to download', requestOrigin);
+  }
+
+  const MAX_BULK_DOWNLOAD = 100;
+  if (requestedKeys.length > MAX_BULK_DOWNLOAD) {
+    return badRequest(`Maximum ${MAX_BULK_DOWNLOAD} images per bulk download request`, requestOrigin);
+  }
+
+  const downloads = await Promise.all(
+    requestedKeys.map(async (key) => ({
+      key,
+      downloadUrl: await generatePresignedDownloadUrl(MEDIA_BUCKET!, key, 3600),
+    }))
+  );
+
+  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length });
+  return success({ downloads }, 200, requestOrigin);
 }
 
 async function handleDownload(

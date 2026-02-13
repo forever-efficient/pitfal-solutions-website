@@ -1223,4 +1223,510 @@ describe('Admin Lambda Handler', () => {
       expect(result!.headers?.['Access-Control-Allow-Origin']).toBeDefined();
     });
   });
+
+  // ============ GALLERY SECTIONS ============
+
+  describe('gallery sections support', () => {
+    describe('POST /admin/galleries (create with sections)', () => {
+      it('creates gallery with valid sections', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Sectioned Gallery',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'sectioned',
+            sections: [
+              { id: 'sec-1', title: 'Getting Ready', images: ['img1.jpg', 'img2.jpg'] },
+              { id: 'sec-2', title: 'Ceremony', images: [] },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(201);
+        const body = JSON.parse(result!.body);
+        expect(body.data.gallery.sections).toHaveLength(2);
+        expect(body.data.gallery.sections[0].title).toBe('Getting Ready');
+        expect(body.data.gallery.sections[1].title).toBe('Ceremony');
+      });
+
+      it('creates gallery with heroImage', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Hero Gallery',
+            category: 'portraits',
+            type: 'portfolio',
+            slug: 'hero-gallery',
+            heroImage: 'finished/hero.jpg',
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(201);
+        const body = JSON.parse(result!.body);
+        expect(body.data.gallery.heroImage).toBe('finished/hero.jpg');
+      });
+
+      it('returns 400 for sections with missing id', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Bad Sections',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'bad-sections',
+            sections: [
+              { title: 'No ID', images: [] },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+        const body = JSON.parse(result!.body);
+        expect(body.error).toContain('Invalid sections');
+      });
+
+      it('returns 400 for sections with missing title', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Bad Sections',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'bad-sections',
+            sections: [
+              { id: 'sec-1', images: [] },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+      });
+
+      it('returns 400 for sections with non-array images', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Bad Sections',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'bad-sections',
+            sections: [
+              { id: 'sec-1', title: 'Bad', images: 'not-an-array' },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+      });
+
+      it('returns 400 for sections with non-string image keys', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Bad Sections',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'bad-sections',
+            sections: [
+              { id: 'sec-1', title: 'Bad', images: [123, 456] },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+      });
+
+      it('returns 400 for non-array sections', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'Bad Sections',
+            category: 'brands',
+            type: 'portfolio',
+            slug: 'bad-sections',
+            sections: 'not-an-array',
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+      });
+
+      it('creates gallery without sections (backward compatibility)', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'POST',
+          resource: '/api/admin/galleries',
+          body: JSON.stringify({
+            title: 'No Sections Gallery',
+            category: 'events',
+            type: 'client',
+            slug: 'no-sections',
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(201);
+        const body = JSON.parse(result!.body);
+        expect(body.data.gallery.sections).toBeUndefined();
+      });
+    });
+
+    describe('PUT /admin/galleries/{id} (update sections)', () => {
+      it('updates gallery sections', async () => {
+        setupAuthenticatedAdmin();
+        mockBuildUpdateExpression.mockImplementation(() => ({
+          UpdateExpression: 'SET #a = :a',
+          ExpressionAttributeNames: { '#a': 'sections' },
+          ExpressionAttributeValues: { ':a': [] },
+        }));
+
+        const event = createEvent({
+          httpMethod: 'PUT',
+          resource: '/api/admin/galleries/{id}',
+          pathParameters: { id: 'g1' },
+          body: JSON.stringify({
+            sections: [
+              { id: 'sec-1', title: 'Updated Section', images: ['img1.jpg'] },
+            ],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(200);
+        expect(mockUpdateItem).toHaveBeenCalledOnce();
+      });
+
+      it('updates gallery heroImage', async () => {
+        setupAuthenticatedAdmin();
+        mockBuildUpdateExpression.mockImplementation(() => ({
+          UpdateExpression: 'SET #a = :a',
+          ExpressionAttributeNames: { '#a': 'heroImage' },
+          ExpressionAttributeValues: { ':a': 'finished/new-hero.jpg' },
+        }));
+
+        const event = createEvent({
+          httpMethod: 'PUT',
+          resource: '/api/admin/galleries/{id}',
+          pathParameters: { id: 'g1' },
+          body: JSON.stringify({ heroImage: 'finished/new-hero.jpg' }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(200);
+        expect(mockUpdateItem).toHaveBeenCalledOnce();
+      });
+
+      it('rejects invalid sections on update', async () => {
+        setupAuthenticatedAdmin();
+
+        const event = createEvent({
+          httpMethod: 'PUT',
+          resource: '/api/admin/galleries/{id}',
+          pathParameters: { id: 'g1' },
+          body: JSON.stringify({
+            sections: [{ id: '', title: '', images: [] }],
+          }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(400);
+        const body = JSON.parse(result!.body);
+        expect(body.error).toContain('Invalid sections');
+      });
+
+      it('allows setting sections to null (remove sections)', async () => {
+        setupAuthenticatedAdmin();
+        mockBuildUpdateExpression.mockImplementation(() => ({
+          UpdateExpression: 'SET #a = :a',
+          ExpressionAttributeNames: { '#a': 'updatedAt' },
+          ExpressionAttributeValues: { ':a': '2026-02-10T00:00:00Z' },
+        }));
+
+        const event = createEvent({
+          httpMethod: 'PUT',
+          resource: '/api/admin/galleries/{id}',
+          pathParameters: { id: 'g1' },
+          body: JSON.stringify({ sections: null }),
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        // null sections should pass validation (the code checks: if sections !== undefined && sections !== null)
+        expect(result!.statusCode).toBe(200);
+      });
+    });
+
+    describe('GET /admin/galleries (list with section count)', () => {
+      it('includes sectionCount and heroImage in gallery list', async () => {
+        setupAuthenticatedAdmin();
+        mockScanItems.mockImplementation(async () => [
+          {
+            id: 'g1', title: 'Gallery With Sections', category: 'brands', type: 'portfolio',
+            slug: 'sectioned', images: [{ key: 'img1.jpg' }],
+            sections: [
+              { id: 'sec-1', title: 'Section 1', images: ['img1.jpg'] },
+              { id: 'sec-2', title: 'Section 2', images: [] },
+            ],
+            heroImage: 'finished/hero.jpg',
+            featured: false, createdAt: '2026-02-01T00:00:00Z', updatedAt: '2026-02-01T00:00:00Z',
+          },
+        ]);
+
+        const event = createEvent({
+          httpMethod: 'GET',
+          resource: '/api/admin/galleries',
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        expect(result!.statusCode).toBe(200);
+        const body = JSON.parse(result!.body);
+        expect(body.data.galleries[0].sectionCount).toBe(2);
+        expect(body.data.galleries[0].heroImage).toBe('finished/hero.jpg');
+      });
+
+      it('returns sectionCount 0 and heroImage null for galleries without sections', async () => {
+        setupAuthenticatedAdmin();
+        mockScanItems.mockImplementation(async () => [
+          {
+            id: 'g1', title: 'Plain Gallery', category: 'portraits', type: 'client',
+            slug: 'plain', images: [], featured: false,
+            createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+          },
+        ]);
+
+        const event = createEvent({
+          httpMethod: 'GET',
+          resource: '/api/admin/galleries',
+        });
+        const result = await handler(event, mockContext, () => {});
+
+        const body = JSON.parse(result!.body);
+        expect(body.data.galleries[0].sectionCount).toBe(0);
+        expect(body.data.galleries[0].heroImage).toBeNull();
+      });
+    });
+  });
+
+  // ============ BULK DOWNLOAD ============
+
+  describe('POST /admin/galleries/{id}/bulk-download', () => {
+    it('returns presigned download URLs for all gallery images', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Test', category: 'portraits', type: 'client',
+        slug: 'test', images: [{ key: 'img1.jpg' }, { key: 'img2.jpg' }],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.downloads).toHaveLength(2);
+      expect(body.data.downloads[0].key).toBe('img1.jpg');
+      expect(body.data.downloads[0].downloadUrl).toBe('https://download-url.example.com');
+      expect(body.data.downloads[1].key).toBe('img2.jpg');
+    });
+
+    it('returns presigned URLs only for requested image keys', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Test', category: 'portraits', type: 'client',
+        slug: 'test', images: [{ key: 'img1.jpg' }, { key: 'img2.jpg' }, { key: 'img3.jpg' }],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({ imageKeys: ['img1.jpg', 'img3.jpg'] }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.downloads).toHaveLength(2);
+      expect(body.data.downloads[0].key).toBe('img1.jpg');
+      expect(body.data.downloads[1].key).toBe('img3.jpg');
+    });
+
+    it('returns 400 when requested keys dont belong to gallery', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Test', category: 'portraits', type: 'client',
+        slug: 'test', images: [{ key: 'img1.jpg' }],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({ imageKeys: ['img1.jpg', 'not-in-gallery.jpg'] }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('do not belong to this gallery');
+    });
+
+    it('returns 404 when gallery not found', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => null);
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'nonexistent' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(404);
+    });
+
+    it('returns 400 when gallery has no images', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Empty', category: 'portraits', type: 'client',
+        slug: 'empty', images: [],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('No images to download');
+    });
+
+    it('returns 400 when requesting more than 100 images', async () => {
+      setupAuthenticatedAdmin();
+      const manyImages = Array.from({ length: 101 }, (_, i) => ({ key: `img${i}.jpg` }));
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Huge', category: 'portraits', type: 'client',
+        slug: 'huge', images: manyImages,
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('Maximum 100 images');
+    });
+
+    it('returns 405 for non-POST methods', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(405);
+    });
+
+    it('returns 400 for invalid JSON', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: 'not json{',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('generates download URLs with correct bucket and expiration', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Test', category: 'portraits', type: 'client',
+        slug: 'test', images: [{ key: 'finished/g1/photo.jpg' }],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({}),
+      });
+      await handler(event, mockContext, () => {});
+
+      expect(mockGeneratePresignedDownloadUrl).toHaveBeenCalledWith(
+        'test-media',
+        'finished/g1/photo.jpg',
+        3600
+      );
+    });
+
+    it('requires authentication', async () => {
+      mockParseAuthToken.mockImplementation(() => null);
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/galleries/{id}/bulk-download',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({}),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(401);
+    });
+  });
 });

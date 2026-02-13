@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { clientGallery, clientAuth } from '@/lib/api';
+import { clientGallery, clientAuth, type GallerySection } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
 import { DownloadButton } from './DownloadButton';
 
@@ -24,12 +25,6 @@ interface ClientGalleryViewProps {
   initialTitle?: string;
 }
 
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
-
-function getImageUrl(key: string): string {
-  return `${MEDIA_URL}/${key}`;
-}
-
 export function ClientGalleryView({
   galleryId,
   initialTitle,
@@ -38,6 +33,8 @@ export function ClientGalleryView({
     title: string;
     description?: string;
     images: GalleryImage[];
+    heroImage?: string | null;
+    sections?: GallerySection[];
     category: string;
   } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -138,6 +135,8 @@ export function ClientGalleryView({
     ? comments.filter((c) => c.imageKey === currentImage.key)
     : [];
 
+  const hasSections = gallery.sections && gallery.sections.length > 0;
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Header */}
@@ -167,35 +166,104 @@ export function ClientGalleryView({
         </div>
       </div>
 
-      {/* Gallery Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
-          {gallery.images.map((image, index) => (
-            <button
-              key={image.key}
-              onClick={() => setLightboxIndex(index)}
-              className="block w-full mb-4 break-inside-avoid group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden"
-            >
-              <div className="relative bg-neutral-200 rounded-lg overflow-hidden">
-                <Image
-                  src={getImageUrl(image.key)}
-                  alt={image.alt || `Photo ${index + 1}`}
-                  width={640}
-                  height={480}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                  loading="lazy"
-                />
-                {comments.some((c) => c.imageKey === image.key) && (
-                  <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                    {comments.filter((c) => c.imageKey === image.key).length}
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
+      {/* Hero Image */}
+      {gallery.heroImage && (
+        <div className="relative w-full h-[40vh] md:h-[60vh] bg-neutral-900">
+          <Image
+            src={getImageUrl(gallery.heroImage)}
+            alt="Gallery Cover"
+            fill
+            className="object-cover opacity-90"
+            priority
+            unoptimized={true}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
+              {gallery.title}
+            </h2>
+            {gallery.category && (
+              <p className="text-lg opacity-90 capitalize">{gallery.category}</p>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Gallery Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {hasSections ? (
+          <div className="space-y-16">
+            {gallery.sections?.map((section) => {
+              // Find images belonging to this section, preserving order
+              const sectionImages = section.images
+                .map(key => gallery.images.find(img => img.key === key))
+                .filter((img): img is GalleryImage => img !== undefined);
+
+              if (sectionImages.length === 0) return null;
+
+              // Calculate start index for lightbox by finding index of first image in main array
+              // Note: This assumes images are unique across sections or we just find first occurrence
+              // Use a map to track global indices to be precise
+              const firstImageIndex = gallery.images.findIndex(img => img.key === sectionImages[0]?.key);
+
+              return (
+                <div key={section.id}>
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-display font-semibold text-neutral-900">
+                      {section.title}
+                    </h3>
+                    {section.description && (
+                      <p className="text-neutral-500 mt-1">{section.description}</p>
+                    )}
+                  </div>
+                  <ImageGrid
+                    images={sectionImages}
+                    startIndex={firstImageIndex}
+                    onImageClick={setLightboxIndex}
+                    comments={comments}
+                  />
+                </div>
+              );
+            })}
+
+            {/* Show unassigned images if any */}
+            {(() => {
+              const assignedKeys = new Set(gallery.sections?.flatMap(s => s.images) || []);
+              const unassignedImages = gallery.images.filter(img => !assignedKeys.has(img.key));
+
+              if (unassignedImages.length > 0) {
+                // Find start index of first unassigned
+                const firstIndex = gallery.images.findIndex(img => img.key === unassignedImages[0]?.key);
+                return (
+                  <div>
+                    <div className="mb-6">
+                      <h3 className="text-2xl font-display font-semibold text-neutral-900">
+                        Other Photos
+                      </h3>
+                    </div>
+                    <ImageGrid
+                      images={unassignedImages}
+                      startIndex={firstIndex}
+                      onImageClick={setLightboxIndex}
+                      comments={comments}
+                    />
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        ) : (
+          <ImageGrid
+            images={gallery.images}
+            startIndex={0}
+            onImageClick={setLightboxIndex}
+            comments={comments}
+          />
+        )}
       </div>
+
+      {/* Lightbox */}
 
       {/* Lightbox */}
       {lightboxIndex !== null && currentImage && (
@@ -266,6 +334,7 @@ export function ClientGalleryView({
                 sizes="70vw"
                 className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
                 priority
+                unoptimized={true}
               />
             </div>
 
@@ -321,3 +390,46 @@ export function ClientGalleryView({
     </div>
   );
 }
+
+interface ImageGridProps {
+  images: GalleryImage[];
+  startIndex: number;
+  onImageClick: (index: number) => void;
+  comments: Comment[];
+}
+
+function ImageGrid({ images, startIndex, onImageClick, comments }: ImageGridProps) {
+  return (
+    <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+      {images.map((image, index) => {
+        const globalIndex = startIndex + index;
+        return (
+          <button
+            key={image.key}
+            onClick={() => onImageClick(globalIndex)}
+            className="block w-full break-inside-avoid group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden"
+          >
+            <div className="relative bg-neutral-200 rounded-lg overflow-hidden">
+              <Image
+                src={getImageUrl(image.key)}
+                alt={image.alt || `Photo ${globalIndex + 1}`}
+                width={640}
+                height={480}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                loading="lazy"
+                unoptimized={true}
+              />
+              {comments.some((c) => c.imageKey === image.key) && (
+                <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                  {comments.filter((c) => c.imageKey === image.key).length}
+                </div>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+

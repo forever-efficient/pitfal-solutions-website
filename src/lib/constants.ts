@@ -323,3 +323,16 @@ export const SITE_IMAGES = {
   hero: 'finished/site/hero-bg.jpg',
   about: 'finished/site/about-portrait.jpg',
 } as const;
+
+// =============================================================================
+// BLOG CATEGORIES
+// =============================================================================
+
+export const BLOG_CATEGORIES = {
+  all: { slug: 'all', label: 'All Posts' },
+  guides: { slug: 'guides', label: 'Guides' },
+  'behind-the-scenes': { slug: 'behind-the-scenes', label: 'Behind the Scenes' },
+  'client-stories': { slug: 'client-stories', label: 'Client Stories' },
+} as const;
+
+export type BlogCategorySlug = keyof typeof BLOG_CATEGORIES;

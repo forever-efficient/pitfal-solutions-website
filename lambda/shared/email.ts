@@ -34,6 +34,8 @@ export type EmailTemplate =
   | 'contact-confirmation'
   | 'contact-notification'
   | 'booking-confirmation'
+  | 'booking-notification'
+  | 'booking-status-update'
   | 'gallery-ready';
 
 /**
@@ -139,6 +141,44 @@ Details:
 - Session Type: {{sessionType}}
 
 We look forward to working with you!
+
+Best regards,
+Pitfal Solutions
+    `.trim(),
+  },
+
+  'booking-notification': {
+    subject: 'New Booking Request from {{name}} - Pitfal Solutions',
+    text: `
+New Booking Request
+
+Client: {{name}}
+Email: {{email}}
+Phone: {{phone}}
+Session Type: {{sessionType}}
+Date: {{date}}
+Time: {{time}}
+Notes: {{notes}}
+
+---
+Booking ID: {{bookingId}}
+Submitted at: {{timestamp}}
+    `.trim(),
+  },
+
+  'booking-status-update': {
+    subject: 'Booking Update - Pitfal Solutions',
+    text: `
+Hi {{name}},
+
+Your booking status has been updated.
+
+Status: {{status}}
+Date: {{date}}
+Time: {{time}}
+Session Type: {{sessionType}}
+
+{{message}}
 
 Best regards,
 Pitfal Solutions

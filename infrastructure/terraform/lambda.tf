@@ -333,6 +333,7 @@ resource "aws_lambda_function" "admin" {
       ADMIN_TABLE          = aws_dynamodb_table.admin.name
       GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
       INQUIRIES_TABLE      = aws_dynamodb_table.inquiries.name
+      BOOKINGS_TABLE       = aws_dynamodb_table.bookings.name
       MEDIA_BUCKET         = aws_s3_bucket.media.id
       FROM_EMAIL           = var.from_email
       CONTACT_EMAIL        = var.contact_email

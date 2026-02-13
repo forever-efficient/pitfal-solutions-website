@@ -63,7 +63,7 @@ export function ImageUploader({
 
       setUploading(false);
     },
-    [galleryId, images, onUpdate]
+    [galleryId, images, onUpdate, showError]
   );
 
   async function handleDelete(imageKey: string) {
@@ -95,9 +95,8 @@ export function ImageUploader({
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={`border-2 border-dashed rounded-lg p-8 text-center mb-6 transition-colors ${
-          dragOver ? 'border-primary-400 bg-primary-50' : 'border-neutral-300'
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center mb-6 transition-colors ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-neutral-300'
+          }`}
       >
         <input
           type="file"

@@ -32,7 +32,7 @@ const nextConfig = {
   // Environment variables exposed to browser
   env: {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pitfal.solutions',
-    NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || 'https://media.pitfal.solutions',
+    NEXT_PUBLIC_MEDIA_URL: process.env.NEXT_PUBLIC_MEDIA_URL || 'https://dprk6phv6ds9x.cloudfront.net/media',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://www.pitfal.solutions/api',
   },
 
