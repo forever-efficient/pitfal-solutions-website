@@ -18,6 +18,8 @@ interface SectionManagerProps {
 }
 
 const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
+const SECTION_IMAGES_PAGE_SIZE = 24;
+const AVAILABLE_PAGE_SIZE = 24;
 
 function generateId(): string {
   return crypto.randomUUID();
@@ -28,10 +30,16 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
   const [sections, setSections] = useState<GallerySection[]>(initialSections);
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [sectionPage, setSectionPage] = useState<Record<string, number>>({});
+  const [availablePage, setAvailablePage] = useState(1);
 
   // Images not assigned to any section
   const assignedKeys = new Set(sections.flatMap(s => s.images));
   const unassignedImages = images.filter(img => !assignedKeys.has(img.key));
+  const availableTotalPages = Math.max(1, Math.ceil(unassignedImages.length / AVAILABLE_PAGE_SIZE));
+  const effectiveAvailablePage = Math.min(availablePage, availableTotalPages);
+  const availableStart = (effectiveAvailablePage - 1) * AVAILABLE_PAGE_SIZE;
+  const paginatedUnassigned = unassignedImages.slice(availableStart, availableStart + AVAILABLE_PAGE_SIZE);
 
   function addSection() {
     const newSection: GallerySection = {
@@ -125,6 +133,10 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
           {sections.map((section, index) => {
             const isExpanded = expandedId === section.id;
             const sectionImages = images.filter(img => section.images.includes(img.key));
+            const sectionTotalPages = Math.max(1, Math.ceil(sectionImages.length / SECTION_IMAGES_PAGE_SIZE));
+            const currentSectionPage = Math.min(sectionPage[section.id] ?? 1, sectionTotalPages);
+            const sectionStart = (currentSectionPage - 1) * SECTION_IMAGES_PAGE_SIZE;
+            const paginatedSectionImages = sectionImages.slice(sectionStart, sectionStart + SECTION_IMAGES_PAGE_SIZE);
 
             return (
               <div
@@ -211,9 +223,9 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                     {/* Current section images */}
                     {sectionImages.length > 0 && (
                       <div className="mb-3">
-                        <p className="text-xs font-medium text-neutral-500 mb-2">In this section:</p>
+                        <p className="text-xs font-medium text-neutral-500 mb-2">In this section ({sectionImages.length}):</p>
                         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
-                          {sectionImages.map(img => (
+                          {paginatedSectionImages.map(img => (
                             <div key={img.key} className="aspect-square relative group rounded overflow-hidden">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
@@ -233,6 +245,27 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                             </div>
                           ))}
                         </div>
+                        {sectionTotalPages > 1 && (
+                          <div className="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                            <button
+                              type="button"
+                              onClick={() => setSectionPage(prev => ({ ...prev, [section.id]: Math.max(1, (prev[section.id] ?? 1) - 1) }))}
+                              disabled={currentSectionPage <= 1}
+                              className="hover:text-neutral-700 disabled:opacity-50"
+                            >
+                              Previous
+                            </button>
+                            <span>Page {currentSectionPage} of {sectionTotalPages}</span>
+                            <button
+                              type="button"
+                              onClick={() => setSectionPage(prev => ({ ...prev, [section.id]: Math.min(sectionTotalPages, (prev[section.id] ?? 1) + 1) }))}
+                              disabled={currentSectionPage >= sectionTotalPages}
+                              className="hover:text-neutral-700 disabled:opacity-50"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -243,7 +276,7 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                           Available ({unassignedImages.length}):
                         </p>
                         <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-1.5">
-                          {unassignedImages.map(img => (
+                          {paginatedUnassigned.map(img => (
                             <button
                               key={img.key}
                               onClick={() => toggleImageInSection(section.id, img.key)}
@@ -259,6 +292,27 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                             </button>
                           ))}
                         </div>
+                        {availableTotalPages > 1 && (
+                          <div className="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                            <button
+                              type="button"
+                              onClick={() => setAvailablePage(p => Math.max(1, p - 1))}
+                              disabled={effectiveAvailablePage <= 1}
+                              className="hover:text-neutral-700 disabled:opacity-50"
+                            >
+                              Previous
+                            </button>
+                            <span>Page {effectiveAvailablePage} of {availableTotalPages}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAvailablePage(p => Math.min(availableTotalPages, p + 1))}
+                              disabled={effectiveAvailablePage >= availableTotalPages}
+                              className="hover:text-neutral-700 disabled:opacity-50"
+                            >
+                              Next
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
 

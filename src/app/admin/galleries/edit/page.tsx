@@ -7,7 +7,6 @@ import { adminGalleries } from '@/lib/api';
 import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
-import { HeroImagePicker } from '@/components/admin/HeroImagePicker';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -109,20 +108,10 @@ function GalleryEditContent() {
           <ImageUploader
             galleryId={id}
             images={gallery.images || []}
+            heroImage={gallery.heroImage}
             onUpdate={() => loadGallery()}
+            onHeroChange={() => loadGallery()}
           />
-
-          <div className="bg-white rounded-xl border border-neutral-200 p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-              Cover Image
-            </h2>
-            <HeroImagePicker
-              galleryId={id}
-              heroImage={gallery.heroImage}
-              images={gallery.images || []}
-              onUpdate={() => loadGallery()}
-            />
-          </div>
         </div>
 
         <div>
