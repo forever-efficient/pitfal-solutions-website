@@ -176,10 +176,17 @@ export const clientGallery = {
       body: JSON.stringify({ imageKey, size }),
     }),
 
-  bulkDownload: (galleryId: string, imageKeys?: string[]) =>
+  bulkDownload: (
+    galleryId: string,
+    imageKeys?: string[],
+    size?: 'full' | 'web'
+  ) =>
     request<BulkDownloadResult>(`/api/client/${galleryId}/bulk-download`, {
       method: 'POST',
-      body: JSON.stringify(imageKeys ? { imageKeys } : {}),
+      body: JSON.stringify({
+        ...(imageKeys && imageKeys.length > 0 ? { imageKeys } : {}),
+        ...(size ? { size } : {}),
+      }),
     }),
 };
 

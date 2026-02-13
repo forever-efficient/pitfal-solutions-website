@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { clientGallery, clientAuth, type GallerySection } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
 import { DownloadButton } from './DownloadButton';
+import { useBulkDownload } from './useBulkDownload';
 
 interface GalleryImage {
   key: string;
@@ -41,6 +42,7 @@ export function ClientGalleryView({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const bulkDownload = useBulkDownload(galleryId);
 
   useEffect(() => {
     clientGallery
@@ -156,6 +158,23 @@ export function ClientGalleryView({
             <span className="text-sm text-neutral-500">
               {gallery.images.length} photos
             </span>
+            {gallery.images.length > 0 && !gallery.heroImage && (
+              <BulkDownloadButton
+                label="Download All"
+                total={gallery.images.length}
+                isDownloading={bulkDownload.isDownloading}
+                progress={bulkDownload.progress}
+                error={bulkDownload.error}
+                onClearError={bulkDownload.clearError}
+                onDownload={(size) =>
+                  bulkDownload.startBulkDownload(
+                    gallery.images.map((img) => img.key),
+                    size
+                  )
+                }
+                variant="header"
+              />
+            )}
             <button
               onClick={handleLogout}
               className="text-sm text-neutral-600 hover:text-neutral-900 font-medium"
@@ -178,12 +197,33 @@ export function ClientGalleryView({
             unoptimized={true}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
-              {gallery.title}
-            </h2>
-            {gallery.category && (
-              <p className="text-lg opacity-90 capitalize">{gallery.category}</p>
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
+                {gallery.title}
+              </h2>
+              {gallery.category && (
+                <p className="text-lg opacity-90 capitalize">
+                  {gallery.category}
+                </p>
+              )}
+            </div>
+            {gallery.images.length > 0 && (
+              <BulkDownloadButton
+                label="Download All"
+                total={gallery.images.length}
+                isDownloading={bulkDownload.isDownloading}
+                progress={bulkDownload.progress}
+                error={bulkDownload.error}
+                onClearError={bulkDownload.clearError}
+                onDownload={(size) =>
+                  bulkDownload.startBulkDownload(
+                    gallery.images.map((img) => img.key),
+                    size
+                  )
+                }
+                variant="hero"
+              />
             )}
           </div>
         </div>
@@ -208,13 +248,29 @@ export function ClientGalleryView({
 
               return (
                 <div key={section.id}>
-                  <div className="mb-6">
-                    <h3 className="text-2xl font-display font-semibold text-neutral-900">
-                      {section.title}
-                    </h3>
-                    {section.description && (
-                      <p className="text-neutral-500 mt-1">{section.description}</p>
-                    )}
+                  <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-2xl font-display font-semibold text-neutral-900">
+                        {section.title}
+                      </h3>
+                      {section.description && (
+                        <p className="text-neutral-500 mt-1">
+                          {section.description}
+                        </p>
+                      )}
+                    </div>
+                    <BulkDownloadButton
+                      label="Download section"
+                      total={sectionImages.length}
+                      isDownloading={bulkDownload.isDownloading}
+                      progress={bulkDownload.progress}
+                      error={bulkDownload.error}
+                      onClearError={bulkDownload.clearError}
+                      onDownload={(size) =>
+                        bulkDownload.startBulkDownload(section.images, size)
+                      }
+                      variant="section"
+                    />
                   </div>
                   <ImageGrid
                     images={sectionImages}
@@ -237,10 +293,25 @@ export function ClientGalleryView({
                 const firstIndex = gallery.images.findIndex(img => img.key === unassignedImages[0]?.key);
                 return (
                   <div>
-                    <div className="mb-6">
+                    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <h3 className="text-2xl font-display font-semibold text-neutral-900">
                         Other Photos
                       </h3>
+                      <BulkDownloadButton
+                        label="Download section"
+                        total={unassignedImages.length}
+                        isDownloading={bulkDownload.isDownloading}
+                        progress={bulkDownload.progress}
+                        error={bulkDownload.error}
+                        onClearError={bulkDownload.clearError}
+                        onDownload={(size) =>
+                          bulkDownload.startBulkDownload(
+                            unassignedImages.map((img) => img.key),
+                            size
+                          )
+                        }
+                        variant="section"
+                      />
                     </div>
                     <ImageGrid
                       images={unassignedImages}
@@ -391,6 +462,171 @@ export function ClientGalleryView({
         </div>
       )}
     </div>
+  );
+}
+
+interface BulkDownloadButtonProps {
+  label: string;
+  total: number;
+  isDownloading: boolean;
+  progress: { current: number; total: number } | null;
+  error: string | null;
+  onClearError: () => void;
+  onDownload: (size: 'full' | 'web') => void;
+  variant: 'header' | 'hero' | 'section';
+}
+
+function BulkDownloadButton({
+  label,
+  total,
+  isDownloading,
+  progress,
+  error,
+  onClearError,
+  onDownload,
+  variant,
+}: BulkDownloadButtonProps) {
+  const [showMenu, setShowMenu] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
+
+  const progressText =
+    progress && progress.total > 0
+      ? `Downloading ${progress.current} of ${progress.total}`
+      : 'Preparing…';
+
+  const base =
+    'inline-flex items-center gap-2 font-medium rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-70';
+  const styles = {
+    header:
+      'text-sm px-3 py-2 text-neutral-700 bg-neutral-100 hover:bg-neutral-200 focus-visible:ring-neutral-500' as const,
+    hero:
+      'text-sm px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white border border-white/40 focus-visible:ring-white' as const,
+    section:
+      'text-sm px-3 py-1.5 text-neutral-600 bg-neutral-100 hover:bg-neutral-200 focus-visible:ring-primary-500' as const,
+  };
+
+  const isHero = variant === 'hero';
+  const menuContent = (
+    <div
+      className={`absolute right-0 z-50 min-w-[160px] rounded-lg border border-neutral-200 bg-white shadow-xl overflow-hidden ${
+        isHero ? 'bottom-full mb-2 border-white/30 bg-neutral-900/95' : 'top-full mt-2'
+      }`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          onDownload('full');
+          setShowMenu(false);
+        }}
+        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-neutral-50 transition-colors ${
+          isHero ? 'text-white hover:bg-white/10' : 'text-neutral-700'
+        }`}
+      >
+        <BulkDownloadIcon className={`w-4 h-4 shrink-0 ${isHero ? 'text-white/80' : 'text-neutral-500'}`} />
+        <span>Full Size</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          onDownload('web');
+          setShowMenu(false);
+        }}
+        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 border-t transition-colors ${
+          isHero
+            ? 'border-white/20 text-white hover:bg-white/10'
+            : 'border-neutral-100 text-neutral-700 hover:bg-neutral-50'
+        }`}
+      >
+        <WebSizeIcon className={`w-4 h-4 shrink-0 ${isHero ? 'text-white/80' : 'text-neutral-500'}`} />
+        <span>Web Size</span>
+      </button>
+    </div>
+  );
+
+  return (
+    <div ref={containerRef} className="relative flex flex-col items-start gap-1">
+      <button
+        type="button"
+        onClick={() => {
+          if (isDownloading) return;
+          setShowMenu((prev) => !prev);
+        }}
+        disabled={isDownloading}
+        className={`${base} ${styles[variant]}`}
+        aria-busy={isDownloading}
+        aria-expanded={showMenu}
+        aria-haspopup="true"
+        aria-live="polite"
+        aria-label={total > 0 ? `${label} (${total} images)` : label}
+      >
+        <BulkDownloadIcon className="w-4 h-4 shrink-0" />
+        {isDownloading ? progressText : label}
+      </button>
+      {showMenu && !isDownloading && menuContent}
+      {error && (
+        <p className="text-xs text-red-600 flex items-center gap-1">
+          {error}
+          <button
+            type="button"
+            onClick={onClearError}
+            className="underline hover:no-underline"
+            aria-label="Dismiss error"
+          >
+            Dismiss
+          </button>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function WebSizeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+      />
+    </svg>
+  );
+}
+
+function BulkDownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
+    </svg>
   );
 }
 

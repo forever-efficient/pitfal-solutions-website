@@ -245,7 +245,7 @@ async function handleBulkDownload(
   ctx: LogContext,
   requestOrigin?: string
 ) {
-  let body: { imageKeys?: string[] };
+  let body: { imageKeys?: string[]; size?: 'full' | 'web' };
   try {
     body = JSON.parse(event.body || '{}');
   } catch {
@@ -281,14 +281,44 @@ async function handleBulkDownload(
     return badRequest(`Maximum ${MAX_BULK_DOWNLOAD} images per bulk download request`, requestOrigin);
   }
 
+  const size = body.size === 'web' ? 'web' : 'full';
+
   const downloads = await Promise.all(
-    requestedKeys.map(async (key) => ({
-      key,
-      downloadUrl: await generatePresignedDownloadUrl(MEDIA_BUCKET!, key, 3600),
-    }))
+    requestedKeys.map(async (key) => {
+      let downloadKey = key;
+      const originalFilename = key.split('/').pop() || 'photo';
+      let downloadFilename = originalFilename;
+
+      if (size === 'web') {
+        const baseName = key.replace(/\.[^/.]+$/, '');
+        const webKey = `processed/${baseName}/1920w.webp`;
+        const cached = await objectExists(MEDIA_BUCKET!, webKey);
+        if (cached) {
+          downloadKey = webKey;
+        } else {
+          try {
+            downloadKey = await generateWebVersion(key, webKey, ctx);
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Unknown error';
+            log('ERROR', 'Failed to generate web-sized version in bulk', ctx, { key, error: msg });
+            throw err;
+          }
+        }
+        const webFilename = originalFilename.replace(/\.[^/.]+$/, '.webp');
+        downloadFilename = `web_${webFilename}`;
+      }
+
+      const downloadUrl = await generatePresignedDownloadUrl(
+        MEDIA_BUCKET!,
+        downloadKey,
+        3600,
+        downloadFilename
+      );
+      return { key, downloadUrl };
+    })
   );
 
-  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length });
+  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length, size });
   return success({ downloads }, 200, requestOrigin);
 }
 

@@ -15,6 +15,7 @@ const mockValidateSession = vi.hoisted(() => vi.fn());
 const mockParseAuthToken = vi.hoisted(() => vi.fn());
 const mockDecodeToken = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
+const mockObjectExists = vi.hoisted(() => vi.fn());
 
 // Mock db module
 vi.mock('../../../lambda/shared/db', () => ({
@@ -43,6 +44,7 @@ vi.mock('../../../lambda/shared/session', () => ({
 // Mock S3 utilities
 vi.mock('../../../lambda/shared/s3', () => ({
   generatePresignedDownloadUrl: mockGeneratePresignedDownloadUrl,
+  objectExists: mockObjectExists,
   generatePresignedUploadUrl: vi.fn(),
   deleteS3Objects: vi.fn(),
 }));
@@ -127,12 +129,14 @@ describe('Client Gallery Lambda Handler', () => {
     mockParseAuthToken.mockClear();
     mockDecodeToken.mockClear();
     mockGeneratePresignedDownloadUrl.mockClear();
+    mockObjectExists.mockClear();
 
     mockGetItem.mockImplementation(async () => null);
     mockQueryItems.mockImplementation(async () => []);
     mockGeneratePresignedDownloadUrl.mockImplementation(async (_bucket: string, key: string) =>
       `https://s3.amazonaws.com/test-media/${key}?signed=true`
     );
+    mockObjectExists.mockResolvedValue(false);
   });
 
   describe('OPTIONS (CORS preflight)', () => {
@@ -315,11 +319,11 @@ describe('Client Gallery Lambda Handler', () => {
       expect(result!.statusCode).toBe(201);
 
       const body = JSON.parse(result!.body);
-      expect(body.comment.imageKey).toBe('finished/gallery-1/img1.jpg');
-      expect(body.comment.author).toBe('Jane Doe');
-      expect(body.comment.text).toBe('Great photo!');
-      expect(body.comment.id).toBeDefined();
-      expect(body.comment.createdAt).toBeDefined();
+      expect(body.data.comment.imageKey).toBe('finished/gallery-1/img1.jpg');
+      expect(body.data.comment.author).toBe('Jane Doe');
+      expect(body.data.comment.text).toBe('Great photo!');
+      expect(body.data.comment.id).toBeDefined();
+      expect(body.data.comment.createdAt).toBeDefined();
     });
 
     it('trims author and text whitespace', async () => {
@@ -337,8 +341,8 @@ describe('Client Gallery Lambda Handler', () => {
 
       const result = await handler(event, mockContext, () => {});
       const body = JSON.parse(result!.body);
-      expect(body.comment.author).toBe('Jane');
-      expect(body.comment.text).toBe('Nice!');
+      expect(body.data.comment.author).toBe('Jane');
+      expect(body.data.comment.text).toBe('Nice!');
     });
 
     it('stores comment with correct DynamoDB structure', async () => {
@@ -467,8 +471,8 @@ describe('Client Gallery Lambda Handler', () => {
       expect(result!.statusCode).toBe(200);
 
       const body = JSON.parse(result!.body);
-      expect(body.downloadUrl).toContain('finished/gallery-1/img1.jpg');
-      expect(body.downloadUrl).toContain('signed=true');
+      expect(body.data.downloadUrl).toContain('finished/gallery-1/img1.jpg');
+      expect(body.data.downloadUrl).toContain('signed=true');
     });
 
     it('calls generatePresignedDownloadUrl with correct params', async () => {
@@ -485,7 +489,8 @@ describe('Client Gallery Lambda Handler', () => {
       expect(mockGeneratePresignedDownloadUrl).toHaveBeenCalledWith(
         'test-media',
         'finished/gallery-1/img1.jpg',
-        3600
+        3600,
+        'img1.jpg'
       );
     });
 
@@ -556,9 +561,9 @@ describe('Client Gallery Lambda Handler', () => {
       expect(result!.statusCode).toBe(200);
 
       const body = JSON.parse(result!.body);
-      expect(body.downloads).toHaveLength(3);
-      expect(body.downloads[0].key).toBe('finished/gallery-1/img1.jpg');
-      expect(body.downloads[0].downloadUrl).toContain('signed=true');
+      expect(body.data.downloads).toHaveLength(3);
+      expect(body.data.downloads[0].key).toBe('finished/gallery-1/img1.jpg');
+      expect(body.data.downloads[0].downloadUrl).toContain('signed=true');
     });
 
     it('returns presigned URLs for specific requested image keys', async () => {
@@ -576,8 +581,8 @@ describe('Client Gallery Lambda Handler', () => {
       expect(result!.statusCode).toBe(200);
 
       const body = JSON.parse(result!.body);
-      expect(body.downloads).toHaveLength(2);
-      expect(body.downloads.map((d: { key: string }) => d.key)).toEqual([
+      expect(body.data.downloads).toHaveLength(2);
+      expect(body.data.downloads.map((d: { key: string }) => d.key)).toEqual([
         'finished/gallery-1/img1.jpg',
         'finished/gallery-1/img3.jpg',
       ]);
@@ -666,7 +671,8 @@ describe('Client Gallery Lambda Handler', () => {
       expect(mockGeneratePresignedDownloadUrl).toHaveBeenCalledWith(
         'test-media',
         'finished/gallery-1/img1.jpg',
-        3600
+        3600,
+        'img1.jpg'
       );
     });
 
