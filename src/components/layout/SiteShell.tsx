@@ -12,8 +12,9 @@ interface SiteShellProps {
 export function SiteShell({ header, footer, children }: SiteShellProps) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith('/admin');
+  const isClient = pathname.startsWith('/client');
 
-  if (isAdmin) {
+  if (isAdmin || isClient) {
     return <>{children}</>;
   }
 

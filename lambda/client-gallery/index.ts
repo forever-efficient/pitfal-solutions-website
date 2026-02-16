@@ -74,6 +74,10 @@ interface GalleryRecord {
   sections?: GallerySection[];
   category: string;
   type: string;
+  heroFocalPoint?: { x: number; y: number };
+  heroZoom?: number;
+  heroGradientOpacity?: number;
+  heroHeight?: 'sm' | 'md' | 'lg';
 }
 
 interface Comment {
@@ -173,6 +177,10 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
       heroImage: gallery.heroImage || null,
       sections: gallery.sections || [],
       category: gallery.category,
+      heroFocalPoint: gallery.heroFocalPoint,
+      heroZoom: gallery.heroZoom,
+      heroGradientOpacity: gallery.heroGradientOpacity,
+      heroHeight: gallery.heroHeight,
     },
     comments: comments.map(c => ({
       id: c.commentId,

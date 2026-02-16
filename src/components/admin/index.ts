@@ -7,3 +7,4 @@ export { ToastProvider, useToast } from './Toast';
 export { NotifyClient } from './NotifyClient';
 export { SectionManager } from './SectionManager';
 export { HeroImagePicker } from './HeroImagePicker';
+export { HeroPositionEditor } from './HeroPositionEditor';

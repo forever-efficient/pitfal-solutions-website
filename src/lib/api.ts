@@ -141,6 +141,10 @@ export const clientGallery = {
         heroImage: string | null;
         sections: GallerySection[];
         category: string;
+        heroFocalPoint?: { x: number; y: number };
+        heroZoom?: number;
+        heroGradientOpacity?: number;
+        heroHeight?: 'sm' | 'md' | 'lg';
       };
       comments: Array<{
         id: string;
@@ -255,6 +259,10 @@ export const adminGalleries = {
         heroImage?: string;
         sections?: GallerySection[];
         featured?: boolean;
+        heroFocalPoint?: { x: number; y: number };
+        heroZoom?: number;
+        heroGradientOpacity?: number;
+        heroHeight?: 'sm' | 'md' | 'lg';
         createdAt: string;
         updatedAt: string;
       };
@@ -299,6 +307,10 @@ export const adminGalleries = {
       heroImage?: string | null;
       sections?: GallerySection[];
       password?: string;
+      heroFocalPoint?: { x: number; y: number } | null;
+      heroZoom?: number | null;
+      heroGradientOpacity?: number | null;
+      heroHeight?: 'sm' | 'md' | 'lg' | null;
     }
   ) =>
     request<{ updated: boolean }>(`/api/admin/galleries/${id}`, {

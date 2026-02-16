@@ -37,6 +37,10 @@ export function ClientGalleryView({
     heroImage?: string | null;
     sections?: GallerySection[];
     category: string;
+    heroFocalPoint?: { x: number; y: number };
+    heroZoom?: number;
+    heroGradientOpacity?: number;
+    heroHeight?: 'sm' | 'md' | 'lg';
   } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -148,11 +152,6 @@ export function ClientGalleryView({
             <h1 className="font-display text-2xl font-bold text-neutral-900">
               {initialTitle || gallery.title}
             </h1>
-            {gallery.description && (
-              <p className="text-sm text-neutral-500 mt-1">
-                {gallery.description}
-              </p>
-            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-neutral-500">
@@ -186,17 +185,32 @@ export function ClientGalleryView({
       </div>
 
       {/* Hero Image */}
-      {gallery.heroImage && (
-        <div className="relative w-full h-[40vh] md:h-[60vh] bg-neutral-900">
-          <Image
-            src={getImageUrl(gallery.heroImage)}
+      {gallery.heroImage && (() => {
+        const focalX = gallery.heroFocalPoint?.x ?? 50;
+        const focalY = gallery.heroFocalPoint?.y ?? 50;
+        const zoom = gallery.heroZoom ?? 1.0;
+        const gradientOpacity = gallery.heroGradientOpacity ?? 0.5;
+        const heroHeight = gallery.heroHeight ?? 'md';
+        const heightClass = heroHeight === 'sm' ? 'h-[35vh]' : heroHeight === 'lg' ? 'h-[75vh]' : 'h-[55vh]';
+        return (
+        <div className={`relative w-full overflow-hidden bg-neutral-900 ${heightClass}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={getImageUrl(gallery.heroImage!)}
             alt="Gallery Cover"
-            fill
-            className="object-cover opacity-90"
-            priority
-            unoptimized={true}
+            className="absolute inset-0 w-full h-full"
+            style={{
+              objectFit: 'cover',
+              objectPosition: `${focalX}% ${focalY}%`,
+              opacity: 0.9,
+              transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+              transformOrigin: `${focalX}% ${focalY}%`,
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div
+            className="absolute inset-0 bg-gradient-to-t from-black to-transparent"
+            style={{ opacity: gradientOpacity }}
+          />
           <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto flex items-end justify-between gap-4 flex-wrap">
             <div>
               <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
@@ -208,6 +222,11 @@ export function ClientGalleryView({
                 </p>
               )}
             </div>
+            {gallery.description && (
+              <p className="self-end text-base opacity-85 max-w-xs md:max-w-sm leading-relaxed">
+                {gallery.description}
+              </p>
+            )}
             {gallery.images.length > 0 && (
               <BulkDownloadButton
                 label="Download All"
@@ -227,7 +246,8 @@ export function ClientGalleryView({
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Gallery Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">

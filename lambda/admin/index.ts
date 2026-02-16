@@ -408,7 +408,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'type', 'slug', 'featured', 'images', 'heroImage', 'sections'];
+    const allowedFields = ['title', 'description', 'category', 'type', 'slug', 'featured', 'images', 'heroImage', 'sections', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {

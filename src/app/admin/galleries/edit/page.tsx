@@ -7,6 +7,7 @@ import { adminGalleries } from '@/lib/api';
 import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
+import { HeroPositionEditor } from '@/components/admin/HeroPositionEditor';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -112,6 +113,16 @@ function GalleryEditContent() {
             onUpdate={() => loadGallery()}
             onHeroChange={() => loadGallery()}
           />
+          {gallery.heroImage && (
+            <HeroPositionEditor
+              galleryId={id}
+              heroImage={gallery.heroImage}
+              initialFocalPoint={gallery.heroFocalPoint}
+              initialZoom={gallery.heroZoom}
+              initialGradientOpacity={gallery.heroGradientOpacity}
+              initialHeight={gallery.heroHeight}
+            />
+          )}
         </div>
 
         <div>
