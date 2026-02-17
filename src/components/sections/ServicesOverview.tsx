@@ -4,34 +4,37 @@ import { Card, CardContent } from '@/components/ui/Card';
 import {
   ArrowRightIcon,
   BuildingIcon,
-  UserIcon,
+  EyeIcon,
   CalendarIcon,
+  ArrowDownIcon,
   ChevronRightIcon,
 } from '@/components/icons';
 import { SERVICES } from '@/lib/constants';
 
 const services = [
   {
-    title: SERVICES.brand.title,
-    description:
-      'Elevate your brand with professional imagery that tells your story. Perfect for businesses, entrepreneurs, and content creators looking to make a lasting impression.',
-    icon: <BuildingIcon size={32} strokeWidth={1.5} />,
-    href: SERVICES.brand.href,
-    image: SERVICES.brand.image,
+    title: SERVICES.photography.title,
+    description: SERVICES.photography.description,
+    icon: <EyeIcon size={32} strokeWidth={1.5} />,
+    href: SERVICES.photography.href,
   },
   {
-    title: SERVICES.portraits.title,
-    description: SERVICES.portraits.description,
-    icon: <UserIcon size={32} strokeWidth={1.5} />,
-    href: SERVICES.portraits.href,
-    image: SERVICES.portraits.image,
-  },
-  {
-    title: SERVICES.events.title,
-    description: SERVICES.events.description,
+    title: SERVICES.videography.title,
+    description: SERVICES.videography.description,
     icon: <CalendarIcon size={32} strokeWidth={1.5} />,
-    href: SERVICES.events.href,
-    image: SERVICES.events.image,
+    href: SERVICES.videography.href,
+  },
+  {
+    title: SERVICES.drone.title,
+    description: SERVICES.drone.description,
+    icon: <ArrowDownIcon size={32} strokeWidth={1.5} />,
+    href: SERVICES.drone.href,
+  },
+  {
+    title: SERVICES.ai.title,
+    description: SERVICES.ai.description,
+    icon: <BuildingIcon size={32} strokeWidth={1.5} />,
+    href: SERVICES.ai.href,
   },
 ];
 
@@ -48,13 +51,13 @@ export function ServicesOverview() {
             Services Provided
           </h2>
           <p className="text-lg text-neutral-600">
-            Professional photography and videography tailored to your unique needs.
-            Every project receives our full creative attention.
+            From photography and video to aerial imaging and AI solutions — every
+            project receives full creative and technical attention.
           </p>
         </div>
 
         {/* Service cards */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {services.map((service) => (
             <Link key={service.title} href={service.href} className="group">
               <Card hover className="h-full overflow-hidden">

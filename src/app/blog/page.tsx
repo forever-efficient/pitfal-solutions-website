@@ -26,7 +26,7 @@ export default function BlogPage() {
               From Behind the Lens
             </h1>
             <p className="text-xl text-neutral-600">
-              Tips, session guides, and stories from our work. Everything you need to prepare for your shoot and get inspired.
+              Tips, session guides, and stories from the field. Everything you need to prepare for your shoot and get inspired.
             </p>
           </div>
         </Container>

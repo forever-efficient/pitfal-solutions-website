@@ -32,10 +32,10 @@ describe('ContactForm', () => {
     const select = screen.getByLabelText(/service type/i);
 
     expect(select).toContainElement(screen.getByText('Select a service...'));
-    expect(select).toContainElement(screen.getByText('Brand Photography'));
-    expect(select).toContainElement(screen.getByText('Portrait Session'));
-    expect(select).toContainElement(screen.getByText('Event Coverage'));
-    expect(select).toContainElement(screen.getByText('Commercial Project'));
+    expect(select).toContainElement(screen.getByText('Photography'));
+    expect(select).toContainElement(screen.getByText('Videography'));
+    expect(select).toContainElement(screen.getByText('Commercial Drone'));
+    expect(select).toContainElement(screen.getByText('AI & Software Solutions'));
     expect(select).toContainElement(screen.getByText('Other / General Inquiry'));
   });
 
@@ -85,8 +85,8 @@ describe('ContactForm', () => {
     render(<ContactForm />);
 
     const select = screen.getByLabelText(/service type/i);
-    await user.selectOptions(select, 'brand');
-    expect(select).toHaveValue('brand');
+    await user.selectOptions(select, 'photography');
+    expect(select).toHaveValue('photography');
   });
 
   describe('validation messages', () => {

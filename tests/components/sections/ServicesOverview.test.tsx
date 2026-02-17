@@ -9,35 +9,41 @@ describe('ServicesOverview', () => {
     expect(screen.getByRole('heading', { name: 'Services Provided' })).toBeInTheDocument();
   });
 
-  it('renders all three service cards', () => {
+  it('renders all four service cards', () => {
     render(<ServicesOverview />);
-    expect(screen.getByText('Brand Photography')).toBeInTheDocument();
-    expect(screen.getByText('Portrait Sessions')).toBeInTheDocument();
-    expect(screen.getByText('Event Coverage')).toBeInTheDocument();
+    expect(screen.getByText('Photography')).toBeInTheDocument();
+    expect(screen.getByText('Videography')).toBeInTheDocument();
+    expect(screen.getByText('Commercial Drone')).toBeInTheDocument();
+    expect(screen.getByText('AI & Software Solutions')).toBeInTheDocument();
   });
 
   it('renders service descriptions', () => {
     render(<ServicesOverview />);
-    expect(screen.getByText(/Elevate your brand/i)).toBeInTheDocument();
-    expect(screen.getByText(/From professional headshots/i)).toBeInTheDocument();
-    expect(screen.getByText(/Comprehensive event documentation/i)).toBeInTheDocument();
+    expect(screen.getByText(/From brand imagery to portraits and events/i)).toBeInTheDocument();
+    expect(screen.getByText(/High-quality video content for brands/i)).toBeInTheDocument();
+    expect(screen.getByText(/FAA-compliant aerial imagery/i)).toBeInTheDocument();
+    expect(screen.getByText(/From AI strategy and custom model integration/i)).toBeInTheDocument();
   });
 
   it('renders service links', () => {
     render(<ServicesOverview />);
-    const links = screen.getAllByRole('link', { name: /brand photography|portrait sessions|event coverage/i });
-    expect(links).toHaveLength(3);
+    const photoLink = screen.getByRole('link', { name: /photography/i });
+    expect(photoLink).toHaveAttribute('href', '/services/photography');
 
-    // Check hrefs
-    expect(links[0]).toHaveAttribute('href', '/services#brand');
-    expect(links[1]).toHaveAttribute('href', '/services#portraits');
-    expect(links[2]).toHaveAttribute('href', '/services#events');
+    const videoLink = screen.getByRole('link', { name: /videography/i });
+    expect(videoLink).toHaveAttribute('href', '/services/videography');
+
+    const droneLink = screen.getByRole('link', { name: /commercial drone/i });
+    expect(droneLink).toHaveAttribute('href', '/services/commercial-drone');
+
+    const aiLink = screen.getByRole('link', { name: /ai & software solutions/i });
+    expect(aiLink).toHaveAttribute('href', '/services/ai-software');
   });
 
   it('renders Learn more text for each service', () => {
     render(<ServicesOverview />);
     const learnMoreTexts = screen.getAllByText('Learn more');
-    expect(learnMoreTexts).toHaveLength(3);
+    expect(learnMoreTexts).toHaveLength(4);
   });
 
   it('renders View all services link', () => {
@@ -49,9 +55,8 @@ describe('ServicesOverview', () => {
 
   it('renders service icons', () => {
     render(<ServicesOverview />);
-    // Each service card should have an icon
     const serviceCards = document.querySelectorAll('.h-48');
-    expect(serviceCards).toHaveLength(3);
+    expect(serviceCards).toHaveLength(4);
     serviceCards.forEach((card) => {
       expect(card.querySelector('svg')).toBeInTheDocument();
     });
@@ -59,6 +64,6 @@ describe('ServicesOverview', () => {
 
   it('renders section description', () => {
     render(<ServicesOverview />);
-    expect(screen.getByText(/Professional photography and videography tailored/i)).toBeInTheDocument();
+    expect(screen.getByText(/From photography and video to aerial imaging and AI solutions/i)).toBeInTheDocument();
   });
 });

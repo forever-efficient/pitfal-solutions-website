@@ -27,10 +27,10 @@ interface FormErrors {
 
 const sessionTypes = [
   { value: '', label: 'Select a service...' },
-  { value: 'brand', label: SERVICES.brand.title },
-  { value: 'portrait', label: 'Portrait Session' },
-  { value: 'event', label: SERVICES.events.title },
-  { value: 'commercial', label: 'Commercial Project' },
+  { value: 'photography', label: SERVICES.photography.title },
+  { value: 'videography', label: SERVICES.videography.title },
+  { value: 'drone', label: SERVICES.drone.title },
+  { value: 'ai', label: SERVICES.ai.title },
   { value: 'other', label: 'Other / General Inquiry' },
 ];
 
@@ -105,7 +105,7 @@ export function ContactForm() {
 
       if (response.ok && data.success) {
         setStatus('success');
-        setStatusMessage(data.message || 'Thank you for your message! We will get back to you soon.');
+        setStatusMessage(data.message || "Thank you for your message! You'll hear back soon.");
         setFormData({
           name: '',
           email: '',
@@ -235,7 +235,7 @@ export function ContactForm() {
               onChange={(e) => handleChange('message', e.target.value)}
               error={errors.message}
               required
-              placeholder="Tell us about your project, event, or what you're looking for..."
+              placeholder="Tell me about your project, event, or what you're looking for..."
               rows={5}
             />
 

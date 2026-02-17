@@ -21,7 +21,12 @@ describe('MobileMenu', () => {
     render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
 
     navigationItems.forEach((item) => {
-      expect(screen.getByRole('link', { name: item.label })).toBeInTheDocument();
+      if (item.children) {
+        // Items with children are accordion toggles (buttons), not links
+        expect(screen.getByRole('button', { name: item.label })).toBeInTheDocument();
+      } else {
+        expect(screen.getByRole('link', { name: item.label })).toBeInTheDocument();
+      }
     });
   });
 

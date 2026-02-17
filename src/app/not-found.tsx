@@ -12,8 +12,8 @@ export default function NotFound() {
         Page Not Found
       </h2>
       <p className="mt-4 max-w-md text-neutral-600">
-        Sorry, we couldn&apos;t find the page you&apos;re looking for. It may
-        have been moved or no longer exists.
+        Sorry, that page couldn&apos;t be found. It may have been moved or
+        no longer exists.
       </p>
       <div className="mt-8 flex flex-col gap-4 sm:flex-row">
         <Button asChild>

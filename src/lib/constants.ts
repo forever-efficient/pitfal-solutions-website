@@ -32,53 +32,69 @@ export const BUSINESS = {
 // =============================================================================
 
 export const SERVICES = {
-  brand: {
-    id: 'brand',
-    title: 'Brand Photography',
-    shortDescription: 'Visual storytelling for businesses',
+  photography: {
+    id: 'photography',
+    title: 'Photography',
+    shortDescription: 'Professional photography for every occasion',
     description:
-      'Elevate your brand with compelling visual content. From product photography to team headshots, create a cohesive visual identity that resonates with your audience.',
+      'From brand imagery to portraits and events — compelling visuals that tell your story with clarity and style.',
     features: [
-      'Product photography',
-      'Team headshots',
-      'Office/workspace imagery',
-      'Social media content',
-      'Brand storytelling',
+      'Brand & product photography',
+      'Portrait sessions',
+      'Event coverage',
+      'Headshots',
+      'Lifestyle & editorial',
     ],
-    image: 'finished/site/services-brand.jpg',
-    href: '/services#brand',
+    image: 'finished/site/services-photography.jpg',
+    href: '/services/photography',
   },
-  portraits: {
-    id: 'portraits',
-    title: 'Portrait Sessions',
-    shortDescription: 'Authentic moments captured',
+  videography: {
+    id: 'videography',
+    title: 'Videography',
+    shortDescription: 'Cinematic video production',
     description:
-      'From professional headshots to family portraits, authentic moments are captured with genuine expressions to treasure for years to come.',
+      'High-quality video content for brands, events, social media, and beyond. Every project is handled from concept through final cut.',
     features: [
-      'Professional headshots',
-      'Family portraits',
-      'Couples sessions',
-      'Senior portraits',
-      'Personal branding',
+      'Brand films',
+      'Event videography',
+      'Social media reels',
+      'Interview & testimonial video',
+      'Color grading & post-production',
     ],
-    image: 'finished/site/services-portraits.jpg',
-    href: '/services#portraits',
+    image: 'finished/site/services-videography.jpg',
+    href: '/services/videography',
   },
-  events: {
-    id: 'events',
-    title: 'Event Coverage',
-    shortDescription: 'Never miss a moment',
+  drone: {
+    id: 'drone',
+    title: 'Commercial Drone',
+    shortDescription: 'Aerial photography & videography',
     description:
-      'Comprehensive event documentation including corporate events, weddings, and special occasions. Never miss a moment.',
+      'FAA-compliant aerial imagery that gives your project a perspective no ground-level shoot can match.',
     features: [
-      'Corporate events',
-      'Weddings',
-      'Conferences',
-      'Private parties',
-      'Live performances',
+      'Aerial photography',
+      'Aerial videography',
+      'Construction & real estate',
+      'Event overviews',
+      'FAA Part 107 certified',
     ],
-    image: 'finished/site/services-events.jpg',
-    href: '/services#events',
+    image: 'finished/site/services-drone.jpg',
+    href: '/services/commercial-drone',
+  },
+  ai: {
+    id: 'ai',
+    title: 'AI & Software Solutions',
+    shortDescription: 'AI consulting & custom development',
+    description:
+      'From AI strategy and custom model integration to full website development — helping businesses leverage technology intelligently.',
+    features: [
+      'AI consulting & strategy',
+      'Custom AI integrations',
+      'Website design & development',
+      'Workflow automation',
+      'Software prototyping',
+    ],
+    image: 'finished/site/services-ai.jpg',
+    href: '/services/ai-software',
   },
 } as const;
 
@@ -86,10 +102,11 @@ export type ServiceId = keyof typeof SERVICES;
 
 // Service options for contact form
 export const SERVICE_OPTIONS = [
-  { value: 'brand', label: SERVICES.brand.title },
-  { value: 'portrait', label: 'Portrait Session' },
-  { value: 'event', label: SERVICES.events.title },
-  { value: 'commercial', label: 'Commercial/Other' },
+  { value: 'photography', label: SERVICES.photography.title },
+  { value: 'videography', label: SERVICES.videography.title },
+  { value: 'drone', label: SERVICES.drone.title },
+  { value: 'ai', label: SERVICES.ai.title },
+  { value: 'other', label: 'Other / Not Sure' },
 ] as const;
 
 // =============================================================================
@@ -127,11 +144,27 @@ export const PAGE_META = {
   },
   about: {
     title: 'About',
-    description: `Learn about ${BUSINESS.name} - Professional photography and videography services in ${BUSINESS.location.full}. Our story, philosophy, and approach to capturing moments.`,
+    description: `Learn about ${BUSINESS.name} - Professional photography and videography services in ${BUSINESS.location.full}. The story, philosophy, and approach to capturing moments.`,
   },
   services: {
     title: 'Services',
-    description: `Professional photography and videography services including brand photography, portrait sessions, and event coverage. View our packages and pricing.`,
+    description: `Professional photography, videography, commercial drone, and AI & software services. View our full range of offerings.`,
+  },
+  servicesPhotography: {
+    title: 'Photography',
+    description: `Professional photography services in ${BUSINESS.location.full} — brand photography, portraits, events, headshots, and lifestyle imagery.`,
+  },
+  servicesVideography: {
+    title: 'Videography',
+    description: `Cinematic video production in ${BUSINESS.location.full} — brand films, event videography, social media reels, and post-production.`,
+  },
+  servicesDrone: {
+    title: 'Commercial Drone',
+    description: `FAA-compliant aerial photography and videography in ${BUSINESS.location.full}. Commercial drone services for real estate, events, and construction.`,
+  },
+  servicesAI: {
+    title: 'AI & Software Solutions',
+    description: `AI consulting, custom AI integrations, and website development from ${BUSINESS.name} in ${BUSINESS.location.full}.`,
   },
   portfolio: {
     title: 'Portfolio',
@@ -197,22 +230,22 @@ export const COPY = {
       `Based in ${BUSINESS.location.full}, ${BUSINESS.name} brings a unique perspective to every project. Combining technical excellence with creative vision ensures you get the highest quality when those fleeting moments are on the line.`,
       "Whether it's a corporate brand shoot, an intimate portrait session, or documenting a special event, the same level of dedication and artistry is brought to every project.",
     ],
-    valuesTitle: 'What Drives Us',
+    valuesTitle: 'Core Values',
     valuesDescription:
-      'Our values guide everything we do, from the first consultation to the final delivery.',
+      'These values guide every project, from the first consultation to the final delivery.',
     taglineDescription:
-      'Our motto reminds us to bridge the gap between vision and reality, between the moment and its preservation.',
+      'This motto is a reminder to bridge the gap between vision and reality, between the moment and its preservation.',
   },
   values: [
     {
       title: 'Authenticity',
       description:
-        'We capture real moments and genuine emotions. No forced poses, no fake smiles—just authentic imagery that tells your true story.',
+        'Real moments and genuine emotions. No forced poses, no fake smiles—just authentic imagery that tells your true story.',
     },
     {
       title: 'Excellence',
       description:
-        'We never compromise on quality. Every image is carefully crafted, edited, and delivered to meet the highest professional standards.',
+        'No compromises on quality. Every image is carefully crafted, edited, and delivered to meet the highest professional standards.',
     },
     {
       title: 'Connection',
@@ -275,9 +308,10 @@ export const NAV_LINKS = {
     { label: 'Contact', href: '/contact' },
   ],
   services: [
-    { label: SERVICES.brand.title, href: SERVICES.brand.href },
-    { label: 'Portraits', href: SERVICES.portraits.href },
-    { label: SERVICES.events.title, href: SERVICES.events.href },
+    { label: SERVICES.photography.title, href: SERVICES.photography.href },
+    { label: SERVICES.videography.title, href: SERVICES.videography.href },
+    { label: SERVICES.drone.title, href: SERVICES.drone.href },
+    { label: SERVICES.ai.title, href: SERVICES.ai.href },
   ],
   company: [
     { label: 'About', href: '/about' },
@@ -295,7 +329,7 @@ export const NAV_LINKS = {
 export const PORTFOLIO_CATEGORIES = {
   brands: {
     slug: 'brands',
-    title: SERVICES.brand.title,
+    title: 'Brand Photography',
     description: 'Commercial and brand photography for businesses',
     image: 'finished/site/portfolio-brands.jpg',
   },

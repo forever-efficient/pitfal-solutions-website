@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { ArrowRightIcon } from '@/components/icons';
-import { PAGE_META, PORTFOLIO_CATEGORIES, SERVICES } from '@/lib/constants';
+import { PAGE_META, PORTFOLIO_CATEGORIES } from '@/lib/constants';
 import { getCategoryCounts } from '@/lib/galleries';
 import { getImageUrl } from '@/lib/utils';
 
@@ -19,7 +19,7 @@ export default function PortfolioPage() {
   const categories = [
     {
       slug: PORTFOLIO_CATEGORIES.brands.slug,
-      title: SERVICES.brand.title,
+      title: PORTFOLIO_CATEGORIES.brands.title,
       description: 'Professional brand imagery for businesses and entrepreneurs',
       count: counts.brands || 0,
       image: PORTFOLIO_CATEGORIES.brands.image,

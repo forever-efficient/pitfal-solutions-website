@@ -16,10 +16,10 @@ describe('Footer', () => {
 
   it('renders service links', () => {
     render(<Footer />);
-    expect(screen.getByText('Brand Photography')).toBeInTheDocument();
-    expect(screen.getByText('Portraits')).toBeInTheDocument();
-    expect(screen.getByText('Events')).toBeInTheDocument();
-    expect(screen.getByText('Commercial')).toBeInTheDocument();
+    expect(screen.getByText('Photography')).toBeInTheDocument();
+    expect(screen.getByText('Videography')).toBeInTheDocument();
+    expect(screen.getByText('Commercial Drone')).toBeInTheDocument();
+    expect(screen.getByText('AI & Software Solutions')).toBeInTheDocument();
   });
 
   it('renders company links', () => {

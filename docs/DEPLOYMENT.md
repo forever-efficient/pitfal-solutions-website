@@ -7,6 +7,53 @@
 
 ---
 
+## Quick Deploy (Makefile)
+
+A `Makefile` at the project root wraps all deployment steps into a single command. This is the recommended way to deploy after initial infrastructure setup.
+
+### First-Time Setup (after `terraform apply`)
+
+```bash
+# From project root — reads Terraform outputs and saves to .make.env
+make setup
+```
+
+### Deploy Frontend (1 command)
+
+```bash
+make deploy
+```
+
+This runs: `check → build → sync → invalidate` with production env vars automatically baked into the Next.js build.
+
+### All Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make deploy` | **Full deploy:** build + S3 sync + CloudFront invalidation |
+| `make build` | Build Next.js with production `NEXT_PUBLIC_*` vars |
+| `make sync` | Two-pass S3 sync (assets: 1-year cache; HTML: no-cache) |
+| `make invalidate` | Create CloudFront invalidation for `/*` |
+| `make check` | Verify AWS CLI, pnpm, and `--profile pitfal` credentials |
+| `make setup` | Read Terraform outputs → write `.make.env` |
+| `make status` | Show active bucket, CloudFront ID, URLs |
+| `make build-lambdas` | Run `scripts/build-lambdas.sh all` |
+| `make deploy-lambdas` | Build Lambdas then print terraform commands to run |
+| `make test` | `pnpm test` |
+| `make test-e2e` | `pnpm test:e2e` |
+| `make lint` | `pnpm lint` |
+| `make type-check` | `pnpm type-check` |
+| `make clean` | Remove `out/`, `.next/`, `lambda/*/dist/` |
+| `make help` | List all targets with active config |
+
+### Notes
+
+- Terraform commands are **never executed** by the Makefile — they are printed for you to run manually.
+- `.make.env` is git-ignored; it stores env-specific values read from Terraform outputs.
+- Defaults are hardcoded to the current prod values so `make deploy` works without running `make setup` first.
+
+---
+
 ## Before You Start
 
 ### Prerequisites Checklist

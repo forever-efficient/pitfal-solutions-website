@@ -116,7 +116,7 @@ export default function AboutPage() {
               {
                 title: 'Connection',
                 description:
-                  'Building relationships with our clients, understanding their vision and creating a comfortable environment for the best results.',
+                  'Building real relationships with clients, understanding their vision and creating a comfortable environment for the best results.',
                 icon: <UsersIcon size={32} strokeWidth={1.5} />,
               },
             ].map((value) => (

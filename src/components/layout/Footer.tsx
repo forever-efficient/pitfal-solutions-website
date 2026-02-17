@@ -5,10 +5,10 @@ import { BUSINESS, COPY, SERVICES } from '@/lib/constants';
 
 const footerLinks = {
   services: [
-    { label: SERVICES.brand.title, href: SERVICES.brand.href },
-    { label: 'Portraits', href: SERVICES.portraits.href },
-    { label: 'Events', href: SERVICES.events.href },
-    { label: 'Commercial', href: '/services#commercial' },
+    { label: SERVICES.photography.title, href: SERVICES.photography.href },
+    { label: SERVICES.videography.title, href: SERVICES.videography.href },
+    { label: SERVICES.drone.title, href: SERVICES.drone.href },
+    { label: SERVICES.ai.title, href: SERVICES.ai.href },
   ],
   company: [
     { label: 'About', href: '/about' },

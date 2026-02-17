@@ -8,7 +8,7 @@ import faqData from '../../../content/faq.json';
 export const metadata: Metadata = {
   title: 'FAQ',
   description:
-    'Frequently asked questions about Pitfal Solutions photography and videography services. Learn about our process, pricing, and what to expect.',
+    'Frequently asked questions about Pitfal Solutions photography and videography services. Learn about the process, pricing, and what to expect.',
 };
 
 export default function FAQPage() {

@@ -1,11 +1,11 @@
 'use client';
 
-import { Fragment, useEffect, useCallback, useRef } from 'react';
+import { Fragment, useEffect, useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { navigationItems, NavItem } from './Navigation';
-import { CloseIcon } from '@/components/icons';
+import { CloseIcon, ChevronDownIcon } from '@/components/icons';
 
 export interface MobileMenuProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -37,6 +38,11 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
     if (isOpen) {
       closeButtonRef.current?.focus();
     }
+  }, [isOpen]);
+
+  // Reset expanded state when menu closes
+  useEffect(() => {
+    if (!isOpen) setExpandedItem(null);
   }, [isOpen]);
 
   // Focus trap
@@ -104,6 +110,60 @@ export function MobileMenu({ isOpen, onClose, items = navigationItems }: MobileM
               const isActive =
                 pathname === item.href ||
                 (item.href !== '/' && pathname.startsWith(item.href));
+
+              if (item.children) {
+                const isExpanded = expandedItem === item.label;
+
+                return (
+                  <li key={item.href}>
+                    {/* Accordion toggle */}
+                    <button
+                      onClick={() => setExpandedItem(isExpanded ? null : item.label)}
+                      className={cn(
+                        'w-full flex items-center justify-between px-4 py-3 text-base font-medium rounded-lg transition-colors duration-200',
+                        isActive
+                          ? 'text-primary-600 bg-primary-50'
+                          : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100'
+                      )}
+                      aria-expanded={isExpanded}
+                    >
+                      {item.label}
+                      <ChevronDownIcon
+                        size={16}
+                        className={cn(
+                          'transition-transform duration-200',
+                          isExpanded ? 'rotate-180' : 'rotate-0'
+                        )}
+                      />
+                    </button>
+
+                    {/* Child links */}
+                    {isExpanded && (
+                      <ul className="mt-1 ml-4 space-y-1 border-l-2 border-neutral-100 pl-3">
+                        {item.children.map((child) => {
+                          const isChildActive = pathname === child.href || pathname.startsWith(child.href);
+                          return (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                onClick={onClose}
+                                className={cn(
+                                  'block px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200',
+                                  isChildActive
+                                    ? 'text-primary-600 bg-primary-50'
+                                    : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                                )}
+                              >
+                                {child.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
 
               return (
                 <li key={item.href}>
