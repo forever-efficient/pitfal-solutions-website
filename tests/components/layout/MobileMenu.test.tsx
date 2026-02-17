@@ -119,4 +119,45 @@ describe('MobileMenu', () => {
 
     expect(screen.getByText('Menu')).toBeInTheDocument();
   });
+
+  it('closes on Escape key when open', () => {
+    render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close on Escape key when closed', () => {
+    render(<MobileMenu isOpen={false} onClose={mockOnClose} />);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
+  it('expands services accordion and renders child links', () => {
+    render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+
+    const servicesToggle = screen.getByRole('button', { name: 'Services' });
+    expect(servicesToggle).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(servicesToggle);
+
+    expect(servicesToggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('link', { name: 'Photography' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Videography' })).toBeInTheDocument();
+  });
+
+  it('resets expanded accordion state when menu closes', () => {
+    const { rerender } = render(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Services' }));
+    expect(screen.getByRole('link', { name: 'Photography' })).toBeInTheDocument();
+
+    rerender(<MobileMenu isOpen={false} onClose={mockOnClose} />);
+    rerender(<MobileMenu isOpen={true} onClose={mockOnClose} />);
+
+    expect(screen.queryByRole('link', { name: 'Photography' })).not.toBeInTheDocument();
+  });
 });

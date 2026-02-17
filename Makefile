@@ -29,7 +29,8 @@ NEXT_PUBLIC_API_URL   ?= https://ei1btpxkmb.execute-api.us-west-2.amazonaws.com/
 
 .PHONY: help setup check build sync invalidate deploy \
         build-lambdas deploy-lambdas \
-        test test-e2e lint type-check \
+        test test-ui test-lambda test-coverage test-e2e lint type-check size \
+        ci-install ci-lint ci-type-check ci-test-ui ci-test-lambda ci-coverage ci-build ci-e2e ci-bundle-size ci-pr ci-all \
         status clean
 
 # --- Default target ----------------------------------------------------------
@@ -60,9 +61,17 @@ help: ## List all available targets
 	@echo ""
 	@echo "Quality:"
 	@echo "  make test            Run unit tests (pnpm test)"
+	@echo "  make test-ui         Run UI tests (pnpm test:ui)"
+	@echo "  make test-lambda     Run Lambda tests (pnpm test:lambda)"
+	@echo "  make test-coverage   Run coverage gate (pnpm test:coverage)"
 	@echo "  make test-e2e        Run E2E tests (pnpm test:e2e)"
 	@echo "  make lint            Run ESLint (pnpm lint)"
 	@echo "  make type-check      TypeScript check (pnpm type-check)"
+	@echo "  make size            Bundle size check (pnpm size)"
+	@echo ""
+	@echo "CI parity (mirrors .github/workflows/ci.yml):"
+	@echo "  make ci-pr           Lint + type-check + UI tests + Lambda tests + coverage + build"
+	@echo "  make ci-all          ci-pr + e2e + bundle-size"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean           Remove out/, .next/, lambda/*/dist/"
@@ -178,6 +187,15 @@ deploy-lambdas: build-lambdas ## Build Lambdas then print terraform commands to 
 test: ## Run unit tests
 	pnpm test
 
+test-ui: ## Run UI tests (jsdom)
+	pnpm test:ui
+
+test-lambda: ## Run Lambda tests (node)
+	pnpm test:lambda
+
+test-coverage: ## Run coverage checks (v8 + thresholds)
+	pnpm test:coverage
+
 test-e2e: ## Run E2E tests (Playwright)
 	pnpm test:e2e
 
@@ -186,6 +204,44 @@ lint: ## Run ESLint
 
 type-check: ## Run TypeScript type checker
 	pnpm type-check
+
+size: ## Run bundle size check
+	pnpm size
+
+# --- CI parity targets -------------------------------------------------------
+
+ci-install: ## Install dependencies exactly like GitHub Actions
+	CI=true pnpm install --frozen-lockfile --prefer-offline
+
+ci-lint: ci-install ## Mirror CI lint job
+	pnpm lint
+
+ci-type-check: ci-install ## Mirror CI type-check job
+	pnpm type-check
+
+ci-test-ui: ci-install ## Mirror CI UI test job
+	pnpm test:ui
+
+ci-test-lambda: ci-install ## Mirror CI Lambda test job
+	pnpm test:lambda
+
+ci-coverage: ci-install ## Mirror CI coverage job
+	pnpm test:coverage
+
+ci-build: ci-install ## Mirror CI build job
+	pnpm build
+
+ci-e2e: ci-install ## Mirror CI e2e job
+	pnpm exec playwright install --with-deps chromium
+	pnpm exec playwright test --project=chromium
+
+ci-bundle-size: ci-install ## Mirror CI bundle-size job (non-blocking like continue-on-error)
+	pnpm build
+	-pnpm size
+
+ci-pr: ci-lint ci-type-check ci-test-ui ci-test-lambda ci-coverage ci-build ## Mirror PR-required CI gates
+
+ci-all: ci-pr ci-e2e ci-bundle-size ## Mirror full workflow including post-build jobs
 
 # --- Status ------------------------------------------------------------------
 

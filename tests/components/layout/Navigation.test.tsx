@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Navigation, navigationItems } from '@/components/layout/Navigation';
 
 // Mock usePathname
@@ -89,5 +89,38 @@ describe('Navigation', () => {
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
     expect(homeLink).not.toHaveClass('text-accent-600');
+  });
+
+  it('applies unscrolled inactive style when not active', () => {
+    mockUsePathname.mockReturnValue('/about');
+    render(<Navigation isScrolled={false} />);
+
+    const homeLink = screen.getByRole('link', { name: 'Home' });
+    expect(homeLink).toHaveClass('text-white/90');
+  });
+
+  it('opens and closes services dropdown on hover', () => {
+    render(<Navigation />);
+
+    const servicesLink = screen.getByRole('link', { name: 'Services' });
+    const dropdownContainer = servicesLink.parentElement as HTMLDivElement;
+    const dropdownPanel = dropdownContainer.querySelector('.absolute.top-full') as HTMLDivElement;
+
+    expect(dropdownPanel).toHaveClass('opacity-0');
+
+    fireEvent.mouseEnter(dropdownContainer);
+    expect(dropdownPanel).toHaveClass('opacity-100');
+
+    fireEvent.mouseLeave(dropdownContainer);
+    expect(dropdownPanel).toHaveClass('opacity-0');
+  });
+
+  it('marks active service child link in dropdown', () => {
+    mockUsePathname.mockReturnValue('/services/videography');
+    render(<Navigation />);
+
+    const childLink = screen.getByRole('link', { name: 'Videography' });
+    expect(childLink).toHaveClass('text-primary-600');
+    expect(childLink).toHaveClass('bg-primary-50');
   });
 });

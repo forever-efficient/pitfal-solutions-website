@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
 import '@/styles/globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -7,18 +6,6 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { BUSINESS, SEO } from '@/lib/constants';
 import { LocalBusinessJsonLd } from '@/components/seo';
 import { SiteShell } from '@/components/layout/SiteShell';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -89,11 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${inter.variable} ${playfair.variable}`}
-      suppressHydrationWarning
-    >
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-white font-sans text-neutral-900 antialiased">
         <LocalBusinessJsonLd />
         {/* Skip to main content link for accessibility */}

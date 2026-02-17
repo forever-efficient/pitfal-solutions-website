@@ -48,7 +48,7 @@ describe('TestimonialsSection', () => {
   it('renders the section header', () => {
     render(<TestimonialsSection />);
     expect(screen.getByText('Testimonials')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'What Our Clients Say' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What Clients Say' })).toBeInTheDocument();
   });
 
   it('renders the first testimonial by default', () => {
