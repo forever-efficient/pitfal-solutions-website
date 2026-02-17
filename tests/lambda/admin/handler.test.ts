@@ -34,6 +34,7 @@ const mockGeneratePresignedUploadUrl = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
 const mockDeleteS3Objects = vi.hoisted(() => vi.fn());
 const mockSendTemplatedEmail = vi.hoisted(() => vi.fn());
+const mockLambdaInvokeSend = vi.hoisted(() => vi.fn());
 
 // Mock db module
 vi.mock('../../../lambda/shared/db', () => ({
@@ -64,6 +65,12 @@ vi.mock('bcryptjs', () => ({
   default: { compare: mockCompare, hash: mockHash },
   compare: mockCompare,
   hash: mockHash,
+}));
+
+// Mock Lambda client used for RAW processing orchestration invoke
+vi.mock('@aws-sdk/client-lambda', () => ({
+  LambdaClient: vi.fn(() => ({ send: mockLambdaInvokeSend })),
+  InvokeCommand: vi.fn((params) => params),
 }));
 
 // Mock S3 utilities
@@ -155,6 +162,7 @@ describe('Admin Lambda Handler', () => {
     mockGeneratePresignedDownloadUrl.mockClear();
     mockDeleteS3Objects.mockClear();
     mockSendTemplatedEmail.mockClear();
+    mockLambdaInvokeSend.mockClear();
 
     // Defaults
     mockGetItem.mockImplementation(async () => null);
@@ -197,6 +205,7 @@ describe('Admin Lambda Handler', () => {
     mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload-url.example.com');
     mockGeneratePresignedDownloadUrl.mockImplementation(async () => 'https://download-url.example.com');
     mockDeleteS3Objects.mockImplementation(async () => {});
+    mockLambdaInvokeSend.mockImplementation(async () => ({ StatusCode: 202 }));
   });
 
   // ============ OPTIONS ============
