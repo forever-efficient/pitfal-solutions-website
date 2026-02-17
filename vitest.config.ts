@@ -16,9 +16,11 @@ export default defineConfig({
       include: [
         'src/components/**/*.{ts,tsx}',
         'src/lib/**/*.{ts,tsx}',
+        'lambda/**/*.{ts,tsx}',
       ],
       exclude: [
         'node_modules/',
+        'lambda/**/node_modules/',
         'tests/',
         '**/*.d.ts',
         '**/*.config.{js,ts}',
@@ -27,10 +29,10 @@ export default defineConfig({
         '**/*.test.{ts,tsx}',
       ],
       thresholds: {
-        lines: 55,
-        functions: 75,
-        branches: 55,
-        statements: 55,
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
       },
     },
   },

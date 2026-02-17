@@ -9,6 +9,24 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+function resolveApiBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return API_URL;
+  }
+
+  const isLocalDevHost =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  // In deployed environments, route through same-origin /api so CloudFront
+  // handles origin routing and auth consistently across custom/placeholder domains.
+  if (!isLocalDevHost) {
+    return '';
+  }
+
+  return API_URL;
+}
+
 // =============================================================================
 // Shared Types
 // =============================================================================
@@ -70,7 +88,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ? getStoredToken(CLIENT_TOKEN_KEY)
       : null;
 
-  const url = `${API_URL}${path}`;
+  const url = `${resolveApiBaseUrl()}${path}`;
   const res = await fetch(url, {
     ...options,
     headers: {
@@ -338,10 +356,10 @@ export const adminGalleries = {
 // =============================================================================
 
 export const adminImages = {
-  getUploadUrl: (galleryId: string, filename: string, contentType: string) =>
+  getUploadUrl: (galleryId: string, filename: string, contentType: string, isRaw = false) =>
     request<{ uploadUrl: string; key: string }>('/api/admin/images', {
       method: 'POST',
-      body: JSON.stringify({ galleryId, filename, contentType }),
+      body: JSON.stringify({ galleryId, filename, contentType, isRaw }),
     }),
 
   updateAlt: (imageKey: string, galleryId: string, alt: string) =>
@@ -397,4 +415,47 @@ export const adminNotify = {
         body: JSON.stringify({ clientEmail, clientName, expirationDays }),
       }
     ),
+};
+
+// =============================================================================
+// Admin Processing Jobs
+// =============================================================================
+
+export interface ProcessingJob {
+  jobId: string;
+  galleryId: string;
+  rawKeys: string[];
+  imagenProjectId?: string;
+  status: 'queued' | 'uploading' | 'processing' | 'downloading' | 'complete' | 'failed';
+  mode: 'auto' | 'manual';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  resultKeys?: string[];
+  error?: string;
+}
+
+export interface ProcessingSettings {
+  processingMode: 'auto' | 'manual';
+  imagenProfileId: string;
+}
+
+export const adminProcessing = {
+  listJobs: (galleryId: string) =>
+    request<{ jobs: ProcessingJob[] }>(`/api/admin/processing-jobs?galleryId=${galleryId}`),
+
+  triggerJob: (galleryId: string, rawKeys: string[]) =>
+    request<{ jobId: string }>('/api/admin/processing-jobs', {
+      method: 'POST',
+      body: JSON.stringify({ galleryId, rawKeys }),
+    }),
+
+  getSettings: () =>
+    request<ProcessingSettings>('/api/admin/settings'),
+
+  updateSettings: (data: Partial<ProcessingSettings>) =>
+    request<{ updated: boolean }>('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 };

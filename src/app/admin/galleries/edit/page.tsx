@@ -8,6 +8,7 @@ import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
 import { HeroPositionEditor } from '@/components/admin/HeroPositionEditor';
+import { ProcessingQueue } from '@/components/admin/ProcessingQueue';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -123,6 +124,7 @@ function GalleryEditContent() {
               initialHeight={gallery.heroHeight}
             />
           )}
+          <ProcessingQueue galleryId={id} />
         </div>
 
         <div>

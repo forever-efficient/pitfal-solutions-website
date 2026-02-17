@@ -191,3 +191,37 @@ variable "image_processor_jpeg_quality" {
     error_message = "JPEG quality must be between 1 and 100."
   }
 }
+
+# ─────────────────────────────────────────────
+# ImagenAI Processing Pipeline settings
+# ─────────────────────────────────────────────
+
+variable "imagenai_api_key" {
+  description = "ImagenAI API key for RAW photo editing. Set to empty string to disable the pipeline."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "imagenai_profile_id" {
+  description = "ImagenAI AI profile ID (the editing style to apply). Find it in the ImagenAI dashboard."
+  type        = string
+  default     = ""
+}
+
+variable "processing_mode" {
+  description = "RAW processing trigger mode: auto (S3 event triggers immediately) or manual (admin clicks Process Now)."
+  type        = string
+  default     = "auto"
+
+  validation {
+    condition     = contains(["auto", "manual"], var.processing_mode)
+    error_message = "processing_mode must be auto or manual."
+  }
+}
+
+variable "enable_raw_pipeline" {
+  description = "Enable the RAW image processing pipeline (orchestrator + poller Lambdas). Requires imagenai_api_key."
+  type        = bool
+  default     = false
+}

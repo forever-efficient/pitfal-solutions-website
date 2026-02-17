@@ -11,6 +11,12 @@ interface GalleryImage {
 
 const PAGE_SIZE = 24;
 
+const RAW_EXTENSIONS = new Set(['.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.rw2', '.orf', '.raw']);
+function isRawFile(filename: string): boolean {
+  const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
+  return RAW_EXTENSIONS.has(ext);
+}
+
 interface ImageUploaderProps {
   galleryId: string;
   images: GalleryImage[];
@@ -32,6 +38,7 @@ export function ImageUploader({
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [page, setPage] = useState(1);
+  const [stagedRawKeys, setStagedRawKeys] = useState<string[]>([]);
 
   const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -45,40 +52,65 @@ export function ImageUploader({
     async (files: FileList) => {
       setUploading(true);
       const newImages: GalleryImage[] = [...images];
+      const newRawKeys: string[] = [];
 
       for (const file of Array.from(files)) {
-        if (!file.type.startsWith('image/')) continue;
+        const raw = isRawFile(file.name);
+        if (!file.type.startsWith('image/') && !raw) continue;
 
         try {
-          // Get presigned upload URL
-          const { uploadUrl, key } = await adminImages.getUploadUrl(
-            galleryId,
-            file.name,
-            file.type
-          );
+          if (raw) {
+            // RAW file: upload to staging, track separately
+            const { uploadUrl, key } = await adminImages.getUploadUrl(
+              galleryId,
+              file.name,
+              'application/octet-stream',
+              true
+            );
 
-          // Upload directly to S3
-          await fetch(uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type },
-          });
+            await fetch(uploadUrl, {
+              method: 'PUT',
+              body: file,
+              headers: { 'Content-Type': 'application/octet-stream' },
+            });
 
-          newImages.push({ key, alt: '' });
+            newRawKeys.push(key);
+          } else {
+            // Regular image: upload normally
+            const { uploadUrl, key } = await adminImages.getUploadUrl(
+              galleryId,
+              file.name,
+              file.type
+            );
+
+            await fetch(uploadUrl, {
+              method: 'PUT',
+              body: file,
+              headers: { 'Content-Type': file.type },
+            });
+
+            newImages.push({ key, alt: '' });
+          }
         } catch {
           showError(`Failed to upload ${file.name}`);
         }
       }
 
-      // Update gallery with new images
+      // Update gallery with new regular images
       if (newImages.length > images.length) {
         await adminGalleries.update(galleryId, { images: newImages });
         onUpdate(newImages);
       }
 
+      // Track staged RAW keys
+      if (newRawKeys.length > 0) {
+        setStagedRawKeys(prev => [...prev, ...newRawKeys]);
+        showSuccess(`${newRawKeys.length} RAW file${newRawKeys.length !== 1 ? 's' : ''} uploaded to processing queue`);
+      }
+
       setUploading(false);
     },
-    [galleryId, images, onUpdate, showError]
+    [galleryId, images, onUpdate, showError, showSuccess]
   );
 
   async function handleDelete(imageKey: string) {
@@ -113,7 +145,7 @@ export function ImageUploader({
   return (
     <div className="bg-white rounded-xl border border-neutral-200 p-6">
       <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-        Images ({images.length})
+        Images ({images.length + stagedRawKeys.length})
       </h2>
 
       {/* Drop zone */}
@@ -134,7 +166,7 @@ export function ImageUploader({
         <input
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,.cr2,.CR2,.cr3,.CR3,.nef,.NEF,.arw,.ARW,.dng,.DNG,.raf,.RAF,.rw2,.RW2,.orf,.ORF,.raw,.RAW"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
           className="hidden"
           id="image-upload"
@@ -156,10 +188,49 @@ export function ImageUploader({
           <p className="text-sm text-neutral-600">
             {uploading
               ? 'Uploading...'
-              : 'Drag & drop images or click to browse'}
+              : 'Drag & drop images or RAW files, or click to browse'}
           </p>
         </label>
       </div>
+
+      {/* Staged RAW files */}
+      {stagedRawKeys.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+          {stagedRawKeys.map((key) => {
+            const filename = key.split('/').pop() || key;
+            return (
+              <div
+                key={key}
+                className="relative rounded-lg overflow-hidden bg-neutral-100 flex flex-col items-center justify-center h-32"
+              >
+                <svg
+                  className="w-8 h-8 text-neutral-400 mb-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                <p className="text-xs text-neutral-500 truncate max-w-full px-2">{filename}</p>
+                <span className="absolute top-1 right-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                  In queue
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Image grid */}
       {images.length > 0 && (

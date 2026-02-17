@@ -55,8 +55,8 @@ jobs:
       - name: Run TypeScript check
         run: pnpm type-check
 
-  test:
-    name: Unit Tests
+  test-ui:
+    name: UI Tests (jsdom)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -74,7 +74,51 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
+      - name: Run UI tests
+        run: pnpm test:ui
+
+  test-lambda:
+    name: Lambda Tests (node)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Lambda tests
+        run: pnpm test:lambda
+
+  coverage:
+    name: Coverage Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run coverage
         run: pnpm test:coverage
 
       - name: Upload coverage reports
@@ -82,13 +126,12 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
-          fail_ci_if_error: false
-        continue-on-error: true
+          fail_ci_if_error: true
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, type-check, test]
+    needs: [lint, type-check, test-ui, test-lambda, coverage]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

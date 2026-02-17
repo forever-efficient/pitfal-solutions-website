@@ -26,16 +26,21 @@ const mockImages = [
 function renderUploader(
   images = mockImages,
   onUpdate = vi.fn(),
-  galleryId = 'gal-123'
+  galleryId = 'gal-123',
+  heroImage?: string | null,
+  onHeroChange = vi.fn()
 ) {
   return {
     onUpdate,
+    onHeroChange,
     ...render(
       <ToastProvider>
         <ImageUploader
           galleryId={galleryId}
           images={images}
+          heroImage={heroImage}
           onUpdate={onUpdate}
+          onHeroChange={onHeroChange}
         />
       </ToastProvider>
     ),
@@ -80,7 +85,7 @@ describe('ImageUploader', () => {
   it('renders drop zone with upload text', () => {
     renderUploader();
     expect(
-      screen.getByText('Drag & drop images or click to browse')
+      screen.getByText('Drag & drop images or RAW files, or click to browse')
     ).toBeInTheDocument();
   });
 
@@ -119,7 +124,8 @@ describe('ImageUploader', () => {
       'input[type="file"]'
     ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
-    expect(input).toHaveAttribute('accept', 'image/*');
+    expect(input.getAttribute('accept')).toContain('image/*');
+    expect(input.getAttribute('accept')).toContain('.cr2');
     expect(input.multiple).toBe(true);
   });
 
@@ -210,13 +216,65 @@ describe('ImageUploader', () => {
         );
       });
     });
+
+    it('uploads RAW files to staging and shows queue state', async () => {
+      mockGetUploadUrl.mockImplementationOnce(() =>
+        Promise.resolve({
+          uploadUrl: 'https://s3.example.com/raw-upload',
+          key: 'staging/gal-123/raw-file.CR2',
+        })
+      );
+
+      renderUploader();
+
+      const rawFile = new File(['raw-data'], 'raw-file.CR2', {
+        type: '',
+      });
+      const input = document.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+
+      await userEvent.upload(input, rawFile);
+
+      await waitFor(() => {
+        expect(mockGetUploadUrl).toHaveBeenCalledWith(
+          'gal-123',
+          'raw-file.CR2',
+          'application/octet-stream',
+          true
+        );
+      });
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          'https://s3.example.com/raw-upload',
+          {
+            method: 'PUT',
+            body: rawFile,
+            headers: { 'Content-Type': 'application/octet-stream' },
+          }
+        );
+      });
+
+      expect(mockGalleryUpdate).not.toHaveBeenCalledWith('gal-123', {
+        images: expect.any(Array),
+      });
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        '1 RAW file uploaded to processing queue'
+      );
+      expect(screen.getByText('raw-file.CR2')).toBeInTheDocument();
+      expect(screen.getByText('In queue')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Images (3)' })
+      ).toBeInTheDocument();
+    });
   });
 
   describe('drag and drop', () => {
     it('shows drag-over styling on dragOver', () => {
       renderUploader();
       const dropZone = screen
-        .getByText('Drag & drop images or click to browse')
+        .getByText('Drag & drop images or RAW files, or click to browse')
         .closest('div[class*="border-dashed"]')!;
 
       fireEvent.dragOver(dropZone, { preventDefault: vi.fn() });
@@ -227,7 +285,7 @@ describe('ImageUploader', () => {
     it('removes drag-over styling on dragLeave', () => {
       renderUploader();
       const dropZone = screen
-        .getByText('Drag & drop images or click to browse')
+        .getByText('Drag & drop images or RAW files, or click to browse')
         .closest('div[class*="border-dashed"]')!;
 
       fireEvent.dragOver(dropZone, { preventDefault: vi.fn() });
@@ -242,7 +300,7 @@ describe('ImageUploader', () => {
       renderUploader(mockImages, onUpdate);
 
       const dropZone = screen
-        .getByText('Drag & drop images or click to browse')
+        .getByText('Drag & drop images or RAW files, or click to browse')
         .closest('div[class*="border-dashed"]')!;
 
       const file = new File(['image-data'], 'dropped.jpg', {
@@ -325,6 +383,89 @@ describe('ImageUploader', () => {
           'Failed to delete image'
         );
       });
+    });
+  });
+
+  describe('cover image controls', () => {
+    it('sets selected image as cover', async () => {
+      const user = userEvent.setup();
+      const onHeroChange = vi.fn();
+      renderUploader(mockImages, vi.fn(), 'gal-123', null, onHeroChange);
+
+      await user.click(screen.getAllByRole('button', { name: 'Set as cover' })[0]);
+
+      await waitFor(() => {
+        expect(mockGalleryUpdate).toHaveBeenCalledWith('gal-123', {
+          heroImage: 'finished/gal-123/photo1.jpg',
+        });
+      });
+
+      expect(onHeroChange).toHaveBeenCalled();
+      expect(screen.getByRole('alert')).toHaveTextContent('Cover image set');
+    });
+
+    it('removes current cover image', async () => {
+      const user = userEvent.setup();
+      renderUploader(
+        mockImages,
+        vi.fn(),
+        'gal-123',
+        'finished/gal-123/photo1.jpg',
+        vi.fn()
+      );
+
+      await user.click(screen.getByRole('button', { name: 'Remove cover' }));
+
+      await waitFor(() => {
+        expect(mockGalleryUpdate).toHaveBeenCalledWith('gal-123', {
+          heroImage: null,
+        });
+      });
+
+      expect(screen.getByText('Cover')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('Cover image removed');
+    });
+
+    it('shows error toast when cover update fails', async () => {
+      mockGalleryUpdate.mockImplementationOnce(() =>
+        Promise.reject(new Error('update failed'))
+      );
+
+      const user = userEvent.setup();
+      renderUploader(mockImages, vi.fn(), 'gal-123', null, vi.fn());
+
+      await user.click(screen.getAllByRole('button', { name: 'Set as cover' })[0]);
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Failed to update cover image'
+        );
+      });
+    });
+  });
+
+  describe('pagination', () => {
+    it('renders next page and previous page controls', async () => {
+      const user = userEvent.setup();
+      const manyImages = Array.from({ length: 25 }, (_, i) => ({
+        key: `finished/gal-123/photo-${i + 1}.jpg`,
+        alt: `Photo ${i + 1}`,
+      }));
+
+      renderUploader(manyImages);
+
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+      expect(screen.queryByAltText('Photo 25')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Next' }));
+
+      expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+      expect(screen.getByAltText('Photo 25')).toBeInTheDocument();
+
+      await user.click(screen.getByRole('button', { name: 'Previous' }));
+
+      expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+      expect(screen.getByAltText('Photo 1')).toBeInTheDocument();
     });
   });
 });

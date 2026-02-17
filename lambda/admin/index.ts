@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
+import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
 import { getItem, putItem, updateItem, deleteItem, queryItems, scanItems, buildUpdateExpression } from '../shared/db';
 import {
   success,
@@ -36,7 +37,10 @@ const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE;
 const BOOKINGS_TABLE = process.env.BOOKINGS_TABLE;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
+const ORCHESTRATOR_FUNCTION_NAME = process.env.ORCHESTRATOR_FUNCTION_NAME;
 const COOKIE_NAME = 'pitfal_admin_session';
+
+const lambdaClient = new LambdaClient({});
 
 if (!ADMIN_TABLE || !GALLERIES_TABLE || !INQUIRIES_TABLE || !BOOKINGS_TABLE || !MEDIA_BUCKET) {
   throw new Error(
@@ -184,6 +188,16 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return handleBookingById(event, method, bookingId, ctx, requestOrigin);
     }
     return handleBookings(event, method, ctx, requestOrigin);
+  }
+
+  // Processing jobs routes
+  if (resource.includes('/admin/processing-jobs')) {
+    return handleProcessingJobs(event, method, ctx, requestOrigin);
+  }
+
+  // Settings routes
+  if (resource.includes('/admin/settings')) {
+    return handleSettings(event, method, ctx, requestOrigin);
   }
 
   return notFound('Route not found', requestOrigin);
@@ -475,12 +489,15 @@ async function handleImages(
   }
 
   if (method === 'POST') {
-    if (!body.galleryId || !body.filename || !body.contentType) {
+    if (!body.galleryId || !body.filename || (!body.contentType && !body.isRaw)) {
       return badRequest('galleryId, filename, and contentType are required', requestOrigin);
     }
 
-    const key = `finished/${body.galleryId}/${randomUUID()}-${body.filename}`;
-    const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, body.contentType as string, 3600);
+    const isRaw = body.isRaw === true;
+    const prefix = isRaw ? 'staging' : 'finished';
+    const contentType = isRaw ? 'application/octet-stream' : (body.contentType as string);
+    const key = `${prefix}/${body.galleryId}/${randomUUID()}-${body.filename}`;
+    const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, contentType, 3600);
 
     log('INFO', 'Upload URL generated', ctx, { galleryId: body.galleryId as string, key });
     return success({ uploadUrl, key }, 200, requestOrigin);
@@ -769,4 +786,186 @@ async function handleGalleryNotify(
 
   log('INFO', 'Client notified about gallery', ctx, { galleryId, clientEmail: body.clientEmail });
   return success({ notified: true }, 200, requestOrigin);
+}
+
+// ============ PROCESSING JOBS TYPES ============
+
+interface ProcessingJobRecord {
+  pk: string;
+  sk: string;
+  jobId: string;
+  galleryId: string;
+  rawKeys: string[];
+  imagenProjectId?: string;
+  status: 'queued' | 'uploading' | 'processing' | 'downloading' | 'complete' | 'failed';
+  mode: 'auto' | 'manual';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  resultKeys?: string[];
+  error?: string;
+}
+
+interface SettingsRecord {
+  pk: string;
+  sk: string;
+  processingMode: 'auto' | 'manual';
+  imagenProfileId: string;
+}
+
+// ============ PROCESSING JOBS HANDLERS ============
+
+async function handleProcessingJobs(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    const galleryId = event.queryStringParameters?.galleryId;
+    if (!galleryId) {
+      return badRequest('galleryId query parameter is required', requestOrigin);
+    }
+
+    const allJobs = await scanItems<ProcessingJobRecord>({
+      TableName: ADMIN_TABLE,
+    });
+
+    const jobs = allJobs
+      .filter(item => item.pk?.startsWith('PROCESSING_JOB#') && item.galleryId === galleryId)
+      .map(job => ({
+        jobId: job.jobId,
+        galleryId: job.galleryId,
+        rawKeys: job.rawKeys,
+        imagenProjectId: job.imagenProjectId,
+        status: job.status,
+        mode: job.mode,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+        completedAt: job.completedAt,
+        resultKeys: job.resultKeys,
+        error: job.error,
+      }));
+
+    return success({ jobs }, 200, requestOrigin);
+  }
+
+  if (method === 'POST') {
+    let body: { galleryId?: string; rawKeys?: string[] };
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return badRequest('Invalid JSON', requestOrigin);
+    }
+
+    if (!body.galleryId || !body.rawKeys || !Array.isArray(body.rawKeys) || body.rawKeys.length === 0) {
+      return badRequest('galleryId and rawKeys[] are required', requestOrigin);
+    }
+
+    // Read settings to determine mode
+    const settingsRecord = await getItem<SettingsRecord>({
+      TableName: ADMIN_TABLE!,
+      Key: { pk: 'SETTINGS', sk: 'SETTINGS' },
+    });
+    const mode = settingsRecord?.processingMode || 'auto';
+
+    const jobId = randomUUID();
+    const timestamp = new Date().toISOString();
+
+    const jobRecord: ProcessingJobRecord = {
+      pk: `PROCESSING_JOB#${jobId}`,
+      sk: `PROCESSING_JOB#${jobId}`,
+      jobId,
+      galleryId: body.galleryId,
+      rawKeys: body.rawKeys,
+      status: 'queued',
+      mode,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    await putItem({
+      TableName: ADMIN_TABLE!,
+      Item: jobRecord,
+    });
+
+    // Invoke orchestrator Lambda asynchronously
+    if (ORCHESTRATOR_FUNCTION_NAME) {
+      await lambdaClient.send(new InvokeCommand({
+        FunctionName: ORCHESTRATOR_FUNCTION_NAME,
+        InvocationType: 'Event',
+        Payload: Buffer.from(JSON.stringify({ jobId, galleryId: body.galleryId, rawKeys: body.rawKeys })),
+      }));
+    }
+
+    log('INFO', 'Processing job created', ctx, { jobId, galleryId: body.galleryId, fileCount: body.rawKeys.length });
+    return success({ jobId }, 201, requestOrigin);
+  }
+
+  return methodNotAllowed(undefined, requestOrigin);
+}
+
+// ============ SETTINGS HANDLERS ============
+
+async function handleSettings(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    const settingsRecord = await getItem<SettingsRecord>({
+      TableName: ADMIN_TABLE!,
+      Key: { pk: 'SETTINGS', sk: 'SETTINGS' },
+    });
+
+    return success({
+      processingMode: settingsRecord?.processingMode || 'auto',
+      imagenProfileId: settingsRecord?.imagenProfileId || '',
+    }, 200, requestOrigin);
+  }
+
+  if (method === 'PUT') {
+    let body: { processingMode?: 'auto' | 'manual'; imagenProfileId?: string };
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return badRequest('Invalid JSON', requestOrigin);
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (body.processingMode !== undefined) {
+      if (!['auto', 'manual'].includes(body.processingMode)) {
+        return badRequest('processingMode must be auto or manual', requestOrigin);
+      }
+      updates.processingMode = body.processingMode;
+    }
+    if (body.imagenProfileId !== undefined) {
+      updates.imagenProfileId = body.imagenProfileId;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return badRequest('No valid fields to update', requestOrigin);
+    }
+
+    const existingSettings = await getItem<SettingsRecord>({
+      TableName: ADMIN_TABLE!,
+      Key: { pk: 'SETTINGS', sk: 'SETTINGS' },
+    });
+
+    await putItem({
+      TableName: ADMIN_TABLE!,
+      Item: {
+        pk: 'SETTINGS',
+        sk: 'SETTINGS',
+        processingMode: (updates.processingMode || existingSettings?.processingMode || 'auto'),
+        imagenProfileId: (updates.imagenProfileId ?? existingSettings?.imagenProfileId ?? ''),
+      },
+    });
+
+    log('INFO', 'Settings updated', ctx, { updates });
+    return success({ updated: true }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed(undefined, requestOrigin);
 }

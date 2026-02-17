@@ -1,7 +1,7 @@
 {
-  "name": "pitfal-admin-lambda",
+  "name": "pitfal-image-processor-poller",
   "version": "1.0.0",
-  "description": "Admin dashboard API for Pitfal Solutions",
+  "description": "Polls ImagenAI for completed jobs and downloads results",
   "main": "index.js",
   "scripts": {
     "build": "esbuild index.ts --bundle --platform=node --target=node22 --outfile=dist/index.js --external:@aws-sdk/*"
@@ -9,14 +9,10 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@aws-sdk/client-s3": "^3.0.0",
-    "@aws-sdk/lib-dynamodb": "^3.0.0",
-    "@aws-sdk/s3-request-presigner": "^3.0.0",
-    "@aws-sdk/client-lambda": "^3.0.0",
-    "bcryptjs": "^2.4.3"
+    "@aws-sdk/lib-dynamodb": "^3.0.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",
-    "@types/bcryptjs": "^2.4.0",
     "@types/node": "^22.0.0",
     "esbuild": "^0.20.0",
     "typescript": "^5.0.0"

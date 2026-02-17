@@ -352,3 +352,18 @@ resource "aws_iam_role_policy" "admin_dlq" {
     }]
   })
 }
+
+# Lambda invoke permission — allows admin Lambda to trigger the orchestrator
+resource "aws_iam_role_policy" "admin_lambda_invoke" {
+  name = "${local.name_prefix}-admin-lambda-invoke"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["lambda:InvokeFunction"]
+      Resource = "arn:aws:lambda:${var.aws_region}:${data.aws_caller_identity.current.account_id}:function:${local.name_prefix}-image-processor-orchestrator"
+    }]
+  })
+}

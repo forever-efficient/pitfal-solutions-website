@@ -8,3 +8,5 @@ export { NotifyClient } from './NotifyClient';
 export { SectionManager } from './SectionManager';
 export { HeroImagePicker } from './HeroImagePicker';
 export { HeroPositionEditor } from './HeroPositionEditor';
+export { ProcessingQueue } from './ProcessingQueue';
+export { ProcessingSettings } from './ProcessingSettings';

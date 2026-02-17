@@ -360,16 +360,18 @@ resource "aws_lambda_function" "admin" {
 
   environment {
     variables = {
-      ADMIN_TABLE          = aws_dynamodb_table.admin.name
-      GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
-      INQUIRIES_TABLE      = aws_dynamodb_table.inquiries.name
-      BOOKINGS_TABLE       = aws_dynamodb_table.bookings.name
-      MEDIA_BUCKET         = aws_s3_bucket.media.id
-      FROM_EMAIL           = var.from_email
-      CONTACT_EMAIL        = var.contact_email
-      SITE_URL             = var.use_custom_domain ? "https://${var.domain_name}" : ""
-      ENVIRONMENT          = var.environment
-      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+      ADMIN_TABLE                = aws_dynamodb_table.admin.name
+      GALLERIES_TABLE            = aws_dynamodb_table.galleries.name
+      INQUIRIES_TABLE            = aws_dynamodb_table.inquiries.name
+      BOOKINGS_TABLE             = aws_dynamodb_table.bookings.name
+      MEDIA_BUCKET               = aws_s3_bucket.media.id
+      FROM_EMAIL                 = var.from_email
+      CONTACT_EMAIL              = var.contact_email
+      SITE_URL                   = var.use_custom_domain ? "https://${var.domain_name}" : ""
+      ENVIRONMENT                = var.environment
+      CORS_ALLOWED_ORIGINS       = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+      ORCHESTRATOR_FUNCTION_NAME = var.enable_raw_pipeline ? "${local.name_prefix}-image-processor-orchestrator" : ""
+      IMAGENAI_PROFILE_ID        = var.imagenai_profile_id
     }
   }
 
