@@ -53,11 +53,14 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: [
+      { url: '/favicon/favicon.ico' },
+      { url: '/favicon/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: '/favicon/apple-touch-icon.png',
   },
-  manifest: '/site.webmanifest',
+  manifest: '/favicon/site.webmanifest',
 };
 
 export const viewport: Viewport = {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -10,27 +11,18 @@ import { MenuIcon } from '@/components/icons';
 
 export function Header() {
   const pathname = usePathname();
-  const isHomepage = pathname === '/';
-  const [isScrolled, setIsScrolled] = useState(!isHomepage);
+  const isHomePage = pathname === '/';
+  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Only use transparent/white-text styles on the home page hero
+  const useTransparentStyle = !isScrolled && isHomePage;
+
   useEffect(() => {
-    // On non-homepage, always use scrolled style
-    if (!isHomepage) {
-      setIsScrolled(true);
-      return;
-    }
-
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    // Check initial scroll position
-    handleScroll();
-
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isHomepage]);
+  }, []);
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -51,35 +43,25 @@ export function Header() {
           'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
           isScrolled
             ? 'bg-white/95 backdrop-blur-sm shadow-sm'
-            : 'bg-transparent'
+            : 'bg-white/75'
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-2 group"
-            >
-              <span
-                className="text-xl md:text-2xl font-bold text-accent-500 transition-colors group-hover:text-accent-400"
-              >
-                Pitfal
-              </span>
-              <span
-                className={cn(
-                  'text-xl md:text-2xl font-light transition-colors',
-                  isScrolled
-                    ? 'text-neutral-700'
-                    : 'text-white/90'
-                )}
-              >
-                Solutions
-              </span>
+            <Link href="/" className="flex items-center group">
+              <Image
+                src="/pitfal-solution-logo.png"
+                alt="Pitfal Solutions"
+                width={220}
+                height={64}
+                className="h-14 md:h-16 w-auto object-contain transition-opacity group-hover:opacity-80"
+                priority
+              />
             </Link>
 
             {/* Desktop Navigation */}
-            <Navigation isScrolled={isScrolled} />
+            <Navigation isScrolled={!useTransparentStyle} />
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-4">
@@ -96,9 +78,9 @@ export function Header() {
               onClick={() => setIsMobileMenuOpen(true)}
               className={cn(
                 'md:hidden p-2 rounded-lg transition-colors',
-                isScrolled
-                  ? 'text-neutral-700 hover:bg-neutral-100'
-                  : 'text-white hover:bg-white/10'
+                useTransparentStyle
+                  ? 'text-white hover:bg-white/10'
+                  : 'text-neutral-700 hover:bg-neutral-100'
               )}
               aria-label="Open menu"
             >

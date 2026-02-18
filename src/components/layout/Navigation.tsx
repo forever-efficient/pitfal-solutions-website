@@ -53,7 +53,7 @@ export function Navigation({ items = navigationItems, className, isScrolled = tr
           return (
             <div
               key={item.href}
-              className="relative pb-1"
+              className="relative"
               onMouseEnter={() => setOpenDropdown(item.label)}
               onMouseLeave={() => setOpenDropdown(null)}
             >
@@ -67,8 +67,8 @@ export function Navigation({ items = navigationItems, className, isScrolled = tr
                       ? 'text-accent-600 bg-accent-50'
                       : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                     : isActive
-                      ? 'text-accent-400 bg-white/10'
-                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                      ? 'text-accent-600 bg-accent-100'
+                      : 'text-neutral-900 hover:bg-white/20'
                 )}
               >
                 {item.label}
@@ -84,7 +84,7 @@ export function Navigation({ items = navigationItems, className, isScrolled = tr
               {/* Dropdown panel */}
               <div
                 className={cn(
-                  'absolute top-full left-0 w-52 bg-white rounded-xl shadow-lg border border-neutral-100 py-2 z-50 transition-all duration-150',
+                  'absolute top-full mt-1 left-0 w-52 bg-white rounded-xl shadow-lg border border-neutral-100 py-2 z-50 transition-all duration-150',
                   isOpen
                     ? 'opacity-100 translate-y-0 pointer-events-auto'
                     : 'opacity-0 translate-y-1 pointer-events-none'
@@ -123,8 +123,8 @@ export function Navigation({ items = navigationItems, className, isScrolled = tr
                   ? 'text-accent-600 bg-accent-50'
                   : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
                 : isActive
-                  ? 'text-accent-400 bg-white/10'
-                  : 'text-white/90 hover:text-white hover:bg-white/10'
+                  ? 'text-accent-600 bg-accent-100'
+                  : 'text-neutral-900 hover:bg-white/20'
             )}
           >
             {item.label}

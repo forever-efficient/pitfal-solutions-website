@@ -55,7 +55,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-neutral-400 text-sm">
-              {COPY.footer.description} Capturing moments that matter.
+              {COPY.footer.description} Delivering solutions that matter.
             </p>
             <p className="mt-2 text-accent-500 font-medium text-sm italic">
               {COPY.footer.tagline}

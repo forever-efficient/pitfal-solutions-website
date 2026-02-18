@@ -116,8 +116,8 @@ export const SERVICE_OPTIONS = [
 export const SEO = {
   siteTitle: BUSINESS.name,
   titleTemplate: `%s | ${BUSINESS.name}`,
-  defaultDescription: `Professional photography and videography services in ${BUSINESS.location.short}. Specializing in brand photography, portraits, and event coverage. ${BUSINESS.tagline}.`,
-  shortDescription: `Professional photography and videography services in ${BUSINESS.location.short}.`,
+  defaultDescription: `Professional Photography, Videography, Commercial Drone, and AI services in ${BUSINESS.location.short}. Specializing in brand photography, portraits, and event coverage. ${BUSINESS.tagline}.`,
+  shortDescription: `Professional Photography, Videography, Commercial Drone, and AI services in ${BUSINESS.location.short}.`,
   keywords: [
     'photography',
     'videography',
@@ -144,7 +144,7 @@ export const PAGE_META = {
   },
   about: {
     title: 'About',
-    description: `Learn about ${BUSINESS.name} - Professional photography and videography services in ${BUSINESS.location.full}. The story, philosophy, and approach to capturing moments.`,
+    description: `Learn about ${BUSINESS.name} - Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}. The story, philosophy, and approach to capturing moments.`,
   },
   services: {
     title: 'Services',
@@ -198,14 +198,14 @@ export const PAGE_META = {
 
 export const COPY = {
   hero: {
-    title: 'Capturing Moments That Matter',
-    subtitle: `Professional photography and videography services in ${BUSINESS.location.full}`,
+    title: 'Delivering Solutions That Matter',
+    subtitle: `Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}`,
     tagline: BUSINESS.tagline,
     cta: 'View Portfolio',
     ctaSecondary: 'Book Now',
   },
   footer: {
-    description: `Professional photography and videography services in ${BUSINESS.location.full}.`,
+    description: `Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}.`,
     tagline: `"${BUSINESS.tagline}"`,
     copyright: `© ${new Date().getFullYear()} ${BUSINESS.name}. All rights reserved.`,
   },

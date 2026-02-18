@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { clientGallery, clientAuth, type GallerySection } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
@@ -147,9 +148,19 @@ export function ClientGalleryView({
     <div className="min-h-screen bg-neutral-50">
       {/* Header */}
       <div className="bg-white border-b border-neutral-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-2xl font-bold text-neutral-900">
+        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="shrink-0">
+              <Image
+                src="/pitfal-solution-logo.png"
+                alt="Pitfal Solutions"
+                width={220}
+                height={64}
+                className="h-14 md:h-16 w-auto object-contain"
+                priority
+              />
+            </Link>
+            <h1 className="font-display text-xl font-bold text-neutral-900 hidden sm:block">
               {initialTitle || gallery.title}
             </h1>
           </div>

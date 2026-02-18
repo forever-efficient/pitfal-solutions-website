@@ -5,7 +5,7 @@ import { HeroSection } from '@/components/sections/HeroSection';
 describe('HeroSection', () => {
   it('renders default title', () => {
     render(<HeroSection />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Capturing Moments That Matter');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Delivering Solutions That Matter');
   });
 
   it('renders custom title', () => {
