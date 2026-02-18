@@ -29,7 +29,7 @@ NEXT_PUBLIC_API_URL   ?= https://ei1btpxkmb.execute-api.us-west-2.amazonaws.com/
 
 .PHONY: help setup check build sync invalidate deploy \
         build-lambdas deploy-lambdas \
-        test test-ui test-lambda test-coverage test-e2e lint type-check size \
+        test test-ui test-lambda test-coverage test-e2e test-all lint type-check size \
         ci-install ci-lint ci-type-check ci-test-ui ci-test-lambda ci-coverage ci-build ci-e2e ci-bundle-size ci-pr ci-all \
         status clean
 
@@ -65,6 +65,7 @@ help: ## List all available targets
 	@echo "  make test-lambda     Run Lambda tests (pnpm test:lambda)"
 	@echo "  make test-coverage   Run coverage gate (pnpm test:coverage)"
 	@echo "  make test-e2e        Run E2E tests (pnpm test:e2e)"
+	@echo "  make test-all        Run all tests: unit + Lambda + E2E"
 	@echo "  make lint            Run ESLint (pnpm lint)"
 	@echo "  make type-check      TypeScript check (pnpm type-check)"
 	@echo "  make size            Bundle size check (pnpm size)"
@@ -198,6 +199,8 @@ test-coverage: ## Run coverage checks (v8 + thresholds)
 
 test-e2e: ## Run E2E tests (Playwright)
 	pnpm test:e2e
+
+test-all: test test-e2e ## Run all tests: unit + Lambda + E2E (Playwright)
 
 lint: ## Run ESLint
 	pnpm lint

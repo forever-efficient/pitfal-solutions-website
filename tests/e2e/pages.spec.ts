@@ -89,8 +89,8 @@ test.describe('Portfolio Page', () => {
   test('displays gallery categories', async ({ page }) => {
     await page.goto('/portfolio');
 
-    // Should have links to category pages
-    const categoryLinks = page.getByRole('link').filter({
+    // Should have links to category pages (role="listitem" overrides link role on these elements)
+    const categoryLinks = page.locator('main a').filter({
       hasText: /brand|portrait|event/i,
     });
 

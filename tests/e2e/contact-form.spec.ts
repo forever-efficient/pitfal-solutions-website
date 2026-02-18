@@ -41,14 +41,14 @@ test.describe('Contact Form', () => {
     const serviceSelect = page.getByLabel(/service type/i);
 
     // Check that options exist
-    await expect(page.getByRole('option', { name: /brand photography/i })).toBeAttached();
-    await expect(page.getByRole('option', { name: /portrait/i })).toBeAttached();
-    await expect(page.getByRole('option', { name: /event/i })).toBeAttached();
-    await expect(page.getByRole('option', { name: /commercial/i })).toBeAttached();
+    await expect(page.getByRole('option', { name: /photography/i })).toBeAttached();
+    await expect(page.getByRole('option', { name: /videography/i })).toBeAttached();
+    await expect(page.getByRole('option', { name: /commercial drone/i })).toBeAttached();
+    await expect(page.getByRole('option', { name: /ai/i })).toBeAttached();
 
     // Select an option
-    await serviceSelect.selectOption('brand');
-    await expect(serviceSelect).toHaveValue('brand');
+    await serviceSelect.selectOption('photography');
+    await expect(serviceSelect).toHaveValue('photography');
   });
 
   test('message textarea accepts input', async ({ page }) => {

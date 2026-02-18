@@ -17,8 +17,7 @@ describe('Header', () => {
 
   it('renders the logo', () => {
     render(<Header />);
-    expect(screen.getByText('Pitfal')).toBeInTheDocument();
-    expect(screen.getByText('Solutions')).toBeInTheDocument();
+    expect(screen.getByAltText('Pitfal Solutions')).toBeInTheDocument();
   });
 
   it('renders the logo link to homepage', () => {
@@ -50,20 +49,20 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: /close menu/i })).toBeInTheDocument();
   });
 
-  it('has transparent background on homepage without scroll', () => {
+  it('has semi-transparent white background on homepage without scroll', () => {
     mockUsePathname.mockReturnValue('/');
     render(<Header />);
 
     const header = document.querySelector('header');
-    expect(header).toHaveClass('bg-transparent');
+    expect(header).toHaveClass('bg-white/75');
   });
 
-  it('has white background on non-homepage', () => {
+  it('has semi-transparent white background on non-homepage without scroll', () => {
     mockUsePathname.mockReturnValue('/about');
     render(<Header />);
 
     const header = document.querySelector('header');
-    expect(header).toHaveClass('bg-white/95');
+    expect(header).toHaveClass('bg-white/75');
   });
 
   it('changes to scrolled style on scroll', async () => {

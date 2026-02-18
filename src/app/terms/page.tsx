@@ -14,7 +14,7 @@ export default function TermsPage() {
         <p className="lead">Last updated: February 2026</p>
 
         <h2>Services</h2>
-        <p>{BUSINESS.name} provides professional photography and videography services including brand photography, portrait sessions, and event coverage in the {BUSINESS.location.full} area.</p>
+        <p>{BUSINESS.name} provides professional {BUSINESS.servicesOffering.toLowerCase()} including brand photography, portrait sessions, and event coverage in the {BUSINESS.location.full} area.</p>
 
         <h2>Booking and Payment</h2>
         <ul>

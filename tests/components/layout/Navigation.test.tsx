@@ -47,12 +47,13 @@ describe('Navigation', () => {
     expect(portfolioLink).toHaveClass('text-neutral-600');
   });
 
-  it('applies transparent style when not scrolled', () => {
+  it('applies unscrolled active style when not scrolled', () => {
     mockUsePathname.mockReturnValue('/');
     render(<Navigation isScrolled={false} />);
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
-    expect(homeLink).toHaveClass('text-accent-400');
+    expect(homeLink).toHaveClass('text-accent-600');
+    expect(homeLink).toHaveClass('bg-accent-100');
   });
 
   it('accepts custom items', () => {
@@ -96,7 +97,7 @@ describe('Navigation', () => {
     render(<Navigation isScrolled={false} />);
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
-    expect(homeLink).toHaveClass('text-white/90');
+    expect(homeLink).toHaveClass('text-neutral-900');
   });
 
   it('opens and closes services dropdown on hover', () => {

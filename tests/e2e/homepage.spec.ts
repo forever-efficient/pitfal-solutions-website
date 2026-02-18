@@ -19,8 +19,8 @@ test.describe('Homepage', () => {
     const header = page.locator('header');
     await expect(header).toBeVisible();
 
-    // Check for brand name in header
-    await expect(header.getByText('Pitfal')).toBeVisible();
+    // Check for logo image in header
+    await expect(header.getByRole('img', { name: /pitfal solutions/i })).toBeVisible();
   });
 
   test('displays footer with contact information', async ({ page }) => {

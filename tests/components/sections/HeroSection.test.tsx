@@ -25,7 +25,7 @@ describe('HeroSection', () => {
 
   it('renders default subtitle', () => {
     render(<HeroSection />);
-    expect(screen.getByText(/Professional photography and videography/i)).toBeInTheDocument();
+    expect(screen.getByText(/Professional Photography, Videography, Commercial Drone, and AI Services/i)).toBeInTheDocument();
   });
 
   it('renders custom subtitle', () => {

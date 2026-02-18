@@ -1,3 +1,5 @@
+import { BUSINESS } from '@/lib/constants';
+
 interface JsonLdProps {
   data: Record<string, unknown>;
 }
@@ -19,7 +21,7 @@ export function LocalBusinessJsonLd() {
         '@type': 'LocalBusiness',
         '@id': 'https://www.pitfal.solutions',
         name: 'Pitfal Solutions',
-        description: 'Professional Photography, Videography, Commercial Drone, and AI Services in Denver, Colorado.',
+        description: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.full}.`,
         url: 'https://www.pitfal.solutions',
         telephone: '',
         email: 'info@pitfal.solutions',

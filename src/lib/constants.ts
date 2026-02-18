@@ -17,6 +17,7 @@ export const BUSINESS = {
     full: 'Denver, Colorado',
     short: 'Denver, CO',
   },
+  servicesOffering: 'Photography, Videography, Commercial Drone, and AI Services',
   contact: {
     email: 'info@pitfal.solutions',
   },
@@ -116,8 +117,8 @@ export const SERVICE_OPTIONS = [
 export const SEO = {
   siteTitle: BUSINESS.name,
   titleTemplate: `%s | ${BUSINESS.name}`,
-  defaultDescription: `Professional Photography, Videography, Commercial Drone, and AI services in ${BUSINESS.location.short}. Specializing in brand photography, portraits, and event coverage. ${BUSINESS.tagline}.`,
-  shortDescription: `Professional Photography, Videography, Commercial Drone, and AI services in ${BUSINESS.location.short}.`,
+  defaultDescription: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.short}. Specializing in brand photography, portraits, and event coverage. ${BUSINESS.tagline}.`,
+  shortDescription: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.short}.`,
   keywords: [
     'photography',
     'videography',
@@ -144,11 +145,11 @@ export const PAGE_META = {
   },
   about: {
     title: 'About',
-    description: `Learn about ${BUSINESS.name} - Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}. The story, philosophy, and approach to capturing moments.`,
+    description: `Learn about ${BUSINESS.name} - Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.full}. The story, philosophy, and approach to capturing moments.`,
   },
   services: {
     title: 'Services',
-    description: `Professional photography, videography, commercial drone, and AI & software services. View our full range of offerings.`,
+    description: `Professional ${BUSINESS.servicesOffering}. View our full range of offerings.`,
   },
   servicesPhotography: {
     title: 'Photography',
@@ -199,13 +200,13 @@ export const PAGE_META = {
 export const COPY = {
   hero: {
     title: 'Delivering Solutions That Matter',
-    subtitle: `Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}`,
+    subtitle: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.full}`,
     tagline: BUSINESS.tagline,
     cta: 'View Portfolio',
     ctaSecondary: 'Book Now',
   },
   footer: {
-    description: `Professional Photography, Videography, Commercial Drone, and AI Services in ${BUSINESS.location.full}.`,
+    description: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.full}.`,
     tagline: `"${BUSINESS.tagline}"`,
     copyright: `© ${new Date().getFullYear()} ${BUSINESS.name}. All rights reserved.`,
   },
