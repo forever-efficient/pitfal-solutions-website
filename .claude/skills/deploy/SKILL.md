@@ -60,7 +60,8 @@ Deploy the Pitfal Solutions website following this sequence:
    aws cloudfront create-invalidation \
      --distribution-id $DISTRIBUTION_ID \
      --paths "/*" \
-     --profile pitfal
+     --profile pitfal \
+     --no-cli-pager
    ```
    Note: Cache invalidation takes 1-5 minutes to propagate globally.
 

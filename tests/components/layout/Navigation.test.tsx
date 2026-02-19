@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { Navigation, navigationItems } from '@/components/layout/Navigation';
 
 // Mock usePathname
@@ -32,7 +32,7 @@ describe('Navigation', () => {
 
   it('applies active style to current page', () => {
     mockUsePathname.mockReturnValue('/about');
-    render(<Navigation isScrolled={true} />);
+    render(<Navigation />);
 
     const aboutLink = screen.getByRole('link', { name: 'About' });
     expect(aboutLink).toHaveClass('text-accent-600');
@@ -41,19 +41,19 @@ describe('Navigation', () => {
 
   it('applies inactive style to non-current pages', () => {
     mockUsePathname.mockReturnValue('/about');
-    render(<Navigation isScrolled={true} />);
+    render(<Navigation />);
 
     const portfolioLink = screen.getByRole('link', { name: 'Portfolio' });
     expect(portfolioLink).toHaveClass('text-neutral-600');
   });
 
-  it('applies unscrolled active style when not scrolled', () => {
+  it('applies transparent active style when transparent', () => {
     mockUsePathname.mockReturnValue('/');
-    render(<Navigation isScrolled={false} />);
+    render(<Navigation isTransparent={true} />);
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
-    expect(homeLink).toHaveClass('text-accent-600');
-    expect(homeLink).toHaveClass('bg-accent-100');
+    expect(homeLink).toHaveClass('text-white');
+    expect(homeLink).toHaveClass('bg-white/20');
   });
 
   it('accepts custom items', () => {
@@ -78,7 +78,7 @@ describe('Navigation', () => {
 
   it('marks child pages as active', () => {
     mockUsePathname.mockReturnValue('/portfolio/brands');
-    render(<Navigation isScrolled={true} />);
+    render(<Navigation />);
 
     const portfolioLink = screen.getByRole('link', { name: 'Portfolio' });
     expect(portfolioLink).toHaveClass('text-accent-600');
@@ -86,34 +86,41 @@ describe('Navigation', () => {
 
   it('does not mark home as active for child paths', () => {
     mockUsePathname.mockReturnValue('/about');
-    render(<Navigation isScrolled={true} />);
+    render(<Navigation />);
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
     expect(homeLink).not.toHaveClass('text-accent-600');
   });
 
-  it('applies unscrolled inactive style when not active', () => {
+  it('applies transparent inactive style when transparent', () => {
     mockUsePathname.mockReturnValue('/about');
-    render(<Navigation isScrolled={false} />);
+    render(<Navigation isTransparent={true} />);
 
     const homeLink = screen.getByRole('link', { name: 'Home' });
-    expect(homeLink).toHaveClass('text-neutral-900');
+    expect(homeLink).toHaveClass('text-white/90');
   });
 
   it('opens and closes services dropdown on hover', () => {
+    vi.useFakeTimers();
     render(<Navigation />);
 
     const servicesLink = screen.getByRole('link', { name: 'Services' });
     const dropdownContainer = servicesLink.parentElement as HTMLDivElement;
-    const dropdownPanel = dropdownContainer.querySelector('.absolute.top-full') as HTMLDivElement;
+    const dropdownWrapper = dropdownContainer.querySelector('.absolute.top-full') as HTMLDivElement;
+    const dropdownPanel = dropdownWrapper.querySelector('.bg-white') as HTMLDivElement;
 
     expect(dropdownPanel).toHaveClass('opacity-0');
 
     fireEvent.mouseEnter(dropdownContainer);
     expect(dropdownPanel).toHaveClass('opacity-100');
 
-    fireEvent.mouseLeave(dropdownContainer);
+    act(() => {
+      fireEvent.mouseLeave(dropdownContainer);
+      vi.runAllTimers();
+    });
     expect(dropdownPanel).toHaveClass('opacity-0');
+
+    vi.useRealTimers();
   });
 
   it('marks active service child link in dropdown', () => {

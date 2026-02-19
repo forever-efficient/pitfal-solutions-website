@@ -54,7 +54,9 @@
       "Bash(./scripts/build-lambdas.sh:*)",
       "Bash(npx tsc:*)",
       "Bash(npx next build:*)",
-      "Bash(make help:*)"
+      "Bash(make help:*)",
+      "WebFetch(domain:dprk6phv6ds9x.cloudfront.net)",
+      "Skill(test)"
     ]
   },
   "enabledMcpjsonServers": [

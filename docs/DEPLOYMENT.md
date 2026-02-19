@@ -460,7 +460,7 @@ Step 6: Deploy to S3
 
 Step 7: Invalidate CloudFront Cache
 [x] DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
-[x] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+[x] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal --no-cli-pager --no-cli-pager
 [x] Wait 2-5 minutes for invalidation to complete
 
 Step 8: Verify Deployment
@@ -503,7 +503,7 @@ NEXT_PUBLIC_API_URL=https://$CLOUDFRONT_DOMAIN/api \
 pnpm build
 
 aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal --no-cli-pager
 
 # Verify
 echo "Website URL: https://$CLOUDFRONT_DOMAIN"
@@ -610,7 +610,7 @@ Step 8: Redeploy to S3
 
 Step 9: Invalidate CloudFront Cache
 [ ] DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
-[ ] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+[ ] aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal --no-cli-pager
 
 Step 10: Verify Custom Domain
 [ ] curl -I https://pitfal.solutions
@@ -651,7 +651,7 @@ BUCKET=$(cd infrastructure/terraform && terraform output -raw website_bucket_nam
 DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
 
 aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal --no-cli-pager
 
 # Verify
 curl -I https://www.pitfal.solutions
@@ -680,7 +680,7 @@ pnpm build
 BUCKET=$(cd infrastructure/terraform && terraform output -raw website_bucket_name)
 DIST_ID=$(cd infrastructure/terraform && terraform output -raw cloudfront_distribution_id)
 aws s3 sync out/ s3://$BUCKET --delete --profile pitfal
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal
+aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --profile pitfal --no-cli-pager
 ```
 
 **Note:** The CloudFront default domain (`*.cloudfront.net`) remains accessible even after adding custom domain aliases. This provides a fallback if DNS issues occur.
@@ -868,7 +868,8 @@ DIST_ID=$(cd ../infrastructure/terraform && terraform output -raw cloudfront_dis
 aws cloudfront create-invalidation \
   --distribution-id $DIST_ID \
   --paths "/*" \
-  --profile pitfal
+  --profile pitfal \
+  --no-cli-pager
 
 # Check invalidation status
 aws cloudfront list-invalidations --distribution-id $DIST_ID --profile pitfal
@@ -1091,7 +1092,8 @@ jobs:
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+            --paths "/*" \
+            --no-cli-pager
 ```
 
 ---
@@ -1302,7 +1304,8 @@ aws s3api copy-object \
 aws cloudfront create-invalidation \
   --distribution-id $DIST_ID \
   --paths "/*" \
-  --profile pitfal
+  --profile pitfal \
+  --no-cli-pager
 ```
 
 ### Lambda Rollback

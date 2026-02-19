@@ -141,7 +141,7 @@ sync: ## Two-pass S3 sync: assets (1-year cache) then HTML (no-cache)
 	@echo "Pass 2: HTML files — no-cache (always fresh)"
 	aws s3 sync out/ s3://$(S3_BUCKET) \
 		--cache-control "public, max-age=0, must-revalidate" \
-		--include "*.html" --exclude "*" \
+		--exclude "*" --include "*.html" \
 		--profile $(AWS_PROFILE) --region $(AWS_REGION)
 	@echo ""
 	@echo "Sync complete."
@@ -153,7 +153,8 @@ invalidate: ## Create CloudFront invalidation for all paths
 	aws cloudfront create-invalidation \
 		--distribution-id $(CLOUDFRONT_ID) \
 		--paths "/*" \
-		--profile $(AWS_PROFILE)
+		--profile $(AWS_PROFILE) \
+		--no-cli-pager
 	@echo ""
 	@echo "Invalidation submitted. Cache will clear in 2-5 minutes."
 

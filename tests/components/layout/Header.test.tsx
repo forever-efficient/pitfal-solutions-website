@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Header } from '@/components/layout/Header';
 
-// Mock usePathname
 const mockUsePathname = vi.fn();
 vi.mock('next/navigation', () => ({
   usePathname: () => mockUsePathname(),
@@ -11,7 +10,6 @@ vi.mock('next/navigation', () => ({
 describe('Header', () => {
   beforeEach(() => {
     mockUsePathname.mockReturnValue('/');
-    // Reset scroll
     Object.defineProperty(window, 'scrollY', { value: 0, writable: true });
   });
 
@@ -45,31 +43,29 @@ describe('Header', () => {
 
     fireEvent.click(menuButton);
 
-    // Mobile menu should be visible
     expect(screen.getByRole('button', { name: /close menu/i })).toBeInTheDocument();
   });
 
-  it('has semi-transparent white background on homepage without scroll', () => {
+  it('has transparent background on homepage without scroll', () => {
     mockUsePathname.mockReturnValue('/');
     render(<Header />);
 
     const header = document.querySelector('header');
-    expect(header).toHaveClass('bg-white/75');
+    expect(header).toHaveClass('bg-transparent');
   });
 
-  it('has semi-transparent white background on non-homepage without scroll', () => {
+  it('has opaque background on non-homepage', () => {
     mockUsePathname.mockReturnValue('/about');
     render(<Header />);
 
     const header = document.querySelector('header');
-    expect(header).toHaveClass('bg-white/75');
+    expect(header).toHaveClass('bg-white/95');
   });
 
-  it('changes to scrolled style on scroll', async () => {
+  it('changes to opaque style on scroll from homepage', () => {
     mockUsePathname.mockReturnValue('/');
     render(<Header />);
 
-    // Simulate scroll
     Object.defineProperty(window, 'scrollY', { value: 50, writable: true });
     fireEvent.scroll(window);
 
@@ -90,11 +86,9 @@ describe('Header', () => {
     render(<Header />);
     const menuButton = screen.getByRole('button', { name: /open menu/i });
 
-    // Open menu
     fireEvent.click(menuButton);
     expect(document.body.style.overflow).toBe('hidden');
 
-    // Close menu
     const closeButton = screen.getByRole('button', { name: /close menu/i });
     fireEvent.click(closeButton);
 

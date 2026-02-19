@@ -481,7 +481,7 @@ Step 2c: If CloudFront Failed
 │   │
 │   # If "InProgress", wait for completion
 │   # If "Deployed" but wrong content, create new invalidation:
-│   aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+│   aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*" --no-cli-pager
 │
 └── CloudFront recovered
 

@@ -622,7 +622,8 @@ curl -IL http://pitfal.solutions
    ```bash
    aws cloudfront create-invalidation \
      --distribution-id YOUR_DIST_ID \
-     --paths "/*"
+     --paths "/*" \
+     --no-cli-pager
    ```
 2. **Clear browser cache** or use incognito
 3. **Check DNS is pointing to CloudFront:**
