@@ -53,13 +53,10 @@ describe('ServicesOverview', () => {
     expect(viewAllLink).toHaveAttribute('href', '/services');
   });
 
-  it('renders service icons', () => {
+  it('renders service image containers', () => {
     render(<ServicesOverview />);
-    const serviceCards = document.querySelectorAll('.h-48');
+    const serviceCards = document.querySelectorAll('.h-64');
     expect(serviceCards).toHaveLength(4);
-    serviceCards.forEach((card) => {
-      expect(card.querySelector('svg')).toBeInTheDocument();
-    });
   });
 
   it('renders section description', () => {

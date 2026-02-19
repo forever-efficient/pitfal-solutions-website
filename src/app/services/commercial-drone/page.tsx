@@ -1,10 +1,12 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { SERVICES, PAGE_META } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: PAGE_META.servicesDrone.title,
@@ -45,16 +47,15 @@ export default function CommercialDronePage() {
       <Section size="lg" background="white">
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Image placeholder */}
-            <div
-              className="aspect-[4/3] bg-neutral-200 rounded-2xl overflow-hidden relative"
-              role="img"
-              aria-label="Commercial drone service preview"
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" aria-hidden="true" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-neutral-400 text-sm">Image coming soon</p>
-              </div>
+            <div className="aspect-[4/3] bg-neutral-200 rounded-2xl overflow-hidden relative">
+              <Image
+                src={getImageUrl(service.image)}
+                alt={service.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+              />
             </div>
 
             {/* Content */}

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
 import {
@@ -10,29 +11,34 @@ import {
   ChevronRightIcon,
 } from '@/components/icons';
 import { SERVICES } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 const services = [
   {
     title: SERVICES.photography.title,
     description: SERVICES.photography.description,
+    image: SERVICES.photography.image,
     icon: <EyeIcon size={32} strokeWidth={1.5} />,
     href: SERVICES.photography.href,
   },
   {
     title: SERVICES.videography.title,
     description: SERVICES.videography.description,
+    image: SERVICES.videography.image,
     icon: <CalendarIcon size={32} strokeWidth={1.5} />,
     href: SERVICES.videography.href,
   },
   {
     title: SERVICES.drone.title,
     description: SERVICES.drone.description,
+    image: SERVICES.drone.image,
     icon: <ArrowDownIcon size={32} strokeWidth={1.5} />,
     href: SERVICES.drone.href,
   },
   {
     title: SERVICES.ai.title,
     description: SERVICES.ai.description,
+    image: SERVICES.ai.image,
     icon: <BuildingIcon size={32} strokeWidth={1.5} />,
     href: SERVICES.ai.href,
   },
@@ -57,16 +63,20 @@ export function ServicesOverview() {
         </div>
 
         {/* Service cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           {services.map((service) => (
             <Link key={service.title} href={service.href} className="group">
-              <Card hover className="h-full overflow-hidden">
-                {/* Image placeholder */}
-                <div className="h-48 bg-neutral-200 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" />
-                  <div className="absolute inset-0 flex items-center justify-center text-primary-600 group-hover:scale-110 transition-transform duration-300">
-                    {service.icon}
-                  </div>
+              <Card hover padding="none" className="h-full overflow-hidden">
+                <div className="h-64 bg-neutral-200 relative overflow-hidden">
+                  <Image
+                    src={getImageUrl(service.image)}
+                    alt={service.title}
+                    fill
+                    priority
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 </div>
 
                 <CardContent className="p-6">

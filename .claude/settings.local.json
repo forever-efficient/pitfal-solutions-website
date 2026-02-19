@@ -58,7 +58,8 @@
       "WebFetch(domain:dprk6phv6ds9x.cloudfront.net)",
       "Skill(test)",
       "Bash(fi)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:localhost)"
     ]
   },
   "enabledMcpjsonServers": [

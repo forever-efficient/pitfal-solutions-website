@@ -20,7 +20,7 @@ describe('ServicesPage', () => {
 
     for (const service of Object.values(SERVICES)) {
       expect(screen.getByRole('heading', { level: 2, name: service.title })).toBeInTheDocument();
-      expect(screen.getAllByRole('link', { name: 'Learn more' }).some((link) => link.getAttribute('href') === service.href)).toBe(true);
+      expect(screen.getByRole('link', { name: new RegExp(service.title) }).getAttribute('href')).toBe(service.href);
     }
   });
 });

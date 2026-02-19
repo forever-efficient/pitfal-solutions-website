@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
+import { getImageUrl } from '@/lib/utils';
 import { Container, Section } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ContactCTA } from '@/components/sections';
@@ -62,14 +64,19 @@ export default function ServicesPage() {
       <Section size="lg" background="white">
         <Container>
           <div className="grid md:grid-cols-2 gap-8">
-            {serviceCards.map(({ service, icon }) => (
-              <Card key={service.id} hover className="overflow-hidden group">
-                {/* Image placeholder */}
-                <div className="h-48 bg-neutral-200 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/20 to-primary-700/40" />
-                  <div className="absolute inset-0 flex items-center justify-center text-primary-600 group-hover:scale-110 transition-transform duration-300">
-                    {icon}
-                  </div>
+            {serviceCards.map(({ service }) => (
+              <Link key={service.id} href={service.href} className="group">
+                <Card hover className="overflow-hidden h-full">
+                <div className="h-64 bg-neutral-200 relative overflow-hidden">
+                  <Image
+                    src={getImageUrl(service.image)}
+                    alt={service.title}
+                    fill
+                    priority
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 </div>
 
                 <CardContent className="p-8">
@@ -92,15 +99,13 @@ export default function ServicesPage() {
                     ))}
                   </ul>
 
-                  <Link
-                    href={service.href}
-                    className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-semibold transition-colors"
-                  >
+                  <span className="inline-flex items-center gap-2 text-primary-600 group-hover:text-primary-700 font-semibold transition-colors">
                     Learn more
                     <ArrowRightIcon size={18} />
-                  </Link>
+                  </span>
                 </CardContent>
-              </Card>
+                </Card>
+              </Link>
             ))}
           </div>
         </Container>
