@@ -218,6 +218,8 @@ async function handleAuth(
       return handleAdminCheck(event, ctx, requestOrigin);
     case 'DELETE':
       return handleAdminLogout(event, ctx, requestOrigin);
+    case 'PUT':
+      return handleChangePassword(event, ctx, requestOrigin);
     default:
       return methodNotAllowed(undefined, requestOrigin);
   }
@@ -295,6 +297,49 @@ async function handleAdminLogout(event: APIGatewayProxyEvent, ctx: LogContext, r
   }
 
   return clearCookie(success({ authenticated: false }, 200, requestOrigin), COOKIE_NAME);
+}
+
+async function handleChangePassword(event: APIGatewayProxyEvent, ctx: LogContext, requestOrigin?: string) {
+  const username = await authenticateAdmin(event);
+  if (!username) return unauthorized('Admin authentication required', requestOrigin);
+
+  let body: { currentPassword?: string; newPassword?: string };
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
+
+  if (!body.currentPassword || !body.newPassword) {
+    return badRequest('currentPassword and newPassword are required', requestOrigin);
+  }
+
+  if (body.newPassword.length < 8) {
+    return badRequest('New password must be at least 8 characters', requestOrigin);
+  }
+
+  const adminUser = await getItem<AdminUser>({
+    TableName: ADMIN_TABLE!,
+    Key: { pk: `ADMIN#${username}`, sk: 'PROFILE' },
+  });
+
+  if (!adminUser) return unauthorized('Admin user not found', requestOrigin);
+
+  const valid = await bcrypt.compare(body.currentPassword, adminUser.passwordHash);
+  if (!valid) {
+    log('WARN', 'Change password failed - wrong current password', ctx, { username });
+    return unauthorized('Current password is incorrect', requestOrigin);
+  }
+
+  const newHash = await bcrypt.hash(body.newPassword, 10);
+  await updateItem({
+    TableName: ADMIN_TABLE!,
+    Key: { pk: `ADMIN#${username}`, sk: 'PROFILE' },
+    ...buildUpdateExpression({ passwordHash: newHash }),
+  });
+
+  log('INFO', 'Admin password changed', ctx, { username });
+  return success({ success: true }, 200, requestOrigin);
 }
 
 // ============ GALLERY HANDLERS ============

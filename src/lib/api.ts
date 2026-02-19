@@ -240,6 +240,12 @@ export const adminAuth = {
     storeToken(ADMIN_TOKEN_KEY, null);
     return data;
   },
+
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ success: boolean }>('/api/admin/auth', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 };
 
 // =============================================================================

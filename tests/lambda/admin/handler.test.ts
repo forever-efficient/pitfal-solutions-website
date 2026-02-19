@@ -496,12 +496,135 @@ describe('Admin Lambda Handler', () => {
 
     it('returns 405 for unsupported methods on auth route', async () => {
       const event = createEvent({
-        httpMethod: 'PUT',
+        httpMethod: 'PATCH',
         resource: '/api/admin/auth',
       });
       const result = await handler(event, mockContext, () => {});
 
       expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ AUTH: CHANGE PASSWORD ============
+
+  describe('PUT /admin/auth - change password', () => {
+    it('returns 401 if unauthenticated', async () => {
+      mockParseAuthToken.mockImplementation(() => null);
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ currentPassword: 'old', newPassword: 'newpass123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(401);
+    });
+
+    it('returns 400 if currentPassword is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ newPassword: 'newpass123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('required');
+    });
+
+    it('returns 400 if newPassword is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ currentPassword: 'old' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('required');
+    });
+
+    it('returns 400 if newPassword is fewer than 8 characters', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ currentPassword: 'old', newPassword: 'short' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('8 characters');
+    });
+
+    it('returns 401 if current password is wrong', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        pk: 'ADMIN#admin',
+        sk: 'PROFILE',
+        username: 'admin',
+        passwordHash: '$2a$10$existinghash',
+        email: 'admin@test.com',
+        createdAt: '2026-01-01T00:00:00Z',
+      }));
+      mockCompare.mockImplementation(async () => false);
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ currentPassword: 'wrongpass', newPassword: 'newpass123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(401);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('Current password is incorrect');
+    });
+
+    it('returns 200 and updates DynamoDB on success', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        pk: 'ADMIN#admin',
+        sk: 'PROFILE',
+        username: 'admin',
+        passwordHash: '$2a$10$existinghash',
+        email: 'admin@test.com',
+        createdAt: '2026-01-01T00:00:00Z',
+      }));
+      mockCompare.mockImplementation(async () => true);
+      mockHash.mockImplementation(async () => '$2a$10$newhash');
+      mockBuildUpdateExpression.mockImplementation(() => ({
+        UpdateExpression: 'SET #a = :a',
+        ExpressionAttributeNames: { '#a': 'passwordHash' },
+        ExpressionAttributeValues: { ':a': '$2a$10$newhash' },
+      }));
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/auth',
+        body: JSON.stringify({ currentPassword: 'correctpass', newPassword: 'newpass123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.success).toBe(true);
+      expect(mockHash).toHaveBeenCalledWith('newpass123', 10);
+      expect(mockUpdateItem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          TableName: 'test-admin',
+          Key: { pk: 'ADMIN#admin', sk: 'PROFILE' },
+        })
+      );
     });
   });
 

@@ -13,6 +13,9 @@
 
 AWS_PROFILE    ?= pitfal
 AWS_REGION     ?= us-west-2
+
+# Export AWS_PROFILE so all sub-commands (terraform, aws cli) inherit it
+export AWS_PROFILE
 ENV            ?= prod
 S3_BUCKET      ?= pitfal-prod-website
 CLOUDFRONT_ID  ?= EDK9ZMCEN4GAT
@@ -57,7 +60,7 @@ help: ## List all available targets
 	@echo ""
 	@echo "Lambda & infrastructure:"
 	@echo "  make build-lambdas   Build Lambda functions (runs scripts/build-lambdas.sh)"
-	@echo "  make deploy-lambdas  Build Lambdas then print terraform commands to run"
+	@echo "  make deploy-lambdas  Build Lambdas and deploy via Terraform (terraform apply)"
 	@echo ""
 	@echo "Quality:"
 	@echo "  make test            Run unit tests (pnpm test)"
@@ -87,12 +90,11 @@ help: ## List all available targets
 
 setup: ## Read Terraform outputs → write .make.env (run once after terraform apply)
 	@echo "Reading Terraform outputs..."
-	@cd infrastructure/terraform && \
-		echo "S3_BUCKET=$$(terraform output -raw website_bucket_name)" > ../../.make.env && \
-		echo "CLOUDFRONT_ID=$$(terraform output -raw cloudfront_distribution_id)" >> ../../.make.env && \
-		echo "NEXT_PUBLIC_SITE_URL=https://$$(terraform output -raw cloudfront_domain_name)" >> ../../.make.env && \
-		echo "NEXT_PUBLIC_MEDIA_URL=https://$$(terraform output -raw cloudfront_domain_name)/media" >> ../../.make.env && \
-		echo "NEXT_PUBLIC_API_URL=$$(terraform output -raw api_gateway_url)" >> ../../.make.env
+	@echo "S3_BUCKET=$$(terraform -chdir=infrastructure/terraform output -raw website_bucket_name)" > .make.env
+	@echo "CLOUDFRONT_ID=$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_distribution_id)" >> .make.env
+	@echo "NEXT_PUBLIC_SITE_URL=https://$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_domain_name)" >> .make.env
+	@echo "NEXT_PUBLIC_MEDIA_URL=https://$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_domain_name)/media" >> .make.env
+	@echo "NEXT_PUBLIC_API_URL=$$(terraform -chdir=infrastructure/terraform output -raw api_gateway_url)" >> .make.env
 	@echo ""
 	@echo "Saved to .make.env:"
 	@cat .make.env
@@ -173,16 +175,11 @@ build-lambdas: ## Build Lambda functions (runs scripts/build-lambdas.sh)
 	./scripts/build-lambdas.sh all
 	@echo "Lambda build complete."
 
-deploy-lambdas: build-lambdas ## Build Lambdas then print terraform commands to run
+deploy-lambdas: build-lambdas ## Build Lambdas and deploy via Terraform
+	@echo "Deploying Lambda functions via Terraform..."
+	terraform -chdir=infrastructure/terraform apply -auto-approve
 	@echo ""
-	@echo "Lambda functions built. To deploy, run these commands:"
-	@echo ""
-	@echo "  cd infrastructure/terraform"
-	@echo "  terraform plan   # Review changes"
-	@echo "  terraform apply  # Deploy Lambda updates"
-	@echo "  cd ../.."
-	@echo ""
-	@echo "NOTE: Terraform must be run manually per project policy."
+	@echo "Lambda functions deployed."
 
 # --- Quality -----------------------------------------------------------------
 

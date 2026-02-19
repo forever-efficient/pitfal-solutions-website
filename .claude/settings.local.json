@@ -56,7 +56,9 @@
       "Bash(npx next build:*)",
       "Bash(make help:*)",
       "WebFetch(domain:dprk6phv6ds9x.cloudfront.net)",
-      "Skill(test)"
+      "Skill(test)",
+      "Bash(fi)",
+      "Bash(python3:*)"
     ]
   },
   "enabledMcpjsonServers": [

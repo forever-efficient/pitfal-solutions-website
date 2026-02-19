@@ -27,11 +27,13 @@ terraform {
     region         = "us-west-2"
     encrypt        = true
     dynamodb_table = "pitfal-terraform-locks"
+    profile        = "pitfal"
   }
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = "pitfal"
 
   default_tags {
     tags = {
@@ -45,8 +47,9 @@ provider "aws" {
 
 # Provider for ACM certificate (must be in us-east-1 for CloudFront)
 provider "aws" {
-  alias  = "us_east_1"
-  region = "us-east-1"
+  alias   = "us_east_1"
+  region  = "us-east-1"
+  profile = "pitfal"
 
   default_tags {
     tags = {
