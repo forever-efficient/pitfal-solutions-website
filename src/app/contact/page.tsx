@@ -20,7 +20,7 @@ export default function ContactPage() {
               Get in Touch
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
-              Let&apos;s Capture Your Story Together
+              Let&apos;s Work On Your Solution Together
             </h1>
             <p className="text-xl text-neutral-600">
               Have a project in mind? Need to know more? Fill out the
@@ -49,7 +49,7 @@ export default function ContactPage() {
                 <p className="text-neutral-600">
                   {BUSINESS.location.full}
                   <br />
-                  Serving the Denver Metro Area
+                  Serving Almost Anywhere.
                 </p>
               </div>
 
@@ -64,18 +64,6 @@ export default function ContactPage() {
                 >
                   {BUSINESS.contact.email}
                 </a>
-              </div>
-
-              {/* Hours */}
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900 mb-3">
-                  Business Hours
-                </h3>
-                <ul className="text-neutral-600 space-y-1">
-                  <li>Monday - Friday: 9am - 6pm</li>
-                  <li>Saturday: 10am - 4pm</li>
-                  <li>Sunday: By appointment</li>
-                </ul>
               </div>
 
               {/* Social */}

@@ -5,12 +5,12 @@ import { ContactCTA } from '@/components/sections/ContactCTA';
 describe('ContactCTA', () => {
   it('renders the heading', () => {
     render(<ContactCTA />);
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Ready to Capture Your Story?');
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Ready to Plan Your Project?');
   });
 
   it('renders the description', () => {
     render(<ContactCTA />);
-    expect(screen.getByText(/Whether you need brand photography/i)).toBeInTheDocument();
+    expect(screen.getByText(/Whether you need a portrait session/i)).toBeInTheDocument();
   });
 
   it('renders Get in Touch button', () => {

@@ -14,7 +14,7 @@ describe('ServicesOverview', () => {
     expect(screen.getByText('Photography')).toBeInTheDocument();
     expect(screen.getByText('Videography')).toBeInTheDocument();
     expect(screen.getByText('Commercial Drone')).toBeInTheDocument();
-    expect(screen.getByText('AI & Software Solutions')).toBeInTheDocument();
+    expect(screen.getByText('AI & Software')).toBeInTheDocument();
   });
 
   it('renders service descriptions', () => {
@@ -36,7 +36,7 @@ describe('ServicesOverview', () => {
     const droneLink = screen.getByRole('link', { name: /commercial drone/i });
     expect(droneLink).toHaveAttribute('href', '/services/commercial-drone');
 
-    const aiLink = screen.getByRole('link', { name: /ai & software solutions/i });
+    const aiLink = screen.getByRole('link', { name: /ai & software/i });
     expect(aiLink).toHaveAttribute('href', '/services/ai-software');
   });
 

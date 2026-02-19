@@ -63,7 +63,7 @@ export function ServicesOverview() {
         </div>
 
         {/* Service cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-2">
           {services.map((service) => (
             <Link key={service.title} href={service.href} className="group">
               <Card hover padding="none" className="h-full overflow-hidden">

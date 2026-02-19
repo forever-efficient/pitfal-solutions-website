@@ -23,12 +23,11 @@ export default function AboutPage() {
               About
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
-              The Story Behind the Lens
+              Built on Vision
             </h1>
             <p className="text-xl text-neutral-600">
-              At Pitfal Solutions, story telling is a passion. Here, it&apos;s all 
-              about capturing authentic moments that resonate and
-              inspire.
+              At Pitfal Solutions, problem solving is a passion. Whether through a lens,
+              a drone, or a line of code — it&apos;s all about creating work that resonates and inspires.
             </p>
           </div>
         </Container>
@@ -94,8 +93,8 @@ export default function AboutPage() {
               The Mission
             </h2>
             <p className="text-lg text-neutral-600">
-              Core values guide project and every deliverable, from the first consultation to
-              the final delivery.
+              These core values guide every project and every deliverable — from the first
+              consultation to the final delivery.
             </p>
           </div>
 
@@ -104,19 +103,19 @@ export default function AboutPage() {
               {
                 title: 'Authenticity',
                 description:
-                  'Capturing real moments and genuine emotions. Not forced or fake—just authentic imagery that tells your true story.',
+                  'Every project starts with listening. The goal is always to understand your vision and deliver work that genuinely represents you — not a generic template.',
                 icon: <HeartIcon size={32} strokeWidth={1.5} />,
               },
               {
                 title: 'Excellence',
                 description:
-                  'Never compromise on quality. Every image is carefully crafted, edited, and delivered to meet the highest professional standards.',
+                  'Quality is non-negotiable across every service. Whether it\'s a photo, a video, aerial footage, or a software build — every deliverable is held to the highest standard.',
                 icon: <ShieldCheckIcon size={32} strokeWidth={1.5} />,
               },
               {
-                title: 'Connection',
+                title: 'Partnership',
                 description:
-                  'Building real relationships with clients, understanding their vision and creating a comfortable environment for the best results.',
+                  'Great results come from collaboration. Building real relationships with clients means understanding their goals and staying invested from kickoff through delivery.',
                 icon: <UsersIcon size={32} strokeWidth={1.5} />,
               },
             ].map((value) => (
@@ -142,8 +141,8 @@ export default function AboutPage() {
               &quot;{BUSINESS.tagline}&quot;
             </p>
             <p className="mt-4 text-neutral-500">
-              This motto is a reminder to bridge the gap between vision and reality,
-              between the moment and its preservation.
+              This motto is a reminder to bridge the gap between vision and 
+              reality, overcoming all obstacles.
             </p>
           </div>
         </Container>

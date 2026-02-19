@@ -10,7 +10,7 @@ export function ContactCTA() {
         <div className="text-center max-w-3xl mx-auto">
           {/* Content */}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 font-display">
-            Ready to Capture Your Story?
+            Ready to Plan Your Project?
           </h2>
           <p className="text-lg md:text-xl text-white/90 mb-8">
             {COPY.cta.contact.description}

@@ -35,7 +35,7 @@ describe('ContactForm', () => {
     expect(select).toContainElement(screen.getByText('Photography'));
     expect(select).toContainElement(screen.getByText('Videography'));
     expect(select).toContainElement(screen.getByText('Commercial Drone'));
-    expect(select).toContainElement(screen.getByText('AI & Software Solutions'));
+    expect(select).toContainElement(screen.getByText('AI & Software'));
     expect(select).toContainElement(screen.getByText('Other / General Inquiry'));
   });
 

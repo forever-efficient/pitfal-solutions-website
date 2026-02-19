@@ -19,7 +19,7 @@ describe('Footer', () => {
     expect(screen.getByText('Photography')).toBeInTheDocument();
     expect(screen.getByText('Videography')).toBeInTheDocument();
     expect(screen.getByText('Commercial Drone')).toBeInTheDocument();
-    expect(screen.getByText('AI & Software Solutions')).toBeInTheDocument();
+    expect(screen.getByText('AI & Software')).toBeInTheDocument();
   });
 
   it('renders company links', () => {

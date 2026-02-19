@@ -83,7 +83,7 @@ export const SERVICES = {
   },
   ai: {
     id: 'ai',
-    title: 'AI & Software Solutions',
+    title: 'AI & Software',
     shortDescription: 'AI consulting & custom development',
     description:
       'From AI strategy and custom model integration to full website development — helping businesses leverage technology intelligently.',
@@ -164,7 +164,7 @@ export const PAGE_META = {
     description: `FAA-compliant aerial photography and videography in ${BUSINESS.location.full}. Commercial drone services for real estate, events, and construction.`,
   },
   servicesAI: {
-    title: 'AI & Software Solutions',
+    title: 'AI & Software',
     description: `AI consulting, custom AI integrations, and website development from ${BUSINESS.name} in ${BUSINESS.location.full}.`,
   },
   portfolio: {
@@ -173,7 +173,7 @@ export const PAGE_META = {
   },
   contact: {
     title: 'Contact',
-    description: `Get in touch with ${BUSINESS.name} for photography and videography inquiries. Based in ${BUSINESS.location.full}, serving the Denver metro area.`,
+    description: `Get in touch with ${BUSINESS.name} for photography and videography inquiries. Based in ${BUSINESS.location.full}, serving almost anywhere.`,
   },
   faq: {
     title: 'FAQ',
@@ -213,7 +213,7 @@ export const COPY = {
   cta: {
     contact: {
       title: "Let's Create Something Amazing",
-      description: `Whether you need brand photography, a portrait session, or event coverage, your unique vision will be brought to life.`,
+      description: `Whether you need a portrait session, event coverage, aerial view updates, or new AI tools for your business, your unique vision will be brought to life.`,
       button: 'Get in Touch',
     },
     booking: {
@@ -223,8 +223,8 @@ export const COPY = {
     },
   },
   about: {
-    heroTitle: 'The Story Behind the Lens',
-    heroDescription: `At ${BUSINESS.name}, story telling is a passion. Here, it's all about capturing authentic moments that resonate and inspire.`,
+    heroTitle: 'Built on Vision',
+    heroDescription: `At ${BUSINESS.name}, storytelling is a passion. Whether through a lens, a drone, or a line of code — it's all about creating work that resonates and inspires.`,
     philosophyTitle: 'The Philosophy',
     philosophy: [
       "Photography is more than just capturing images—it's about preserving emotions, telling stories, and creating visual narratives that stand the test of time.",
@@ -235,7 +235,7 @@ export const COPY = {
     valuesDescription:
       'These values guide every project, from the first consultation to the final delivery.',
     taglineDescription:
-      'This motto is a reminder to bridge the gap between vision and reality, between the moment and its preservation.',
+      'This motto is a reminder to bridge the gap between vision and reality, overcoming all obstacles.',
   },
   values: [
     {
