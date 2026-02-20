@@ -8,7 +8,6 @@ const galleries = [
     id: 'g1',
     title: 'Wedding Highlights',
     category: 'events',
-    type: 'client',
     slug: 'wedding-highlights',
     imageCount: 42,
     updatedAt: '2025-01-10T00:00:00.000Z',
@@ -32,7 +31,6 @@ describe('GalleryList', () => {
     render(<GalleryList galleries={galleries} onDelete={vi.fn()} />);
 
     expect(screen.getByText('Wedding Highlights')).toBeInTheDocument();
-    expect(screen.getByText('client')).toBeInTheDocument();
     expect(screen.getByText('events')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();
 

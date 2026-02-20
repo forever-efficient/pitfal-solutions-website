@@ -25,11 +25,13 @@ interface Comment {
 interface ClientGalleryViewProps {
   galleryId: string;
   initialTitle?: string;
+  requiresPassword?: boolean;
 }
 
 export function ClientGalleryView({
   galleryId,
   initialTitle,
+  requiresPassword = false,
 }: ClientGalleryViewProps) {
   const [gallery, setGallery] = useState<{
     title: string;
@@ -143,6 +145,7 @@ export function ClientGalleryView({
     : [];
 
   const hasSections = gallery.sections && gallery.sections.length > 0;
+  const imageIndexMap = new Map(gallery.images.map((img, i) => [img.key, i]));
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -168,7 +171,7 @@ export function ClientGalleryView({
             <span className="text-sm text-neutral-500">
               {gallery.images.length} photos
             </span>
-            {gallery.images.length > 0 && !gallery.heroImage && (
+            {requiresPassword && gallery.images.length > 0 && !gallery.heroImage && (
               <BulkDownloadButton
                 label="Download All"
                 total={gallery.images.length}
@@ -185,12 +188,14 @@ export function ClientGalleryView({
                 variant="header"
               />
             )}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-neutral-600 hover:text-neutral-900 font-medium"
-            >
-              Sign Out
-            </button>
+            {requiresPassword && (
+              <button
+                onClick={handleLogout}
+                className="text-sm text-neutral-600 hover:text-neutral-900 font-medium"
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -238,7 +243,7 @@ export function ClientGalleryView({
                 {gallery.description}
               </p>
             )}
-            {gallery.images.length > 0 && (
+            {requiresPassword && gallery.images.length > 0 && (
               <BulkDownloadButton
                 label="Download All"
                 total={gallery.images.length}
@@ -272,11 +277,6 @@ export function ClientGalleryView({
 
               if (sectionImages.length === 0) return null;
 
-              // Calculate start index for lightbox by finding index of first image in main array
-              // Note: This assumes images are unique across sections or we just find first occurrence
-              // Use a map to track global indices to be precise
-              const firstImageIndex = gallery.images.findIndex(img => img.key === sectionImages[0]?.key);
-
               return (
                 <div key={section.id}>
                   <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -290,25 +290,28 @@ export function ClientGalleryView({
                         </p>
                       )}
                     </div>
-                    <BulkDownloadButton
-                      label="Download section"
-                      total={sectionImages.length}
-                      isDownloading={bulkDownload.isDownloading}
-                      progress={bulkDownload.progress}
-                      error={bulkDownload.error}
-                      onClearError={bulkDownload.clearError}
-                      onDownload={(size) =>
-                        bulkDownload.startBulkDownload(section.images, size)
-                      }
-                      variant="section"
-                    />
+                    {requiresPassword && (
+                      <BulkDownloadButton
+                        label="Download section"
+                        total={sectionImages.length}
+                        isDownloading={bulkDownload.isDownloading}
+                        progress={bulkDownload.progress}
+                        error={bulkDownload.error}
+                        onClearError={bulkDownload.clearError}
+                        onDownload={(size) =>
+                          bulkDownload.startBulkDownload(section.images, size)
+                        }
+                        variant="section"
+                      />
+                    )}
                   </div>
                   <ImageGrid
                     images={sectionImages}
-                    startIndex={firstImageIndex}
+                    imageIndexMap={imageIndexMap}
                     onImageClick={setLightboxIndex}
                     comments={comments}
                     galleryId={galleryId}
+                    requiresPassword={requiresPassword}
                   />
                 </div>
               );
@@ -320,36 +323,37 @@ export function ClientGalleryView({
               const unassignedImages = gallery.images.filter(img => !assignedKeys.has(img.key));
 
               if (unassignedImages.length > 0) {
-                // Find start index of first unassigned
-                const firstIndex = gallery.images.findIndex(img => img.key === unassignedImages[0]?.key);
                 return (
                   <div>
                     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                       <h3 className="text-2xl font-display font-semibold text-neutral-900">
                         Other Photos
                       </h3>
-                      <BulkDownloadButton
-                        label="Download section"
-                        total={unassignedImages.length}
-                        isDownloading={bulkDownload.isDownloading}
-                        progress={bulkDownload.progress}
-                        error={bulkDownload.error}
-                        onClearError={bulkDownload.clearError}
-                        onDownload={(size) =>
-                          bulkDownload.startBulkDownload(
-                            unassignedImages.map((img) => img.key),
-                            size
-                          )
-                        }
-                        variant="section"
-                      />
+                      {requiresPassword && (
+                        <BulkDownloadButton
+                          label="Download section"
+                          total={unassignedImages.length}
+                          isDownloading={bulkDownload.isDownloading}
+                          progress={bulkDownload.progress}
+                          error={bulkDownload.error}
+                          onClearError={bulkDownload.clearError}
+                          onDownload={(size) =>
+                            bulkDownload.startBulkDownload(
+                              unassignedImages.map((img) => img.key),
+                              size
+                            )
+                          }
+                          variant="section"
+                        />
+                      )}
                     </div>
                     <ImageGrid
                       images={unassignedImages}
-                      startIndex={firstIndex}
+                      imageIndexMap={imageIndexMap}
                       onImageClick={setLightboxIndex}
                       comments={comments}
                       galleryId={galleryId}
+                      requiresPassword={requiresPassword}
                     />
                   </div>
                 );
@@ -360,10 +364,11 @@ export function ClientGalleryView({
         ) : (
           <ImageGrid
             images={gallery.images}
-            startIndex={0}
+            imageIndexMap={imageIndexMap}
             onImageClick={setLightboxIndex}
             comments={comments}
             galleryId={galleryId}
+            requiresPassword={requiresPassword}
           />
         )}
       </div>
@@ -476,10 +481,12 @@ export function ClientGalleryView({
               <h3 className="font-medium text-neutral-900">
                 {currentImage.alt || `Photo ${lightboxIndex + 1}`}
               </h3>
-              <DownloadButton
-                galleryId={galleryId}
-                imageKey={currentImage.key}
-              />
+              {requiresPassword && (
+                <DownloadButton
+                  galleryId={galleryId}
+                  imageKey={currentImage.key}
+                />
+              )}
             </div>
             <div className="flex-1 overflow-y-auto">
               <ImageComment
@@ -663,17 +670,18 @@ function BulkDownloadIcon({ className }: { className?: string }) {
 
 interface ImageGridProps {
   images: GalleryImage[];
-  startIndex: number;
+  imageIndexMap: Map<string, number>;
   onImageClick: (index: number) => void;
   comments: Comment[];
   galleryId: string;
+  requiresPassword: boolean;
 }
 
-function ImageGrid({ images, startIndex, onImageClick, comments, galleryId }: ImageGridProps) {
+function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, requiresPassword }: ImageGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {images.map((image, index) => {
-        const globalIndex = startIndex + index;
+      {images.map((image) => {
+        const globalIndex = imageIndexMap.get(image.key) ?? 0;
         return (
           <div
             key={image.key}
@@ -697,13 +705,15 @@ function ImageGrid({ images, startIndex, onImageClick, comments, galleryId }: Im
               </div>
             </button>
             {/* Download icon overlay - bottom right */}
-            <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <DownloadButton
-                galleryId={galleryId}
-                imageKey={image.key}
-                variant="icon"
-              />
-            </div>
+            {requiresPassword && (
+              <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <DownloadButton
+                  galleryId={galleryId}
+                  imageKey={image.key}
+                  variant="icon"
+                />
+              </div>
+            )}
             {/* Comment badge - top right */}
             {comments.some((c) => c.imageKey === image.key) && (
               <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center z-20">

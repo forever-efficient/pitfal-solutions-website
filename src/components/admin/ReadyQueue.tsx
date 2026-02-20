@@ -17,7 +17,6 @@ interface GalleryOption {
   id: string;
   title: string;
   category: string;
-  type: string;
 }
 
 interface ReadyQueueProps {
@@ -26,6 +25,7 @@ interface ReadyQueueProps {
 }
 
 const PAGE_SIZE = 10;
+const IMAGE_PAGE_SIZE = 24;
 
 const CATEGORY_LABELS: Record<string, string> = {
   brands: 'Brands',
@@ -45,6 +45,8 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
+
+  const [imagePage, setImagePage] = useState(0);
 
   // Gallery picker state
   const [galleries, setGalleries] = useState<GalleryOption[]>([]);
@@ -101,8 +103,7 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
     const q = search.toLowerCase();
     return (
       g.title.toLowerCase().includes(q) ||
-      g.category.toLowerCase().includes(q) ||
-      g.type.toLowerCase().includes(q)
+      g.category.toLowerCase().includes(q)
     );
   });
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -128,6 +129,9 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
       return next;
     });
   }
+
+  const imageTotalPages = Math.ceil(images.length / IMAGE_PAGE_SIZE);
+  const pagedImages = images.slice(imagePage * IMAGE_PAGE_SIZE, (imagePage + 1) * IMAGE_PAGE_SIZE);
 
   function selectAll() { setSelected(new Set(images.map(i => i.key))); }
   function clearSelection() { setSelected(new Set()); }
@@ -198,11 +202,11 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
 
           {/* Image grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {images.map(img => (
+            {pagedImages.map(img => (
               <div
                 key={img.key}
                 onClick={() => toggleSelect(img.key)}
-                className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-colors ${
+                className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-colors bg-neutral-200 ${
                   selected.has(img.key)
                     ? 'border-primary-500'
                     : 'border-transparent hover:border-neutral-300'
@@ -226,6 +230,27 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
               </div>
             ))}
           </div>
+
+          {/* Image pagination */}
+          {imageTotalPages > 1 && (
+            <div className="flex items-center justify-between text-xs text-neutral-500 pt-1">
+              <button
+                disabled={imagePage === 0}
+                onClick={() => setImagePage(p => p - 1)}
+                className="disabled:opacity-40 hover:text-neutral-700"
+              >
+                ← Prev
+              </button>
+              <span>{imagePage + 1} / {imageTotalPages}</span>
+              <button
+                disabled={imagePage >= imageTotalPages - 1}
+                onClick={() => setImagePage(p => p + 1)}
+                className="disabled:opacity-40 hover:text-neutral-700"
+              >
+                Next →
+              </button>
+            </div>
+          )}
 
           {/* Assign controls */}
           {selected.size > 0 && (
@@ -285,7 +310,6 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
                               <span className="truncate">{g.title}</span>
                               <span className="ml-2 shrink-0 text-xs text-neutral-400">
                                 {CATEGORY_LABELS[g.category] ?? g.category}
-                                {g.type === 'client' && ' · Client'}
                               </span>
                             </button>
                           </li>

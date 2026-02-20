@@ -1,19 +1,21 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createHmac } from 'crypto';
 import type { APIGatewayProxyEvent, Context } from 'aws-lambda';
+
+const TOKEN_SECRET = 'test-secret-for-gallery-tokens-32chars!!';
 
 // Set env vars BEFORE importing handler (module-level validation)
 vi.stubEnv('GALLERIES_TABLE', 'test-galleries');
 vi.stubEnv('ADMIN_TABLE', 'test-admin');
 vi.stubEnv('MEDIA_BUCKET', 'test-media');
+vi.stubEnv('GALLERY_TOKEN_SECRET', TOKEN_SECRET);
 
 // Use vi.hoisted for all mock variables
 const mockGetItem = vi.hoisted(() => vi.fn());
 const mockPutItem = vi.hoisted(() => vi.fn());
 const mockQueryItems = vi.hoisted(() => vi.fn());
-const mockValidateSession = vi.hoisted(() => vi.fn());
 const mockParseAuthToken = vi.hoisted(() => vi.fn());
-const mockDecodeToken = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
 const mockObjectExists = vi.hoisted(() => vi.fn());
 
@@ -28,17 +30,9 @@ vi.mock('../../../lambda/shared/db', () => ({
   buildUpdateExpression: vi.fn(),
 }));
 
-// Mock session module
+// Mock session module — only parseAuthToken is used by client-gallery now
 vi.mock('../../../lambda/shared/session', () => ({
-  validateSession: mockValidateSession,
   parseAuthToken: mockParseAuthToken,
-  decodeToken: mockDecodeToken,
-  createSession: vi.fn(),
-  deleteSession: vi.fn(),
-  checkLoginAttempts: vi.fn(),
-  recordFailedAttempt: vi.fn(),
-  clearLoginAttempts: vi.fn(),
-  encodeToken: vi.fn(),
 }));
 
 // Mock S3 utilities
@@ -89,17 +83,16 @@ const mockContext: Context = {
   succeed: () => {},
 };
 
-/** Sets up mocks for an authenticated client session */
+function makeToken(galleryId: string, galleryTitle = 'Test Gallery', expOffset = 86400): string {
+  const exp = Math.floor(Date.now() / 1000) + expOffset;
+  const payload = Buffer.from(JSON.stringify({ galleryId, galleryTitle, exp })).toString('base64url');
+  const sig = createHmac('sha256', TOKEN_SECRET).update(payload).digest('base64url');
+  return `${payload}.${sig}`;
+}
+
+/** Sets up mocks for an authenticated client with a valid HMAC token */
 function setupAuthenticatedClient(galleryId = 'gallery-1') {
-  mockParseAuthToken.mockImplementation(() => 'encoded-token');
-  mockDecodeToken.mockImplementation(() => ({ id: galleryId, token: 'valid-token' }));
-  mockValidateSession.mockImplementation(async () => ({
-    pk: `GALLERY_SESSION#${galleryId}`,
-    sk: 'valid-token',
-    token: 'valid-token',
-    createdAt: new Date().toISOString(),
-    expiresAt: Math.floor(Date.now() / 1000) + 86400,
-  }));
+  mockParseAuthToken.mockImplementation(() => makeToken(galleryId));
 }
 
 const sampleGallery = {
@@ -125,9 +118,7 @@ describe('Client Gallery Lambda Handler', () => {
     mockGetItem.mockClear();
     mockPutItem.mockClear();
     mockQueryItems.mockClear();
-    mockValidateSession.mockClear();
     mockParseAuthToken.mockClear();
-    mockDecodeToken.mockClear();
     mockGeneratePresignedDownloadUrl.mockClear();
     mockObjectExists.mockClear();
 
@@ -156,26 +147,22 @@ describe('Client Gallery Lambda Handler', () => {
       expect(result!.statusCode).toBe(401);
     });
 
-    it('returns 401 when token decode fails', async () => {
-      mockParseAuthToken.mockImplementation(() => 'some-token');
-      mockDecodeToken.mockImplementation(() => null);
+    it('returns 401 for tampered/invalid token', async () => {
+      mockParseAuthToken.mockImplementation(() => 'invalid.token');
       const event = createEvent();
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(401);
     });
 
-    it('returns 401 when token galleryId does not match', async () => {
-      mockParseAuthToken.mockImplementation(() => 'some-token');
-      mockDecodeToken.mockImplementation(() => ({ id: 'other-gallery', token: 'valid-token' }));
-      const event = createEvent();
+    it('returns 401 when token galleryId does not match path galleryId', async () => {
+      mockParseAuthToken.mockImplementation(() => makeToken('other-gallery'));
+      const event = createEvent(); // pathParameters: { galleryId: 'gallery-1' }
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(401);
     });
 
-    it('returns 401 when session validation fails', async () => {
-      mockParseAuthToken.mockImplementation(() => 'some-token');
-      mockDecodeToken.mockImplementation(() => ({ id: 'gallery-1', token: 'valid-token' }));
-      mockValidateSession.mockImplementation(async () => null);
+    it('returns 401 for expired token', async () => {
+      mockParseAuthToken.mockImplementation(() => makeToken('gallery-1', 'Gallery', -3600));
       const event = createEvent();
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(401);
@@ -689,8 +676,6 @@ describe('Client Gallery Lambda Handler', () => {
 
     it('requires authentication', async () => {
       mockParseAuthToken.mockClear();
-      mockDecodeToken.mockClear();
-      mockValidateSession.mockClear();
       mockParseAuthToken.mockImplementation(() => null);
 
       const event = createEvent({

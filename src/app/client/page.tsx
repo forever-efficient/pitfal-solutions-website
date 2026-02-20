@@ -10,6 +10,7 @@ function ClientGalleryContent() {
     const searchParams = useSearchParams();
     const galleryId = searchParams.get('id');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [requiresPassword, setRequiresPassword] = useState(false);
     const [loading, setLoading] = useState(true);
     const [galleryTitle, setGalleryTitle] = useState('');
 
@@ -19,10 +20,12 @@ function ClientGalleryContent() {
             return;
         }
 
-        clientAuth.check()
+        clientAuth.check(galleryId)
             .then((data) => {
                 if (data.authenticated && data.galleryId === galleryId) {
                     setIsAuthenticated(true);
+                    setRequiresPassword(data.passwordRequired ?? false);
+                    if (data.galleryTitle) setGalleryTitle(data.galleryTitle);
                 }
             })
             .catch(() => {
@@ -58,13 +61,14 @@ function ClientGalleryContent() {
                 galleryId={galleryId}
                 onAuthenticated={(title) => {
                     setGalleryTitle(title);
+                    setRequiresPassword(true);
                     setIsAuthenticated(true);
                 }}
             />
         );
     }
 
-    return <ClientGalleryView galleryId={galleryId} initialTitle={galleryTitle} />;
+    return <ClientGalleryView galleryId={galleryId} initialTitle={galleryTitle} requiresPassword={requiresPassword} />;
 }
 
 export default function ClientPage() {

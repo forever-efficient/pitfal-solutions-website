@@ -34,7 +34,7 @@ export function GalleryGrid({ galleries, category }: GalleryGridProps) {
       {galleries.map((gallery) => (
         <Link
           key={gallery.id}
-          href={`/portfolio/${category}/${gallery.slug}`}
+          href={`/portfolio/viewer?category=${category}&slug=${gallery.slug}`}
           className="group block"
           role="listitem"
           aria-label={`View ${gallery.title} gallery with ${gallery.imageCount} images`}

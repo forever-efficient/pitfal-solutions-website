@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { getItem, putItem, queryItems } from '../shared/db';
 import {
   success,
@@ -9,22 +9,23 @@ import {
   badRequest,
   notFound,
   corsResponse,
-  ErrorCode,
 } from '../shared/response';
-import { validateSession, parseAuthToken, decodeToken } from '../shared/session';
+import { parseAuthToken } from '../shared/session';
 import { generatePresignedDownloadUrl, objectExists } from '../shared/s3';
 
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
+const GALLERY_TOKEN_SECRET = process.env.GALLERY_TOKEN_SECRET;
 const COOKIE_NAME = 'pitfal_client_session';
 
-if (!GALLERIES_TABLE || !ADMIN_TABLE || !MEDIA_BUCKET) {
+if (!GALLERIES_TABLE || !ADMIN_TABLE || !MEDIA_BUCKET || !GALLERY_TOKEN_SECRET) {
   throw new Error(
     `Missing required environment variables: ${[
       !GALLERIES_TABLE && 'GALLERIES_TABLE',
       !ADMIN_TABLE && 'ADMIN_TABLE',
       !MEDIA_BUCKET && 'MEDIA_BUCKET',
+      !GALLERY_TOKEN_SECRET && 'GALLERY_TOKEN_SECRET',
     ].filter(Boolean).join(', ')}`
   );
 }
@@ -46,16 +47,38 @@ function getRequestContext(event: APIGatewayProxyEvent): LogContext {
   };
 }
 
-// Authenticate request using Authorization header or session cookie
-async function authenticateRequest(event: APIGatewayProxyEvent, galleryId: string): Promise<boolean> {
+interface GalleryTokenPayload {
+  galleryId: string;
+  galleryTitle: string;
+  exp: number;
+  noPassword?: boolean;
+}
+
+function verifyGalleryToken(token: string): GalleryTokenPayload | null {
+  try {
+    const dot = token.lastIndexOf('.');
+    if (dot === -1) return null;
+    const payload = token.substring(0, dot);
+    const sig = token.substring(dot + 1);
+    const expectedSig = createHmac('sha256', GALLERY_TOKEN_SECRET!).update(payload).digest('base64url');
+    const sigBuf = Buffer.from(sig, 'base64url');
+    const expectedBuf = Buffer.from(expectedSig, 'base64url');
+    if (sigBuf.length !== expectedBuf.length || !timingSafeEqual(sigBuf, expectedBuf)) return null;
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as GalleryTokenPayload;
+    if (!data.galleryId || !data.exp) return null;
+    if (data.exp < Math.floor(Date.now() / 1000)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+// Authenticate request — verifies HMAC-signed gallery token (no DynamoDB lookup)
+function authenticateRequest(event: APIGatewayProxyEvent, galleryId: string): boolean {
   const tokenValue = parseAuthToken(event.headers, COOKIE_NAME);
   if (!tokenValue) return false;
-
-  const decoded = decodeToken(tokenValue);
-  if (!decoded || decoded.id !== galleryId) return false;
-
-  const session = await validateSession(ADMIN_TABLE!, 'GALLERY_SESSION', galleryId, decoded.token);
-  return session !== null;
+  const payload = verifyGalleryToken(tokenValue);
+  return payload !== null && payload.galleryId === galleryId;
 }
 
 interface GallerySection {
@@ -119,7 +142,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   ctx.galleryId = galleryId;
 
   // Authenticate
-  const authenticated = await authenticateRequest(event, galleryId);
+  const authenticated = authenticateRequest(event, galleryId);
   if (!authenticated) {
     log('WARN', 'Unauthorized gallery access attempt', ctx);
     return unauthorized('Authentication required', requestOrigin);

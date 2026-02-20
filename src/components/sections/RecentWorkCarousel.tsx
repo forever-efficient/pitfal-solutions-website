@@ -8,7 +8,14 @@ import { publicGalleries } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 
 function shuffle<T>(arr: T[]): T[] {
-  return [...arr].sort(() => Math.random() - 0.5);
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = result[i] as T;
+    result[i] = result[j] as T;
+    result[j] = tmp;
+  }
+  return result;
 }
 
 export function RecentWorkCarousel({ className, showHeader = true, showCta = true }: { className?: string; showHeader?: boolean; showCta?: boolean }) {
@@ -16,16 +23,8 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicGalleries.getFeatured()
-      .then(async ({ galleries }) => {
-        const galleryDetails = await Promise.all(
-          galleries.map(g => publicGalleries.getGallery(g.category, g.slug))
-        );
-        const allImages = galleryDetails.flatMap(({ gallery }) =>
-          gallery.images.map(img => img.key)
-        );
-        setImages(shuffle(allImages).slice(0, 20));
-      })
+    publicGalleries.getFeaturedImages()
+      .then(({ images }) => setImages(shuffle(images).slice(0, 20)))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

@@ -11,26 +11,24 @@ export default function NewGalleryPage() {
     const router = useRouter();
     const { showError } = useToast();
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState<{
-        title: string;
-        category: string;
-        type: string;
-        slug: string;
-        password?: string;
-    }>({
+    const [form, setForm] = useState({
         title: '',
         category: 'brands',
-        type: 'client',
         slug: '',
-        password: '',
     });
+    const [passwordEnabled, setPasswordEnabled] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const { gallery } = await adminGalleries.create(form);
+            const payload = {
+                ...form,
+                ...(passwordEnabled && passwordInput ? { password: passwordInput } : {}),
+            };
+            const { gallery } = await adminGalleries.create(payload);
             router.push(`/admin/galleries/edit?id=${gallery.id}`);
         } catch (err) {
             if (err instanceof ApiError) {
@@ -94,50 +92,45 @@ export default function NewGalleryPage() {
 
                     <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Type
-                        </label>
-                        <select
-                            value={form.type}
-                            onChange={(e) => setForm({ ...form, type: e.target.value })}
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                        >
-                            <option value="client">Client Gallery (Private)</option>
-                            <option value="portfolio">Portfolio (Public)</option>
-                        </select>
-                    </div>
-                </div>
-
-                {form.type === 'client' && (
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Access Password
+                            Slug (URL path)
                         </label>
                         <input
                             type="text"
-                            value={form.password}
-                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            value={form.slug}
+                            onChange={(e) => setForm({ ...form, slug: e.target.value })}
                             className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="Required for client galleries"
+                            placeholder="e.g. smith-wedding"
                             required
                         />
+                        <p className="mt-1 text-xs text-neutral-500">
+                            Unique, URL-friendly (letters, numbers, hyphens).
+                        </p>
                     </div>
-                )}
+                </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        Slug (URL path)
+                <div className="border-t border-neutral-200 pt-4">
+                    <h3 className="text-sm font-medium text-neutral-900 mb-3">Security</h3>
+                    <label className="flex items-center gap-2 text-sm mb-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={passwordEnabled}
+                            onChange={(e) => {
+                                setPasswordEnabled(e.target.checked);
+                                if (!e.target.checked) setPasswordInput('');
+                            }}
+                            className="rounded"
+                        />
+                        Require a password to view this gallery
                     </label>
-                    <input
-                        type="text"
-                        value={form.slug}
-                        onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
-                        placeholder="e.g. smith-wedding"
-                        required
-                    />
-                    <p className="mt-1 text-xs text-neutral-500">
-                        Must be unique and URL-friendly (letters, numbers, hyphens).
-                    </p>
+                    {passwordEnabled && (
+                        <input
+                            type="text"
+                            value={passwordInput}
+                            onChange={(e) => setPasswordInput(e.target.value)}
+                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
+                            placeholder="Enter a password"
+                        />
+                    )}
                 </div>
 
                 <button

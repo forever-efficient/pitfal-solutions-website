@@ -43,7 +43,7 @@ describe('GalleryGrid', () => {
     expect(links).toHaveLength(3);
 
     // The listitem is the link itself
-    expect(links[0]).toHaveAttribute('href', '/portfolio/brands/gallery-one');
+    expect(links[0]).toHaveAttribute('href', '/portfolio/viewer?category=brands&slug=gallery-one');
   });
 
   it('renders empty state when no galleries', () => {

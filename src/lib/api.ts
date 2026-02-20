@@ -124,6 +124,7 @@ export const clientAuth = {
       galleryId: string;
       galleryTitle: string;
       token: string;
+      passwordRequired: boolean;
     }>('/api/client/auth', {
       method: 'POST',
       body: JSON.stringify({ galleryId, password }),
@@ -132,8 +133,12 @@ export const clientAuth = {
     return data;
   },
 
-  check: () =>
-    request<{ authenticated: boolean; galleryId?: string }>('/api/client/auth'),
+  check: async (galleryId?: string) => {
+    const endpoint = `/api/client/auth${galleryId ? `?galleryId=${encodeURIComponent(galleryId)}` : ''}`;
+    const data = await request<{ authenticated: boolean; galleryId?: string; galleryTitle?: string; token?: string; passwordRequired?: boolean }>(endpoint);
+    if (data.token) storeToken(CLIENT_TOKEN_KEY, data.token);
+    return data;
+  },
 
   logout: async () => {
     const data = await request<{ authenticated: boolean }>('/api/client/auth', {
@@ -283,6 +288,7 @@ export const adminGalleries = {
         heroImage?: string;
         sections?: GallerySection[];
         featured?: boolean;
+        passwordEnabled?: boolean;
         heroFocalPoint?: { x: number; y: number };
         heroZoom?: number;
         heroGradientOpacity?: number;
@@ -296,7 +302,7 @@ export const adminGalleries = {
     title: string;
     description?: string;
     category: string;
-    type: string;
+    type?: string;
     slug: string;
     password?: string;
     featured?: boolean;
@@ -470,19 +476,34 @@ export interface ProcessingSettings {
 // Public Gallery API (no auth)
 // =============================================================================
 
+type FeaturedResult = {
+  galleries: Array<{
+    id: string;
+    title: string;
+    category: string;
+    type: string;
+    slug: string;
+    coverImage: string | null;
+    href: string;
+  }>;
+};
+
+let _featuredCache: { promise: Promise<FeaturedResult>; expiresAt: number } | null = null;
+
 export const publicGalleries = {
-  getFeatured: () =>
-    request<{
-      galleries: Array<{
-        id: string;
-        title: string;
-        category: string;
-        type: string;
-        slug: string;
-        coverImage: string | null;
-        href: string;
-      }>;
-    }>('/api/galleries/featured'),
+  getFeatured: (): Promise<FeaturedResult> => {
+    const now = Date.now();
+    if (!_featuredCache || now > _featuredCache.expiresAt) {
+      _featuredCache = {
+        promise: request<FeaturedResult>('/api/galleries/featured'),
+        expiresAt: now + 60_000,
+      };
+    }
+    return _featuredCache.promise;
+  },
+
+  getFeaturedImages: () =>
+    request<{ images: string[] }>('/api/galleries/featured/images'),
 
   getByCategory: (category: string) =>
     request<{

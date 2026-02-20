@@ -464,7 +464,7 @@ async function handleGalleryById(
     if (!gallery) return notFound('Gallery not found', requestOrigin);
 
     return success({
-      gallery: { ...gallery, passwordHash: undefined },
+      gallery: { ...gallery, passwordHash: undefined, passwordEnabled: !!gallery.passwordHash },
     }, 200, requestOrigin);
   }
 
@@ -494,6 +494,8 @@ async function handleGalleryById(
     // Handle password update separately
     if (body.password && typeof body.password === 'string') {
       updates.passwordHash = await bcrypt.hash(body.password, 10);
+    } else if (body.password === '') {
+      updates.passwordHash = '';
     }
 
     const expr = buildUpdateExpression(updates);
@@ -1178,6 +1180,16 @@ async function handlePublicGalleries(
 
   const resource = event.resource || '';
 
+  // GET /api/galleries/featured/images
+  if (resource.includes('/galleries/featured/images')) {
+    const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+    const featuredImages = allGalleries
+      .filter(g => g.featured && (g.type === 'portfolio' || g.type === 'client'))
+      .flatMap(g => (g.images || []).map(img => img.key));
+    log('INFO', 'Featured gallery images fetched', ctx, { count: featuredImages.length });
+    return success({ images: featuredImages }, 200, requestOrigin);
+  }
+
   // GET /api/galleries/featured
   if (resource.includes('/galleries/featured')) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
@@ -1192,9 +1204,7 @@ async function handlePublicGalleries(
         type: g.type,
         slug: g.slug,
         coverImage: g.heroImage || g.images?.[0]?.key || null,
-        href: g.type === 'client'
-          ? `/client/${g.id}`
-          : `/portfolio/${g.category}/${g.slug}`,
+        href: `/portfolio/${g.category}/${g.slug}`,
       }));
     log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
     return success({ galleries: featured }, 200, requestOrigin);
@@ -1207,13 +1217,14 @@ async function handlePublicGalleries(
   if (category && slug) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const gallery = allGalleries.find(
-      g => g.category === category && g.slug === slug && g.type === 'portfolio'
+      g => g.category === category && g.slug === slug
     );
     if (!gallery) return notFound('Gallery not found', requestOrigin);
     return success({
       gallery: {
         ...gallery,
         passwordHash: undefined,
+        passwordEnabled: !!gallery.passwordHash,
       },
     }, 200, requestOrigin);
   }

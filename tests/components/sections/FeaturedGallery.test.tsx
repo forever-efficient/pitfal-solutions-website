@@ -98,9 +98,9 @@ describe('FeaturedGallery', () => {
       const href = link.getAttribute('href');
       return href?.includes('/portfolio/') && href !== '/portfolio';
     });
-    expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/brands/tech-startup-rebrand');
-    expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/events/johnson-wedding');
-    expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/portraits/family-session');
+    expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/viewer?category=brands&slug=tech-startup-rebrand');
+    expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/viewer?category=events&slug=johnson-wedding');
+    expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/viewer?category=portraits&slug=family-session');
   });
 
   it('renders View Full Portfolio CTA', () => {

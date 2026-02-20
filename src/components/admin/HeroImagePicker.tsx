@@ -18,9 +18,15 @@ interface HeroImagePickerProps {
 
 const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 
+const HERO_PAGE_SIZE = 48;
+
 export function HeroImagePicker({ galleryId, images, heroImage, onUpdate }: HeroImagePickerProps) {
   const { showSuccess, showError } = useToast();
   const [saving, setSaving] = useState(false);
+  const [heroPage, setHeroPage] = useState(0);
+
+  const heroTotalPages = Math.ceil(images.length / HERO_PAGE_SIZE);
+  const pagedHeroImages = images.slice(heroPage * HERO_PAGE_SIZE, (heroPage + 1) * HERO_PAGE_SIZE);
 
   async function handleSelect(key: string | undefined) {
     setSaving(true);
@@ -62,12 +68,12 @@ export function HeroImagePicker({ galleryId, images, heroImage, onUpdate }: Hero
         Select an image to display as the gallery hero banner.
       </p>
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-        {images.map((image) => (
+        {pagedHeroImages.map((image) => (
           <button
             key={image.key}
             onClick={() => handleSelect(image.key)}
             disabled={saving}
-            className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors disabled:opacity-50 ${heroImage === image.key
+            className={`aspect-square rounded-lg overflow-hidden relative border-2 transition-colors disabled:opacity-50 bg-neutral-200 ${heroImage === image.key
               ? 'border-primary-600 ring-2 ring-primary-200'
               : 'border-transparent hover:border-neutral-300'
               }`}
@@ -88,6 +94,26 @@ export function HeroImagePicker({ galleryId, images, heroImage, onUpdate }: Hero
           </button>
         ))}
       </div>
+
+      {heroTotalPages > 1 && (
+        <div className="flex items-center justify-between mt-3 text-xs text-neutral-500">
+          <button
+            disabled={heroPage === 0}
+            onClick={() => setHeroPage(p => p - 1)}
+            className="disabled:opacity-40 hover:text-neutral-700"
+          >
+            ← Prev
+          </button>
+          <span>{heroPage + 1} / {heroTotalPages}</span>
+          <button
+            disabled={heroPage >= heroTotalPages - 1}
+            onClick={() => setHeroPage(p => p + 1)}
+            className="disabled:opacity-40 hover:text-neutral-700"
+          >
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   );
 }

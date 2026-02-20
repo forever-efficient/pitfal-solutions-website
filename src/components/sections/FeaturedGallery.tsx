@@ -11,14 +11,14 @@ interface FeaturedItem {
   id: string;
   title: string;
   category: string;
-  href: string;
+  slug: string;
   coverImage: string | null;
 }
 
 const STATIC_FALLBACKS: FeaturedItem[] = [
-  { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits', coverImage: null },
-  { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands', coverImage: null },
-  { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events', coverImage: null },
+  { id: '1', title: 'Urban Portrait Session', category: 'portraits', slug: '', coverImage: null },
+  { id: '2', title: 'Corporate Brand Shoot', category: 'brands', slug: '', coverImage: null },
+  { id: '3', title: 'Wedding Celebration', category: 'events', slug: '', coverImage: null },
 ];
 
 export function FeaturedGallery() {
@@ -33,7 +33,7 @@ export function FeaturedGallery() {
             id: g.id,
             title: g.title,
             category: g.category,
-            href: g.href,
+            slug: g.slug,
             coverImage: g.coverImage,
           })));
         }
@@ -74,7 +74,7 @@ export function FeaturedGallery() {
             {featuredWork.map((item) => (
               <Link
                 key={item.id}
-                href={item.href}
+                href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
                 className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
                 {item.coverImage ? (

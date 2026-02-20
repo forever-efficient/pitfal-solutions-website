@@ -16,9 +16,9 @@ const defaultGallery = {
   title: 'Summer Portraits',
   description: 'A collection of summer portraits',
   category: 'portraits',
-  type: 'client',
   slug: 'summer-portraits',
   featured: true,
+  passwordEnabled: true,
 };
 
 function renderEditor(
@@ -33,7 +33,7 @@ function renderEditor(
 }
 
 // Labels don't have htmlFor, so we use role-based queries.
-// The form has: Title, Slug, Access Password (Security), Description (textarea), 2 selects, 1 checkbox.
+// The form has: Title, Slug, Description (textarea), 1 select (Category), 2 checkboxes (password, featured).
 function getTitleInput() {
   return screen.getAllByRole('textbox')[0]; // Title
 }
@@ -43,14 +43,16 @@ function getSlugInput() {
 function getCategorySelect() {
   return screen.getAllByRole('combobox')[0]; // Category
 }
-function getTypeSelect() {
-  return screen.getAllByRole('combobox')[1]; // Type
-}
 function getDescriptionTextarea() {
-  return screen.getAllByRole('textbox')[3]; // Description (textarea; index 2 is Access Password)
+  // Description is always the last textbox; password input is conditional and appears before it
+  const all = screen.getAllByRole('textbox');
+  return all[all.length - 1];
+}
+function getPasswordCheckbox() {
+  return screen.getAllByRole('checkbox')[0]; // "Require a password" checkbox
 }
 function getFeaturedCheckbox() {
-  return screen.getByRole('checkbox');
+  return screen.getAllByRole('checkbox')[1]; // "Featured gallery" checkbox
 }
 
 describe('GalleryEditor', () => {
@@ -65,10 +67,10 @@ describe('GalleryEditor', () => {
     expect(getTitleInput()).toHaveValue('Summer Portraits');
     expect(getSlugInput()).toHaveValue('summer-portraits');
     expect(getCategorySelect()).toHaveValue('portraits');
-    expect(getTypeSelect()).toHaveValue('client');
     expect(getDescriptionTextarea()).toHaveValue(
       'A collection of summer portraits'
     );
+    expect(getPasswordCheckbox()).toBeChecked();
     expect(getFeaturedCheckbox()).toBeChecked();
   });
 
@@ -78,8 +80,8 @@ describe('GalleryEditor', () => {
     expect(getTitleInput()).toHaveValue('');
     expect(getSlugInput()).toHaveValue('');
     expect(getCategorySelect()).toHaveValue('brands');
-    expect(getTypeSelect()).toHaveValue('client');
     expect(getDescriptionTextarea()).toHaveValue('');
+    expect(getPasswordCheckbox()).not.toBeChecked();
     expect(getFeaturedCheckbox()).not.toBeChecked();
   });
 
@@ -125,14 +127,6 @@ describe('GalleryEditor', () => {
     expect(getCategorySelect()).toHaveValue('events');
   });
 
-  it('updates type select', async () => {
-    const user = userEvent.setup();
-    renderEditor();
-
-    await user.selectOptions(getTypeSelect(), 'portfolio');
-    expect(getTypeSelect()).toHaveValue('portfolio');
-  });
-
   it('updates description textarea', async () => {
     const user = userEvent.setup();
     renderEditor();
@@ -141,6 +135,31 @@ describe('GalleryEditor', () => {
     await user.clear(descInput);
     await user.type(descInput, 'Updated description');
     expect(descInput).toHaveValue('Updated description');
+  });
+
+  it('shows password input when password checkbox is checked', () => {
+    renderEditor();
+    expect(getPasswordCheckbox()).toBeChecked();
+    expect(screen.getByPlaceholderText('Enter new password to change it')).toBeInTheDocument();
+  });
+
+  it('hides password input when password checkbox is unchecked', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(getPasswordCheckbox());
+    expect(getPasswordCheckbox()).not.toBeChecked();
+    expect(screen.queryByPlaceholderText('Enter new password to change it')).not.toBeInTheDocument();
+  });
+
+  it('shows password input after checking password checkbox on unpro­tected gallery', async () => {
+    const user = userEvent.setup();
+    renderEditor({});
+
+    expect(getPasswordCheckbox()).not.toBeChecked();
+    await user.click(getPasswordCheckbox());
+    expect(getPasswordCheckbox()).toBeChecked();
+    expect(screen.getByPlaceholderText('Enter a password')).toBeInTheDocument();
   });
 
   it('toggles featured checkbox', async () => {
@@ -154,7 +173,7 @@ describe('GalleryEditor', () => {
     expect(checkbox).not.toBeChecked();
   });
 
-  it('submits form and calls adminGalleries.update', async () => {
+  it('submits form without password field when checkbox checked but input is empty', async () => {
     const user = userEvent.setup();
     renderEditor();
 
@@ -165,7 +184,43 @@ describe('GalleryEditor', () => {
         title: 'Summer Portraits',
         description: 'A collection of summer portraits',
         category: 'portraits',
-        type: 'client',
+        slug: 'summer-portraits',
+        featured: true,
+      });
+    });
+  });
+
+  it('submits form with password field when checkbox checked and input has value', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.type(screen.getByPlaceholderText('Enter new password to change it'), 'newpass123');
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('gal-123', {
+        title: 'Summer Portraits',
+        description: 'A collection of summer portraits',
+        category: 'portraits',
+        slug: 'summer-portraits',
+        featured: true,
+        password: 'newpass123',
+      });
+    });
+  });
+
+  it('submits form with password="" when checkbox is unchecked', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(getPasswordCheckbox()); // uncheck
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('gal-123', {
+        title: 'Summer Portraits',
+        description: 'A collection of summer portraits',
+        category: 'portraits',
         slug: 'summer-portraits',
         featured: true,
         password: '',
@@ -250,12 +305,5 @@ describe('GalleryEditor', () => {
     expect(within(select).getByText('Brands')).toBeInTheDocument();
     expect(within(select).getByText('Portraits')).toBeInTheDocument();
     expect(within(select).getByText('Events')).toBeInTheDocument();
-  });
-
-  it('renders type options', () => {
-    renderEditor();
-    const select = getTypeSelect();
-    expect(within(select).getByText('Portfolio')).toBeInTheDocument();
-    expect(within(select).getByText('Client')).toBeInTheDocument();
   });
 });

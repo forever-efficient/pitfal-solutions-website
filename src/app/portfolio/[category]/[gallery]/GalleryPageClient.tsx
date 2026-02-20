@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { Container, Section } from '@/components/ui/Container';
 import { GalleryViewer } from '@/components/gallery';
 import { ContactCTA } from '@/components/sections';
@@ -37,7 +36,18 @@ export function GalleryPageClient({ category, slug }: { category: string; slug: 
   }, [category, slug]);
 
   if (notFoundError) {
-    notFound();
+    return (
+      <Section size="lg" className="pt-32 bg-neutral-50">
+        <Container>
+          <div className="text-center py-24">
+            <p className="text-neutral-500 text-lg mb-6">Gallery not found.</p>
+            <Link href="/portfolio" className="text-primary-600 hover:text-primary-700 font-medium">
+              ← Back to Portfolio
+            </Link>
+          </div>
+        </Container>
+      </Section>
+    );
   }
 
   if (loading) {

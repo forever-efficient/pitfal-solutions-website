@@ -1647,7 +1647,7 @@ describe('Admin Lambda Handler', () => {
       expect(body.data.galleries[0].coverImage).toBe('gallery/g1/hero.jpg');
     });
 
-    it('GET /api/galleries/featured - client gallery href uses /client/{id}', async () => {
+    it('GET /api/galleries/featured - all gallery hrefs use /portfolio/{category}/{slug}', async () => {
       mockScanItems.mockImplementation(async () => [
         {
           id: 'g1', title: 'Client Gallery', category: 'events', type: 'client',
@@ -1663,7 +1663,7 @@ describe('Admin Lambda Handler', () => {
       const result = await handler(event, mockContext, () => {});
 
       const body = JSON.parse(result!.body);
-      expect(body.data.galleries[0].href).toBe('/client/g1');
+      expect(body.data.galleries[0].href).toBe('/portfolio/events/client-test');
     });
 
     it('GET /api/galleries/{category} - returns portfolio galleries by category', async () => {

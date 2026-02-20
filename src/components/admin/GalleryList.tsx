@@ -8,7 +8,6 @@ interface GalleryListProps {
         id: string;
         title: string;
         category: string;
-        type: string;
         slug: string;
         imageCount: number;
         updatedAt: string;
@@ -34,9 +33,6 @@ export function GalleryList({ galleries, onDelete }: GalleryListProps) {
                             Title
                         </th>
                         <th className="text-left px-4 py-3 font-medium text-neutral-600">
-                            Type
-                        </th>
-                        <th className="text-left px-4 py-3 font-medium text-neutral-600">
                             Category
                         </th>
                         <th className="text-left px-4 py-3 font-medium text-neutral-600">
@@ -60,9 +56,6 @@ export function GalleryList({ galleries, onDelete }: GalleryListProps) {
                                 >
                                     {gallery.title}
                                 </Link>
-                            </td>
-                            <td className="px-4 py-3 text-neutral-600 capitalize">
-                                {gallery.type}
                             </td>
                             <td className="px-4 py-3 text-neutral-600 capitalize">
                                 {gallery.category}

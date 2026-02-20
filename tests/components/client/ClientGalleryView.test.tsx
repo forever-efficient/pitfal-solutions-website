@@ -186,7 +186,7 @@ describe('ClientGalleryView', () => {
 
   it('triggers hero and section bulk downloads via menu actions', async () => {
     const user = userEvent.setup();
-    render(<ClientGalleryView galleryId="g1" />);
+    render(<ClientGalleryView galleryId="g1" requiresPassword={true} />);
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Download All (4 images)' })).toBeInTheDocument();
@@ -217,6 +217,35 @@ describe('ClientGalleryView', () => {
     );
   });
 
+  it('opens lightbox with requiresPassword and supports adding a comment', async () => {
+    const user = userEvent.setup();
+
+    render(<ClientGalleryView galleryId="g1" requiresPassword={true} />);
+    await waitFor(() => expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument());
+
+    // Sign Out visible when requiresPassword=true
+    expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
+
+    // Open lightbox — exercises the requiresPassword && <DownloadButton> branch
+    await user.click(screen.getByRole('button', { name: 'One' }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('1 / 4')).toBeInTheDocument();
+
+    // Add a comment — covers handleCommentAdded
+    await user.click(screen.getByRole('button', { name: 'Add Mock Comment' }));
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('hides sign out and download buttons when requiresPassword is false', async () => {
+    render(<ClientGalleryView galleryId="g1" requiresPassword={false} />);
+    await waitFor(() => expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument());
+
+    expect(screen.queryByRole('button', { name: 'Sign Out' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Download All/ })).not.toBeInTheDocument();
+  });
+
   it('renders header bulk download variant and dismisses hook error', async () => {
     setBulkState({
       isDownloading: true,
@@ -233,7 +262,7 @@ describe('ClientGalleryView', () => {
     });
 
     const user = userEvent.setup();
-    render(<ClientGalleryView galleryId="g1" />);
+    render(<ClientGalleryView galleryId="g1" requiresPassword={true} />);
 
     await waitFor(() => {
       expect(

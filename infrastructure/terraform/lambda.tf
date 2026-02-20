@@ -1,6 +1,15 @@
 # Pitfal Solutions - Lambda Functions
 
 # ─────────────────────────────────────────────
+# Secrets
+# ─────────────────────────────────────────────
+
+resource "random_password" "gallery_token_secret" {
+  length  = 64
+  special = false
+}
+
+# ─────────────────────────────────────────────
 # Lambda TypeScript Build Steps
 # ─────────────────────────────────────────────
 # Lambda functions are written in TypeScript and must be compiled before deployment.
@@ -193,6 +202,7 @@ resource "aws_lambda_function" "client_auth" {
     variables = {
       GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
       ADMIN_TABLE          = aws_dynamodb_table.admin.name
+      GALLERY_TOKEN_SECRET = random_password.gallery_token_secret.result
       ENVIRONMENT          = var.environment
       CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
     }
@@ -290,6 +300,7 @@ resource "aws_lambda_function" "client_gallery" {
       GALLERIES_TABLE      = aws_dynamodb_table.galleries.name
       ADMIN_TABLE          = aws_dynamodb_table.admin.name
       MEDIA_BUCKET         = aws_s3_bucket.media.id
+      GALLERY_TOKEN_SECRET = random_password.gallery_token_secret.result
       ENVIRONMENT          = var.environment
       CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
     }
