@@ -167,7 +167,8 @@ test.describe('Navigation - Browser History', () => {
     await nav.getByRole('link', { name: 'About' }).click();
     await expect(page).toHaveURL(/\/about\/?$/);
 
-    await page.goBack();
+    // Use goBack with no-wait to avoid timeout in static builds
+    await page.goBack({ waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/$/);
   });
 
@@ -179,10 +180,10 @@ test.describe('Navigation - Browser History', () => {
     await nav.getByRole('link', { name: 'About' }).click();
     await expect(page).toHaveURL(/\/about\/?$/);
 
-    await page.goBack();
+    await page.goBack({ waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/$/);
 
-    await page.goForward();
+    await page.goForward({ waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/about\/?$/);
   });
 });
