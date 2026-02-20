@@ -78,7 +78,6 @@ resource "aws_iam_role_policy_attachment" "image_processor_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# S3 access - scoped to media bucket staging/ and finished/ prefixes
 resource "aws_iam_role_policy" "image_processor_s3" {
   name = "${local.name_prefix}-image-processor-s3"
   role = aws_iam_role.image_processor.id
@@ -87,30 +86,25 @@ resource "aws_iam_role_policy" "image_processor_s3" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "ReadStaging"
+        Sid    = "ReadStagingRAW"
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:DeleteObject"
         ]
-        Resource = "${aws_s3_bucket.media.arn}/staging/*"
+        Resource = [
+          "${aws_s3_bucket.media.arn}/staging/RAW/*",
+          "${aws_s3_bucket.media.arn}/staging/JPEG/*"
+        ]
       },
       {
-        Sid    = "WriteFinished"
+        Sid    = "WriteStagingReady"
         Effect = "Allow"
         Action = [
           "s3:PutObject",
           "s3:GetObject"
         ]
-        Resource = "${aws_s3_bucket.media.arn}/finished/*"
-      },
-      {
-        Sid    = "CopyObjects"
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject"
-        ]
-        Resource = "${aws_s3_bucket.media.arn}/*"
+        Resource = "${aws_s3_bucket.media.arn}/staging/ready/*"
       },
       {
         Sid    = "ListBucket"
@@ -121,7 +115,7 @@ resource "aws_iam_role_policy" "image_processor_s3" {
         Resource = aws_s3_bucket.media.arn
         Condition = {
           StringLike = {
-            "s3:prefix" = ["staging/*", "finished/*"]
+            "s3:prefix" = ["staging/RAW/*", "staging/JPEG/*", "staging/ready/*"]
           }
         }
       }
@@ -192,12 +186,13 @@ resource "aws_lambda_function" "image_processor" {
 
   environment {
     variables = {
-      MEDIA_BUCKET       = aws_s3_bucket.media.id
-      STAGING_PREFIX     = "staging/"
-      FINISHED_PREFIX    = "finished/"
-      JPEG_QUALITY       = tostring(var.image_processor_jpeg_quality)
-      NOTIFICATION_EMAIL = var.contact_email
-      ENVIRONMENT        = var.environment
+      MEDIA_BUCKET        = aws_s3_bucket.media.id
+      STAGING_RAW_PREFIX  = "staging/RAW/"
+      STAGING_JPEG_PREFIX = "staging/JPEG/"
+      READY_PREFIX        = "staging/ready/"
+      JPEG_QUALITY        = tostring(var.image_processor_jpeg_quality)
+      NOTIFICATION_EMAIL  = var.contact_email
+      ENVIRONMENT         = var.environment
     }
   }
 
@@ -241,37 +236,81 @@ resource "aws_lambda_permission" "image_processor_s3" {
   source_account = data.aws_caller_identity.current.account_id
 }
 
-# S3 bucket notification for staging/ uploads
+# S3 bucket notification for staging/RAW/ and staging/JPEG/ uploads
 resource "aws_s3_bucket_notification" "media_notifications" {
   count  = var.enable_image_processor ? 1 : 0
   bucket = aws_s3_bucket.media.id
 
+  # RAW file triggers
   lambda_function {
     lambda_function_arn = aws_lambda_function.image_processor[0].arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/"
+    filter_prefix       = "staging/RAW/"
     filter_suffix       = ".cr2"
   }
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.image_processor[0].arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/"
+    filter_prefix       = "staging/RAW/"
     filter_suffix       = ".CR2"
   }
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.image_processor[0].arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/"
+    filter_prefix       = "staging/RAW/"
     filter_suffix       = ".cr3"
   }
 
   lambda_function {
     lambda_function_arn = aws_lambda_function.image_processor[0].arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/"
+    filter_prefix       = "staging/RAW/"
     filter_suffix       = ".CR3"
+  }
+
+  # JPEG/PNG triggers
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".jpg"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".jpeg"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".JPG"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".JPEG"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".png"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "staging/JPEG/"
+    filter_suffix       = ".PNG"
   }
 
   depends_on = [aws_lambda_permission.image_processor_s3]

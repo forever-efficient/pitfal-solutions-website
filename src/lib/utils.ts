@@ -84,39 +84,11 @@ export function truncate(text: string, length: number): string {
  */
 export function getImageUrl(
   key: string,
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'original'
+  _size?: 'sm' | 'md' | 'lg' | 'xl' | 'original'
 ): string {
   const mediaBaseUrl =
     process.env.NEXT_PUBLIC_MEDIA_URL || 'https://media.pitfal.solutions';
-
-  if (!size || size === 'original') {
-    return `${mediaBaseUrl}/${key}`;
-  }
-
-  // Construct URL for processed image sizes
-  const baseName = key.replace(/\.[^/.]+$/, '');
-  const sizeMap = {
-    sm: '320w',
-    md: '640w',
-    lg: '1280w',
-    xl: '1920w',
-  };
-
-  return `${mediaBaseUrl}/processed/${baseName}/${sizeMap[size]}.webp`;
-}
-
-/**
- * Get thumbnail URL
- */
-export function getThumbnailUrl(
-  key: string,
-  size: 'sm' | 'md' | 'lg' = 'md'
-): string {
-  const mediaBaseUrl =
-    process.env.NEXT_PUBLIC_MEDIA_URL || 'https://media.pitfal.solutions';
-
-  const baseName = key.replace(/\.[^/.]+$/, '');
-  return `${mediaBaseUrl}/thumbnails/${baseName}/${size}.webp`;
+  return `${mediaBaseUrl}/${key}`;
 }
 
 /**

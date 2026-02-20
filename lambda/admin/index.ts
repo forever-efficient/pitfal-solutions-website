@@ -28,7 +28,7 @@ import {
   encodeToken,
   decodeToken,
 } from '../shared/session';
-import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteS3Objects } from '../shared/s3';
+import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteS3Objects, copyS3Object, listS3Objects } from '../shared/s3';
 import { sendTemplatedEmail } from '../shared/email';
 
 // Environment variables
@@ -132,6 +132,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return handleAuth(event, method, ctx, requestOrigin);
   }
 
+  // Public gallery routes (no auth required)
+  if (resource.includes('/galleries') && !resource.includes('/admin/galleries')) {
+    return handlePublicGalleries(event, method, ctx, requestOrigin);
+  }
+
   // All other routes require authentication
   const adminUser = await authenticateAdmin(event);
   if (!adminUser) {
@@ -160,6 +165,16 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return handleGalleryById(event, method, galleryId, ctx, requestOrigin);
     }
     return handleGalleries(event, method, ctx, requestOrigin);
+  }
+
+  // Image ready queue route (must check before generic images route)
+  if (resource.includes('/admin/images/ready')) {
+    return handleImagesReady(event, method, ctx, requestOrigin);
+  }
+
+  // Image assign route (must check before generic images route)
+  if (resource.includes('/admin/images/assign')) {
+    return handleImagesAssign(event, method, ctx, requestOrigin);
   }
 
   // Image routes (all methods use base endpoint with imageKey in body)
@@ -493,7 +508,6 @@ async function handleGalleryById(
   }
 
   if (method === 'DELETE') {
-    // Get gallery first to clean up images
     const gallery = await getItem<GalleryRecord>({
       TableName: GALLERIES_TABLE,
       Key: { id: galleryId },
@@ -501,9 +515,20 @@ async function handleGalleryById(
 
     if (!gallery) return notFound('Gallery not found', requestOrigin);
 
-    // Delete gallery images from S3
+    // Move images back to staging/ready/ so they can be re-assigned
     if (gallery.images?.length) {
-      await deleteS3Objects(MEDIA_BUCKET!, gallery.images.map(img => img.key));
+      await Promise.all(
+        gallery.images.map(async (img) => {
+          const filename = img.key.split('/').pop()!;
+          const readyKey = `staging/ready/${filename}`;
+          try {
+            await copyS3Object(MEDIA_BUCKET!, img.key, readyKey);
+            await deleteS3Objects(MEDIA_BUCKET!, [img.key]);
+          } catch {
+            // If move fails, still delete the gallery record
+          }
+        })
+      );
     }
 
     await deleteItem({
@@ -511,7 +536,7 @@ async function handleGalleryById(
       Key: { id: galleryId },
     });
 
-    log('INFO', 'Gallery deleted', ctx, { galleryId });
+    log('INFO', 'Gallery deleted, images returned to staging/ready/', ctx, { galleryId });
     return success({ deleted: true }, 200, requestOrigin);
   }
 
@@ -534,17 +559,32 @@ async function handleImages(
   }
 
   if (method === 'POST') {
-    if (!body.galleryId || !body.filename || (!body.contentType && !body.isRaw)) {
-      return badRequest('galleryId, filename, and contentType are required', requestOrigin);
+    if (!body.filename) {
+      return badRequest('filename is required', requestOrigin);
     }
 
-    const isRaw = body.isRaw === true;
-    const prefix = isRaw ? 'staging' : 'finished';
-    const contentType = isRaw ? 'application/octet-stream' : (body.contentType as string);
-    const key = `${prefix}/${body.galleryId}/${randomUUID()}-${body.filename}`;
+    // Determine upload target from file extension
+    const filename = body.filename as string;
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const rawExtensions = new Set(['cr2', 'cr3', 'raw']);
+    const jpegExtensions = new Set(['jpg', 'jpeg', 'png']);
+    let prefix: string;
+    let contentType: string;
+
+    if (rawExtensions.has(ext)) {
+      prefix = 'staging/RAW';
+      contentType = 'application/octet-stream';
+    } else if (jpegExtensions.has(ext)) {
+      prefix = 'staging/JPEG';
+      contentType = (body.contentType as string) || 'image/jpeg';
+    } else {
+      return badRequest('Unsupported file type. Use CR2, CR3, RAW, JPG, JPEG, or PNG.', requestOrigin);
+    }
+
+    const key = `${prefix}/${randomUUID()}-${filename}`;
     const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, contentType, 3600);
 
-    log('INFO', 'Upload URL generated', ctx, { galleryId: body.galleryId as string, key });
+    log('INFO', 'Upload URL generated', ctx, { key });
     return success({ uploadUrl, key }, 200, requestOrigin);
   }
 
@@ -590,8 +630,15 @@ async function handleImages(
       return badRequest('imageKey and galleryId are required', requestOrigin);
     }
 
-    // Remove from S3
-    await deleteS3Objects(MEDIA_BUCKET!, [imageKey]);
+    // Move image back to staging/ready/ for re-assignment
+    const filename = imageKey.split('/').pop()!;
+    const readyKey = `staging/ready/${filename}`;
+    try {
+      await copyS3Object(MEDIA_BUCKET!, imageKey, readyKey);
+      await deleteS3Objects(MEDIA_BUCKET!, [imageKey]);
+    } catch {
+      // If move fails, continue to update DynamoDB
+    }
 
     // Remove from gallery record
     const gallery = await getItem<GalleryRecord>({
@@ -612,7 +659,7 @@ async function handleImages(
       });
     }
 
-    log('INFO', 'Image deleted', ctx, { galleryId, imageKey });
+    log('INFO', 'Image removed from gallery, returned to staging/ready/', ctx, { galleryId, imageKey });
     return success({ deleted: true }, 200, requestOrigin);
   }
 
@@ -1013,4 +1060,184 @@ async function handleSettings(
   }
 
   return methodNotAllowed(undefined, requestOrigin);
+}
+
+// ============ IMAGES READY QUEUE HANDLER ============
+
+async function handleImagesReady(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'GET') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const objects = await listS3Objects(MEDIA_BUCKET!, 'staging/ready/');
+  const images = objects
+    .filter(obj => obj.key !== 'staging/ready/')  // exclude the "folder" itself
+    .map(obj => ({
+      key: obj.key,
+      filename: obj.key.split('/').pop() || obj.key,
+      uploadedAt: obj.lastModified.toISOString(),
+      size: obj.size,
+      url: `${process.env.CLOUDFRONT_URL || ''}/media/${obj.key}`,
+    }));
+
+  log('INFO', 'Ready queue listed', ctx, { count: images.length });
+  return success({ images }, 200, requestOrigin);
+}
+
+// ============ IMAGES ASSIGN HANDLER ============
+
+async function handleImagesAssign(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  let body: { keys?: string[]; galleryId?: string };
+  try {
+    body = JSON.parse(event.body || '{}');
+  } catch {
+    return badRequest('Invalid JSON', requestOrigin);
+  }
+
+  if (!body.keys || !Array.isArray(body.keys) || body.keys.length === 0 || !body.galleryId) {
+    return badRequest('keys[] and galleryId are required', requestOrigin);
+  }
+
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE,
+    Key: { id: body.galleryId },
+  });
+
+  if (!gallery) return notFound('Gallery not found', requestOrigin);
+
+  // Move each image from staging/ready/ → gallery/{galleryId}/
+  const assignedImages: Array<{ key: string; alt?: string }> = [];
+  const failed: string[] = [];
+
+  await Promise.all(
+    body.keys.map(async (readyKey: string) => {
+      const filename = readyKey.split('/').pop()!;
+      const galleryKey = `gallery/${body.galleryId}/${filename}`;
+      try {
+        await copyS3Object(MEDIA_BUCKET!, readyKey, galleryKey);
+        await deleteS3Objects(MEDIA_BUCKET!, [readyKey]);
+        assignedImages.push({ key: galleryKey });
+      } catch (err) {
+        failed.push(readyKey);
+      }
+    })
+  );
+
+  if (assignedImages.length > 0) {
+    // Append to gallery images array
+    const updatedImages = [...(gallery.images || []), ...assignedImages];
+    await updateItem({
+      TableName: GALLERIES_TABLE,
+      Key: { id: body.galleryId },
+      UpdateExpression: 'SET images = :images, updatedAt = :updatedAt',
+      ExpressionAttributeValues: {
+        ':images': updatedImages,
+        ':updatedAt': new Date().toISOString(),
+      },
+    });
+  }
+
+  log('INFO', 'Images assigned to gallery', ctx, {
+    galleryId: body.galleryId,
+    assigned: assignedImages.length,
+    failed: failed.length,
+  });
+
+  return success({
+    assigned: assignedImages.length,
+    failed: failed.length,
+    failedKeys: failed,
+  }, 200, requestOrigin);
+}
+
+// ============ PUBLIC GALLERY HANDLER ============
+
+async function handlePublicGalleries(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'GET') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const resource = event.resource || '';
+
+  // GET /api/galleries/featured
+  if (resource.includes('/galleries/featured')) {
+    const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+    const featured = allGalleries
+      .filter(g => g.featured && (g.type === 'portfolio' || g.type === 'client'))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
+      .map(g => ({
+        id: g.id,
+        title: g.title,
+        category: g.category,
+        type: g.type,
+        slug: g.slug,
+        coverImage: g.heroImage || g.images?.[0]?.key || null,
+        href: g.type === 'client'
+          ? `/client/${g.id}`
+          : `/portfolio/${g.category}/${g.slug}`,
+      }));
+    log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
+    return success({ galleries: featured }, 200, requestOrigin);
+  }
+
+  // GET /api/galleries/{category}/{slug}
+  const category = event.pathParameters?.category;
+  const slug = event.pathParameters?.slug;
+
+  if (category && slug) {
+    const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+    const gallery = allGalleries.find(
+      g => g.category === category && g.slug === slug && g.type === 'portfolio'
+    );
+    if (!gallery) return notFound('Gallery not found', requestOrigin);
+    return success({
+      gallery: {
+        ...gallery,
+        passwordHash: undefined,
+      },
+    }, 200, requestOrigin);
+  }
+
+  // GET /api/galleries/{category} or GET /api/galleries?category=
+  const categoryParam = category || event.queryStringParameters?.category;
+  if (categoryParam) {
+    const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+    const galleries = allGalleries
+      .filter(g => g.category === categoryParam && g.type === 'portfolio')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(g => ({
+        id: g.id,
+        title: g.title,
+        category: g.category,
+        slug: g.slug,
+        coverImage: g.heroImage || g.images?.[0]?.key || null,
+        imageCount: g.images?.length || 0,
+        description: g.description,
+        createdAt: g.createdAt,
+      }));
+    log('INFO', 'Public galleries by category fetched', ctx, { category: categoryParam, count: galleries.length });
+    return success({ galleries }, 200, requestOrigin);
+  }
+
+  return badRequest('category parameter is required', requestOrigin);
 }

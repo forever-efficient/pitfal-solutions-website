@@ -61,6 +61,6 @@ describe('ServicesOverview', () => {
 
   it('renders section description', () => {
     render(<ServicesOverview />);
-    expect(screen.getByText(/From photography and video to aerial imaging and AI solutions/i)).toBeInTheDocument();
+    expect(screen.getByText(/From photography and videography to aerial imaging and AI solutions, every project receives complete creative and technical attention./i)).toBeInTheDocument();
   });
 });

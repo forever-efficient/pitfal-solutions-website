@@ -179,13 +179,13 @@ resource "aws_s3_bucket_cors_configuration" "media" {
 resource "aws_s3_bucket_lifecycle_configuration" "media" {
   bucket = aws_s3_bucket.media.id
 
+  # Transition completed gallery images to IA after 90 days
   rule {
-    id     = "transition-to-ia"
+    id     = "transition-gallery-to-ia"
     status = "Enabled"
 
-    # Exclude staging files from IA transition (they get moved to finished quickly)
     filter {
-      prefix = "finished/"
+      prefix = "gallery/"
     }
 
     transition {
@@ -203,19 +203,45 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
     }
   }
 
-  # Auto-cleanup staging files that weren't processed (safety net)
+  # Auto-cleanup RAW uploads that weren't processed (safety net: 7 days)
   rule {
-    id     = "staging-cleanup"
+    id     = "staging-raw-cleanup"
     status = "Enabled"
 
     filter {
-      prefix = "staging/"
+      prefix = "staging/RAW/"
     }
 
-    # If a file sits in staging for 7 days without being processed,
-    # something went wrong - expire it to prevent orphaned files
     expiration {
       days = 7
+    }
+  }
+
+  # Auto-cleanup JPEG uploads that weren't processed (safety net: 7 days)
+  rule {
+    id     = "staging-jpeg-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "staging/JPEG/"
+    }
+
+    expiration {
+      days = 7
+    }
+  }
+
+  # Auto-cleanup ready/ images not assigned to a gallery within 30 days
+  rule {
+    id     = "staging-ready-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "staging/ready/"
+    }
+
+    expiration {
+      days = 30
     }
   }
 }

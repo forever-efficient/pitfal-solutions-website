@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { getAllGallerySlugs } from '@/lib/galleries';
 import { getPostSlugs } from '@/lib/blog';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.pitfal.solutions';
@@ -17,13 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/terms`, lastModified: new Date(), changeFrequency: 'yearly' as const, priority: 0.3 },
   ];
 
-  const galleryPages = getAllGallerySlugs().map(({ category, gallery }) => ({
-    url: `${SITE_URL}/portfolio/${category}/${gallery}`,
-    lastModified: new Date(),
-    changeFrequency: 'monthly' as const,
-    priority: 0.7,
-  }));
-
   const categoryPages = ['brands', 'portraits', 'events'].map(cat => ({
     url: `${SITE_URL}/portfolio/${cat}`,
     lastModified: new Date(),
@@ -38,5 +30,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...categoryPages, ...galleryPages, ...blogPages];
+  return [...staticPages, ...categoryPages, ...blogPages];
 }

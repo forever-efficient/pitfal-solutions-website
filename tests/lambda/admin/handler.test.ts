@@ -33,6 +33,8 @@ const mockHash = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedUploadUrl = vi.hoisted(() => vi.fn());
 const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
 const mockDeleteS3Objects = vi.hoisted(() => vi.fn());
+const mockCopyS3Object = vi.hoisted(() => vi.fn());
+const mockListS3Objects = vi.hoisted(() => vi.fn());
 const mockSendTemplatedEmail = vi.hoisted(() => vi.fn());
 const mockLambdaInvokeSend = vi.hoisted(() => vi.fn());
 
@@ -78,6 +80,8 @@ vi.mock('../../../lambda/shared/s3', () => ({
   generatePresignedUploadUrl: mockGeneratePresignedUploadUrl,
   generatePresignedDownloadUrl: mockGeneratePresignedDownloadUrl,
   deleteS3Objects: mockDeleteS3Objects,
+  copyS3Object: mockCopyS3Object,
+  listS3Objects: mockListS3Objects,
 }));
 
 // Mock email utilities
@@ -161,6 +165,8 @@ describe('Admin Lambda Handler', () => {
     mockGeneratePresignedUploadUrl.mockClear();
     mockGeneratePresignedDownloadUrl.mockClear();
     mockDeleteS3Objects.mockClear();
+    mockCopyS3Object.mockClear();
+    mockListS3Objects.mockClear();
     mockSendTemplatedEmail.mockClear();
     mockLambdaInvokeSend.mockClear();
 
@@ -205,6 +211,8 @@ describe('Admin Lambda Handler', () => {
     mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload-url.example.com');
     mockGeneratePresignedDownloadUrl.mockImplementation(async () => 'https://download-url.example.com');
     mockDeleteS3Objects.mockImplementation(async () => {});
+    mockCopyS3Object.mockImplementation(async () => {});
+    mockListS3Objects.mockImplementation(async () => []);
     mockLambdaInvokeSend.mockImplementation(async () => ({ StatusCode: 202 }));
   });
 
@@ -906,11 +914,11 @@ describe('Admin Lambda Handler', () => {
   // ============ GALLERIES: DELETE ============
 
   describe('DELETE /admin/galleries/{id}', () => {
-    it('deletes gallery and its images from S3', async () => {
+    it('deletes gallery and moves images to staging/ready/', async () => {
       setupAuthenticatedAdmin();
       mockGetItem.mockImplementation(async () => ({
         id: 'g1', title: 'Test', category: 'portraits', type: 'portfolio',
-        slug: 'test', images: [{ key: 'img1.jpg' }, { key: 'img2.jpg' }],
+        slug: 'test', images: [{ key: 'gallery/g1/photo1.jpg' }, { key: 'gallery/g1/photo2.jpg' }],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
 
@@ -925,8 +933,12 @@ describe('Admin Lambda Handler', () => {
       const body = JSON.parse(result!.body);
       expect(body.data.deleted).toBe(true);
 
-      // Should delete images from S3
-      expect(mockDeleteS3Objects).toHaveBeenCalledWith('test-media', ['img1.jpg', 'img2.jpg']);
+      // Should copy images to staging/ready/
+      expect(mockCopyS3Object).toHaveBeenCalledWith('test-media', 'gallery/g1/photo1.jpg', 'staging/ready/photo1.jpg');
+      expect(mockCopyS3Object).toHaveBeenCalledWith('test-media', 'gallery/g1/photo2.jpg', 'staging/ready/photo2.jpg');
+      // Should delete originals from gallery/
+      expect(mockDeleteS3Objects).toHaveBeenCalledWith('test-media', ['gallery/g1/photo1.jpg']);
+      expect(mockDeleteS3Objects).toHaveBeenCalledWith('test-media', ['gallery/g1/photo2.jpg']);
       // Should delete gallery from DynamoDB
       expect(mockDeleteItem).toHaveBeenCalledWith({
         TableName: 'test-galleries',
@@ -948,7 +960,7 @@ describe('Admin Lambda Handler', () => {
       expect(result!.statusCode).toBe(404);
     });
 
-    it('skips S3 delete when gallery has no images', async () => {
+    it('skips S3 operations when gallery has no images', async () => {
       setupAuthenticatedAdmin();
       mockGetItem.mockImplementation(async () => ({
         id: 'g1', title: 'Empty', category: 'portraits', type: 'portfolio',
@@ -963,6 +975,7 @@ describe('Admin Lambda Handler', () => {
       });
       await handler(event, mockContext, () => {});
 
+      expect(mockCopyS3Object).not.toHaveBeenCalled();
       expect(mockDeleteS3Objects).not.toHaveBeenCalled();
     });
   });
@@ -970,59 +983,115 @@ describe('Admin Lambda Handler', () => {
   // ============ IMAGES: UPLOAD URL ============
 
   describe('POST /admin/images (get upload URL)', () => {
-    it('returns presigned upload URL', async () => {
+    it('JPEG upload routes to staging/JPEG/', async () => {
       setupAuthenticatedAdmin();
       mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload.s3.example.com');
 
       const event = createEvent({
         httpMethod: 'POST',
         resource: '/api/admin/images',
-        body: JSON.stringify({
-          galleryId: 'g1',
-          filename: 'photo.jpg',
-          contentType: 'image/jpeg',
-        }),
+        body: JSON.stringify({ filename: 'photo.jpg', contentType: 'image/jpeg' }),
       });
       const result = await handler(event, mockContext, () => {});
 
       expect(result!.statusCode).toBe(200);
       const body = JSON.parse(result!.body);
       expect(body.data.uploadUrl).toBe('https://upload.s3.example.com');
-      expect(body.data.key).toContain('finished/g1/');
+      expect(body.data.key).toMatch(/^staging\/JPEG\//);
       expect(body.data.key).toContain('photo.jpg');
     });
 
-    it('returns 400 when required fields are missing', async () => {
+    it('PNG upload routes to staging/JPEG/', async () => {
+      setupAuthenticatedAdmin();
+      mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload.s3.example.com');
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ filename: 'image.png', contentType: 'image/png' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.key).toMatch(/^staging\/JPEG\//);
+    });
+
+    it('RAW upload routes to staging/RAW/', async () => {
+      setupAuthenticatedAdmin();
+      mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload.s3.example.com');
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ filename: 'photo.cr2' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.key).toMatch(/^staging\/RAW\//);
+      expect(body.data.key).toContain('photo.cr2');
+    });
+
+    it('CR3 upload routes to staging/RAW/', async () => {
+      setupAuthenticatedAdmin();
+      mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload.s3.example.com');
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ filename: 'photo.cr3' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.key).toMatch(/^staging\/RAW\//);
+    });
+
+    it('returns 400 for unsupported file extension', async () => {
       setupAuthenticatedAdmin();
 
       const event = createEvent({
         httpMethod: 'POST',
         resource: '/api/admin/images',
-        body: JSON.stringify({ galleryId: 'g1' }), // missing filename and contentType
+        body: JSON.stringify({ filename: 'photo.bmp' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('Unsupported file type');
+    });
+
+    it('returns 400 when filename is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images',
+        body: JSON.stringify({}),
       });
       const result = await handler(event, mockContext, () => {});
 
       expect(result!.statusCode).toBe(400);
     });
 
-    it('generates upload URL with correct bucket', async () => {
+    it('generates upload URL with correct bucket and content type', async () => {
       setupAuthenticatedAdmin();
 
       const event = createEvent({
         httpMethod: 'POST',
         resource: '/api/admin/images',
-        body: JSON.stringify({
-          galleryId: 'g1',
-          filename: 'test.png',
-          contentType: 'image/png',
-        }),
+        body: JSON.stringify({ filename: 'test.jpg', contentType: 'image/jpeg' }),
       });
       await handler(event, mockContext, () => {});
 
       expect(mockGeneratePresignedUploadUrl).toHaveBeenCalledWith(
         'test-media',
-        expect.stringContaining('finished/g1/'),
-        'image/png',
+        expect.stringContaining('staging/JPEG/'),
+        'image/jpeg',
         3600
       );
     });
@@ -1307,6 +1376,372 @@ describe('Admin Lambda Handler', () => {
       const result = await handler(event, mockContext, () => {});
 
       expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ IMAGES: READY QUEUE ============
+
+  describe('GET /admin/images/ready', () => {
+    it('returns list of images in staging/ready/', async () => {
+      setupAuthenticatedAdmin();
+      mockListS3Objects.mockImplementation(async () => [
+        { key: 'staging/ready/abc-photo.jpg', size: 12345, lastModified: new Date('2026-01-01') },
+        { key: 'staging/ready/def-portrait.png', size: 67890, lastModified: new Date('2026-01-02') },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/images/ready',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.images).toHaveLength(2);
+      expect(body.data.images[0].key).toBe('staging/ready/abc-photo.jpg');
+      expect(body.data.images[0].filename).toBe('abc-photo.jpg');
+      expect(body.data.images[0].size).toBe(12345);
+      expect(body.data.images[1].key).toBe('staging/ready/def-portrait.png');
+    });
+
+    it('filters out the folder prefix object', async () => {
+      setupAuthenticatedAdmin();
+      mockListS3Objects.mockImplementation(async () => [
+        { key: 'staging/ready/', size: 0, lastModified: new Date('2026-01-01') },
+        { key: 'staging/ready/photo.jpg', size: 100, lastModified: new Date('2026-01-01') },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/images/ready',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.images).toHaveLength(1);
+      expect(body.data.images[0].key).toBe('staging/ready/photo.jpg');
+    });
+
+    it('returns 405 for non-GET methods', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/ready',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ IMAGES: ASSIGN ============
+
+  describe('POST /admin/images/assign', () => {
+    it('moves images from staging/ready/ to gallery/{galleryId}/', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'gallery-123', title: 'Test Gallery', category: 'portraits', type: 'portfolio',
+        slug: 'test', images: [], featured: false,
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/assign',
+        body: JSON.stringify({
+          keys: ['staging/ready/abc-photo.jpg'],
+          galleryId: 'gallery-123',
+        }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.assigned).toBe(1);
+      expect(body.data.failed).toBe(0);
+      expect(mockCopyS3Object).toHaveBeenCalledWith(
+        'test-media',
+        'staging/ready/abc-photo.jpg',
+        'gallery/gallery-123/abc-photo.jpg'
+      );
+      expect(mockDeleteS3Objects).toHaveBeenCalledWith('test-media', ['staging/ready/abc-photo.jpg']);
+      // Should update gallery images in DynamoDB
+      expect(mockUpdateItem).toHaveBeenCalled();
+    });
+
+    it('returns 400 when galleryId is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/assign',
+        body: JSON.stringify({ keys: ['staging/ready/photo.jpg'] }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 400 when keys is empty', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/assign',
+        body: JSON.stringify({ keys: [], galleryId: 'gallery-123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 400 when keys is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/assign',
+        body: JSON.stringify({ galleryId: 'gallery-123' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 404 when gallery not found', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => null);
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/admin/images/assign',
+        body: JSON.stringify({
+          keys: ['staging/ready/photo.jpg'],
+          galleryId: 'nonexistent',
+        }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(404);
+    });
+
+    it('returns 405 for non-POST methods', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/admin/images/assign',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(405);
+    });
+  });
+
+  // ============ IMAGES: DELETE (move to staging/ready/) ============
+
+  describe('DELETE /admin/images (move to staging/ready/)', () => {
+    it('moves image from gallery/ to staging/ready/ and removes from DynamoDB', async () => {
+      setupAuthenticatedAdmin();
+      mockGetItem.mockImplementation(async () => ({
+        id: 'g1', title: 'Test', category: 'portraits', type: 'portfolio',
+        slug: 'test', images: [{ key: 'gallery/g1/photo.jpg' }, { key: 'gallery/g1/other.jpg' }],
+        createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+      }));
+
+      const event = createEvent({
+        httpMethod: 'DELETE',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ imageKey: 'gallery/g1/photo.jpg', galleryId: 'g1' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.deleted).toBe(true);
+
+      // Should copy to staging/ready/
+      expect(mockCopyS3Object).toHaveBeenCalledWith('test-media', 'gallery/g1/photo.jpg', 'staging/ready/photo.jpg');
+      // Should delete original
+      expect(mockDeleteS3Objects).toHaveBeenCalledWith('test-media', ['gallery/g1/photo.jpg']);
+      // Should update gallery images in DynamoDB (remove the deleted image)
+      expect(mockUpdateItem).toHaveBeenCalled();
+    });
+
+    it('returns 400 when imageKey is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'DELETE',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ galleryId: 'g1' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 400 when galleryId is missing', async () => {
+      setupAuthenticatedAdmin();
+
+      const event = createEvent({
+        httpMethod: 'DELETE',
+        resource: '/api/admin/images',
+        body: JSON.stringify({ imageKey: 'gallery/g1/photo.jpg' }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(400);
+    });
+  });
+
+  // ============ PUBLIC GALLERY ROUTES ============
+
+  describe('Public gallery routes (no auth)', () => {
+    it('GET /api/galleries/featured - returns featured galleries without auth', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1', title: 'Featured Portfolio', category: 'portraits', type: 'portfolio',
+          slug: 'featured-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: true,
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'g2', title: 'Not Featured', category: 'brands', type: 'portfolio',
+          slug: 'not-featured', images: [], featured: false,
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.galleries).toHaveLength(1);
+      expect(body.data.galleries[0].id).toBe('g1');
+      expect(body.data.galleries[0].href).toBe('/portfolio/portraits/featured-test');
+    });
+
+    it('GET /api/galleries/featured - uses heroImage as coverImage when available', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1', title: 'Hero Gallery', category: 'brands', type: 'portfolio',
+          slug: 'hero-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: true,
+          heroImage: 'gallery/g1/hero.jpg',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      const body = JSON.parse(result!.body);
+      expect(body.data.galleries[0].coverImage).toBe('gallery/g1/hero.jpg');
+    });
+
+    it('GET /api/galleries/featured - client gallery href uses /client/{id}', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1', title: 'Client Gallery', category: 'events', type: 'client',
+          slug: 'client-test', images: [], featured: true,
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      const body = JSON.parse(result!.body);
+      expect(body.data.galleries[0].href).toBe('/client/g1');
+    });
+
+    it('GET /api/galleries/{category} - returns portfolio galleries by category', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1', title: 'Brand Gallery', category: 'brands', type: 'portfolio',
+          slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: false,
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'g2', title: 'Portrait Gallery', category: 'portraits', type: 'portfolio',
+          slug: 'portrait-test', images: [], featured: false,
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/{category}',
+        pathParameters: { category: 'brands' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.galleries).toHaveLength(1);
+      expect(body.data.galleries[0].category).toBe('brands');
+    });
+
+    it('GET /api/galleries/{category}/{slug} - returns single portfolio gallery', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1', title: 'Brand Gallery', category: 'brands', type: 'portfolio',
+          slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: false,
+          passwordHash: '$2a$10$hash',
+          createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/{category}/{slug}',
+        pathParameters: { category: 'brands', slug: 'brand-test' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.gallery.id).toBe('g1');
+      expect(body.data.gallery.passwordHash).toBeUndefined();
+    });
+
+    it('GET /api/galleries/{category}/{slug} - returns 404 for non-existent gallery', async () => {
+      mockScanItems.mockImplementation(async () => []);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/{category}/{slug}',
+        pathParameters: { category: 'brands', slug: 'nonexistent' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(404);
+    });
+
+    it('public gallery routes do not require auth', async () => {
+      // Do NOT call setupAuthenticatedAdmin
+      mockParseAuthToken.mockImplementation(() => null);
+      mockScanItems.mockImplementation(async () => []);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      // Should succeed (200), not 401
+      expect(result!.statusCode).toBe(200);
     });
   });
 
@@ -1829,7 +2264,7 @@ describe('Admin Lambda Handler', () => {
       setupAuthenticatedAdmin();
       mockGetItem.mockImplementation(async () => ({
         id: 'g1', title: 'Test', category: 'portraits', type: 'client',
-        slug: 'test', images: [{ key: 'finished/g1/photo.jpg' }],
+        slug: 'test', images: [{ key: 'gallery/g1/photo.jpg' }],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
 
@@ -1843,7 +2278,7 @@ describe('Admin Lambda Handler', () => {
 
       expect(mockGeneratePresignedDownloadUrl).toHaveBeenCalledWith(
         'test-media',
-        'finished/g1/photo.jpg',
+        'gallery/g1/photo.jpg',
         3600
       );
     });

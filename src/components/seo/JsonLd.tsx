@@ -44,11 +44,7 @@ export function LocalBusinessJsonLd() {
           opens: '09:00',
           closes: '18:00',
         },
-        sameAs: [
-          'https://instagram.com/pitfalsolutions',
-          'https://facebook.com/pitfalsolutions',
-          'https://linkedin.com/company/pitfal-solutions',
-        ],
+        sameAs: Object.values(BUSINESS.social),
       }}
     />
   );

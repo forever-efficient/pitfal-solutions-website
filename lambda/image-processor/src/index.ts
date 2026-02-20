@@ -1,16 +1,11 @@
 /**
  * Pitfal Solutions - Image Processor Lambda
  *
- * Triggered by S3 event notifications when RAW images (CR2/CR3) are
- * uploaded to the staging/ prefix in the media bucket.
+ * Triggered by S3 event notifications when images are uploaded to:
+ *   staging/RAW/  - CR2/CR3 RAW files → LibRaw → TIFF → Sharp → staging/ready/
+ *   staging/JPEG/ - JPEG/PNG files → Sharp (smart edits only) → staging/ready/
  *
- * Pipeline:
- * 1. Download RAW file from S3 staging/
- * 2. Convert RAW → TIFF using LibRaw (dcraw_emu)
- * 3. Apply professional magazine-quality edits via Sharp
- * 4. Output high-quality JPEG
- * 5. Copy original RAW + edited JPEG to finished/
- * 6. Delete from staging/
+ * Admin reviews staging/ready/ and assigns images to galleries.
  */
 
 import { S3Event, Context } from 'aws-lambda';
@@ -18,14 +13,14 @@ import {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  CopyObjectCommand,
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { writeFile, readFile, unlink, mkdir } from 'fs/promises';
-import { join, basename, extname, dirname } from 'path';
+import { join, basename, extname } from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { randomUUID } from 'crypto';
 import { applyProfessionalEdits } from './editor';
 
 const execFileAsync = promisify(execFile);
@@ -33,17 +28,17 @@ const execFileAsync = promisify(execFile);
 const s3Client = new S3Client({});
 
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
-const STAGING_PREFIX = process.env.STAGING_PREFIX || 'staging/';
-const FINISHED_PREFIX = process.env.FINISHED_PREFIX || 'finished/';
+const STAGING_RAW_PREFIX = process.env.STAGING_RAW_PREFIX || 'staging/RAW/';
+const STAGING_JPEG_PREFIX = process.env.STAGING_JPEG_PREFIX || 'staging/JPEG/';
+const READY_PREFIX = process.env.READY_PREFIX || 'staging/ready/';
 const JPEG_QUALITY = parseInt(process.env.JPEG_QUALITY || '93', 10);
-const NOTIFICATION_EMAIL = process.env.NOTIFICATION_EMAIL || '';
 
 if (!MEDIA_BUCKET) {
   throw new Error('MEDIA_BUCKET environment variable is required');
 }
 
-// Supported RAW formats
-const RAW_EXTENSIONS = new Set(['.cr2', '.cr3']);
+const RAW_EXTENSIONS = new Set(['.cr2', '.cr3', '.raw']);
+const JPEG_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png']);
 
 interface LogContext {
   requestId: string;
@@ -74,19 +69,11 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
 
 /**
  * Convert a RAW file (CR2/CR3) to TIFF using LibRaw's dcraw_emu.
- * Returns the path to the converted TIFF file.
  */
 async function convertRawToTiff(rawFilePath: string, ctx: LogContext): Promise<string> {
   const tiffPath = rawFilePath.replace(/\.[^.]+$/, '.tiff');
 
   try {
-    // dcraw_emu options:
-    // -T    Output TIFF instead of PPM
-    // -w    Use camera white balance
-    // -H 0  Clip highlights (no recovery, prevents blown look)
-    // -o 1  Output in sRGB colorspace
-    // -q 3  AHD interpolation (highest quality demosaicing)
-    // -6    Write 16-bit output for maximum editing headroom
     await execFileAsync('dcraw_emu', [
       '-T',      // TIFF output
       '-w',      // Camera white balance
@@ -96,7 +83,7 @@ async function convertRawToTiff(rawFilePath: string, ctx: LogContext): Promise<s
       '-6',      // 16-bit output
       rawFilePath,
     ], {
-      timeout: 120000, // 2 min timeout for large RAW files
+      timeout: 120000,
       env: {
         ...process.env,
         LD_LIBRARY_PATH: '/opt/libraw/lib:' + (process.env.LD_LIBRARY_PATH || ''),
@@ -113,51 +100,45 @@ async function convertRawToTiff(rawFilePath: string, ctx: LogContext): Promise<s
 }
 
 /**
- * Process a single RAW image file.
+ * Determine the input type from the S3 key.
  */
-async function processImage(
+function getInputType(key: string, ext: string): 'RAW' | 'JPEG' | null {
+  if (key.startsWith(STAGING_RAW_PREFIX) && RAW_EXTENSIONS.has(ext)) return 'RAW';
+  if (key.startsWith(STAGING_JPEG_PREFIX) && (JPEG_EXTENSIONS.has(ext) || ext === '.png')) return 'JPEG';
+  return null;
+}
+
+/**
+ * Process a RAW image: LibRaw → TIFF → Sharp edits → staging/ready/
+ */
+async function processRawImage(
   bucket: string,
   key: string,
   ctx: LogContext
-): Promise<{ editedKey: string; originalKey: string }> {
+): Promise<string> {
   const fileName = basename(key);
-  const ext = extname(fileName).toLowerCase();
   const nameWithoutExt = basename(fileName, extname(fileName));
-
-  // Derive the relative path within staging/ to preserve folder structure
-  const relativePath = key.startsWith(STAGING_PREFIX)
-    ? key.slice(STAGING_PREFIX.length)
-    : key;
-  const relativeDir = dirname(relativePath);
-  const finishedDir = relativeDir === '.'
-    ? FINISHED_PREFIX
-    : `${FINISHED_PREFIX}${relativeDir}/`;
+  const uuid = randomUUID().slice(0, 8);
+  const outputFileName = `${uuid}-${nameWithoutExt}.jpg`;
+  const readyKey = `${READY_PREFIX}${outputFileName}`;
 
   const tmpDir = `/tmp/${Date.now()}`;
   await mkdir(tmpDir, { recursive: true });
-
   const rawFilePath = join(tmpDir, fileName);
-  const editedFileName = `${nameWithoutExt}.jpg`;
 
   try {
-    // Step 1: Download RAW file from S3
+    // Download RAW file
     log('INFO', 'Downloading RAW file from S3', ctx);
-    const getResult = await s3Client.send(new GetObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }));
-
+    const getResult = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
     const rawBuffer = await streamToBuffer(getResult.Body as Readable);
     ctx.fileSize = rawBuffer.length;
-    log('INFO', `Downloaded RAW file (${(rawBuffer.length / 1024 / 1024).toFixed(1)}MB)`, ctx);
-
     await writeFile(rawFilePath, rawBuffer);
 
-    // Step 2: Convert RAW → TIFF using LibRaw
-    log('INFO', 'Converting RAW to TIFF', ctx, { format: ext });
+    // Convert RAW → TIFF
+    log('INFO', 'Converting RAW to TIFF', ctx);
     const tiffPath = await convertRawToTiff(rawFilePath, ctx);
 
-    // Step 3: Read TIFF and apply professional edits
+    // Apply professional edits
     log('INFO', 'Applying professional edits', ctx);
     const tiffBuffer = await readFile(tiffPath);
     const editedBuffer = await applyProfessionalEdits(tiffBuffer, {
@@ -165,59 +146,82 @@ async function processImage(
       format: 'jpeg',
     });
 
-    log('INFO', `Edit complete (${(editedBuffer.length / 1024).toFixed(0)}KB JPEG)`, ctx);
-
-    // Step 4: Upload edited JPEG to finished/
-    const editedKey = `${finishedDir}${editedFileName}`;
-    log('INFO', 'Uploading edited JPEG to finished/', ctx, { editedKey });
-
+    // Upload to staging/ready/
+    log('INFO', 'Uploading to staging/ready/', ctx, { readyKey });
     await s3Client.send(new PutObjectCommand({
       Bucket: bucket,
-      Key: editedKey,
+      Key: readyKey,
       Body: editedBuffer,
       ContentType: 'image/jpeg',
       Metadata: {
         'source-file': fileName,
-        'source-format': ext.replace('.', ''),
+        'source-format': extname(fileName).replace('.', ''),
         'processed-at': new Date().toISOString(),
-        'processor-version': '1.0.0',
+        'processor-version': '2.0.0',
         'edit-profile': 'magazine-professional',
       },
     }));
 
-    // Step 5: Copy original RAW to finished/
-    const originalKey = `${finishedDir}${fileName}`;
-    log('INFO', 'Copying original RAW to finished/', ctx, { originalKey });
+    // Delete source from staging/RAW/
+    log('INFO', 'Removing source from staging/RAW/', ctx);
+    await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 
-    await s3Client.send(new CopyObjectCommand({
-      Bucket: bucket,
-      CopySource: `${bucket}/${key}`,
-      Key: originalKey,
-      Metadata: {
-        'original-staging-key': key,
-        'processed-at': new Date().toISOString(),
-      },
-      MetadataDirective: 'REPLACE',
-    }));
-
-    // Step 6: Delete from staging
-    log('INFO', 'Removing file from staging/', ctx);
-    await s3Client.send(new DeleteObjectCommand({
-      Bucket: bucket,
-      Key: key,
-    }));
-
-    return { editedKey, originalKey };
+    return readyKey;
   } finally {
-    // Cleanup temp files
-    try {
-      await unlink(rawFilePath).catch(() => {});
-      const tiffPath = rawFilePath.replace(/\.[^.]+$/, '.tiff');
-      await unlink(tiffPath).catch(() => {});
-    } catch {
-      // Ignore cleanup errors
-    }
+    await unlink(rawFilePath).catch(() => {});
+    const tiffPath = rawFilePath.replace(/\.[^.]+$/, '.tiff');
+    await unlink(tiffPath).catch(() => {});
   }
+}
+
+/**
+ * Process a JPEG/PNG image: Sharp edits only → staging/ready/
+ */
+async function processJpegImage(
+  bucket: string,
+  key: string,
+  ctx: LogContext
+): Promise<string> {
+  const fileName = basename(key);
+  const nameWithoutExt = basename(fileName, extname(fileName));
+  const uuid = randomUUID().slice(0, 8);
+  const outputFileName = `${uuid}-${nameWithoutExt}.jpg`;
+  const readyKey = `${READY_PREFIX}${outputFileName}`;
+
+  // Download JPEG
+  log('INFO', 'Downloading JPEG file from S3', ctx);
+  const getResult = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+  const inputBuffer = await streamToBuffer(getResult.Body as Readable);
+  ctx.fileSize = inputBuffer.length;
+
+  // Apply professional edits (Sharp handles JPEG/PNG input directly)
+  log('INFO', 'Applying smart edits to JPEG', ctx);
+  const editedBuffer = await applyProfessionalEdits(inputBuffer, {
+    quality: JPEG_QUALITY,
+    format: 'jpeg',
+  });
+
+  // Upload to staging/ready/
+  log('INFO', 'Uploading to staging/ready/', ctx, { readyKey });
+  await s3Client.send(new PutObjectCommand({
+    Bucket: bucket,
+    Key: readyKey,
+    Body: editedBuffer,
+    ContentType: 'image/jpeg',
+    Metadata: {
+      'source-file': fileName,
+      'source-format': extname(fileName).replace('.', '').toLowerCase(),
+      'processed-at': new Date().toISOString(),
+      'processor-version': '2.0.0',
+      'edit-profile': 'magazine-professional',
+    },
+  }));
+
+  // Delete source from staging/JPEG/
+  log('INFO', 'Removing source from staging/JPEG/', ctx);
+  await s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+
+  return readyKey;
 }
 
 /**
@@ -239,24 +243,23 @@ export const handler = async (event: S3Event, context: Context): Promise<void> =
 
     const recordCtx: LogContext = { ...ctx, bucket, key, fileSize: size };
 
-    // Validate file extension
     const ext = extname(key).toLowerCase();
-    if (!RAW_EXTENSIONS.has(ext)) {
-      log('WARN', 'Skipping non-RAW file', recordCtx, { extension: ext });
-      results.push({ key, status: 'skipped' });
-      continue;
-    }
+    const inputType = getInputType(key, ext);
 
-    // Validate file is in staging prefix
-    if (!key.startsWith(STAGING_PREFIX)) {
-      log('WARN', 'Skipping file outside staging prefix', recordCtx);
+    if (!inputType) {
+      log('WARN', 'Skipping file: not in staging/RAW/ or staging/JPEG/', recordCtx, { extension: ext });
       results.push({ key, status: 'skipped' });
       continue;
     }
 
     try {
-      const { editedKey, originalKey } = await processImage(bucket, key, recordCtx);
-      log('INFO', 'Image processed successfully', recordCtx, { editedKey, originalKey });
+      let readyKey: string;
+      if (inputType === 'RAW') {
+        readyKey = await processRawImage(bucket, key, recordCtx);
+      } else {
+        readyKey = await processJpegImage(bucket, key, recordCtx);
+      }
+      log('INFO', 'Image processed successfully', recordCtx, { readyKey, inputType });
       results.push({ key, status: 'success' });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -274,7 +277,6 @@ export const handler = async (event: S3Event, context: Context): Promise<void> =
 
   log('INFO', 'Image processor completed', ctx, { summary });
 
-  // Throw if any errors occurred (sends to DLQ for retry)
   const errors = results.filter(r => r.status === 'error');
   if (errors.length > 0) {
     throw new Error(

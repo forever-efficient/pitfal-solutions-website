@@ -7,7 +7,6 @@ import {
   slugify,
   truncate,
   getImageUrl,
-  getThumbnailUrl,
   debounce,
   generateId,
   isValidEmail,
@@ -182,53 +181,28 @@ describe('truncate', () => {
 });
 
 describe('getImageUrl', () => {
-  it('returns original URL without size', () => {
+  it('returns URL containing the key', () => {
     const result = getImageUrl('images/photo.jpg');
     expect(result).toContain('images/photo.jpg');
   });
 
-  it('returns original URL with original size', () => {
-    const result = getImageUrl('images/photo.jpg', 'original');
-    expect(result).toContain('images/photo.jpg');
+  it('returns same URL regardless of size hint', () => {
+    const base = getImageUrl('images/photo.jpg');
+    expect(getImageUrl('images/photo.jpg', 'sm')).toBe(base);
+    expect(getImageUrl('images/photo.jpg', 'md')).toBe(base);
+    expect(getImageUrl('images/photo.jpg', 'lg')).toBe(base);
+    expect(getImageUrl('images/photo.jpg', 'xl')).toBe(base);
+    expect(getImageUrl('images/photo.jpg', 'original')).toBe(base);
   });
 
-  it('returns processed URL for sm size', () => {
-    const result = getImageUrl('images/photo.jpg', 'sm');
-    expect(result).toContain('processed');
-    expect(result).toContain('320w.webp');
+  it('builds URL from NEXT_PUBLIC_MEDIA_URL env var', () => {
+    const result = getImageUrl('site/hero-bg.jpg');
+    expect(result).toMatch(/https?:\/\/.+\/site\/hero-bg\.jpg/);
   });
 
-  it('returns processed URL for md size', () => {
-    const result = getImageUrl('images/photo.jpg', 'md');
-    expect(result).toContain('640w.webp');
-  });
-
-  it('returns processed URL for lg size', () => {
-    const result = getImageUrl('images/photo.jpg', 'lg');
-    expect(result).toContain('1280w.webp');
-  });
-
-  it('returns processed URL for xl size', () => {
-    const result = getImageUrl('images/photo.jpg', 'xl');
-    expect(result).toContain('1920w.webp');
-  });
-});
-
-describe('getThumbnailUrl', () => {
-  it('returns thumbnail URL with default md size', () => {
-    const result = getThumbnailUrl('images/photo.jpg');
-    expect(result).toContain('thumbnails');
-    expect(result).toContain('md.webp');
-  });
-
-  it('returns thumbnail URL for sm size', () => {
-    const result = getThumbnailUrl('images/photo.jpg', 'sm');
-    expect(result).toContain('sm.webp');
-  });
-
-  it('returns thumbnail URL for lg size', () => {
-    const result = getThumbnailUrl('images/photo.jpg', 'lg');
-    expect(result).toContain('lg.webp');
+  it('works with gallery/ prefixed keys', () => {
+    const result = getImageUrl('gallery/g1/photo.jpg');
+    expect(result).toContain('gallery/g1/photo.jpg');
   });
 });
 

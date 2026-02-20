@@ -10,3 +10,4 @@ export { HeroImagePicker } from './HeroImagePicker';
 export { HeroPositionEditor } from './HeroPositionEditor';
 export { ProcessingQueue } from './ProcessingQueue';
 export { ProcessingSettings } from './ProcessingSettings';
+export { ReadyQueue } from './ReadyQueue';

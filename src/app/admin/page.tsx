@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/admin/StatCard';
+import { ReadyQueue } from '@/components/admin/ReadyQueue';
 import { useToast } from '@/components/admin/Toast';
 import { adminGalleries, adminInquiries } from '@/lib/api';
 
@@ -40,26 +41,32 @@ export default function AdminDashboardPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-neutral-900 mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Galleries"
-          value={loading ? '...' : stats.galleries}
-        />
-        <StatCard
-          label="Total Images"
-          value={loading ? '...' : stats.images}
-        />
-        <StatCard
-          label="Inquiries"
-          value={loading ? '...' : stats.inquiries}
-        />
-        <StatCard
-          label="New Inquiries"
-          value={loading ? '...' : stats.newInquiries}
-          highlight
-        />
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-6">Dashboard</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Galleries"
+            value={loading ? '...' : stats.galleries}
+          />
+          <StatCard
+            label="Total Images"
+            value={loading ? '...' : stats.images}
+          />
+          <StatCard
+            label="Inquiries"
+            value={loading ? '...' : stats.inquiries}
+          />
+          <StatCard
+            label="New Inquiries"
+            value={loading ? '...' : stats.newInquiries}
+            highlight
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <ReadyQueue />
       </div>
     </div>
   );

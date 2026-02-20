@@ -22,9 +22,9 @@ export const BUSINESS = {
     email: 'info@pitfal.solutions',
   },
   social: {
-    instagram: 'https://instagram.com/pitfalsolutions',
-    facebook: 'https://facebook.com/pitfalsolutions',
-    linkedin: 'https://linkedin.com/company/pitfal-solutions',
+    instagram: 'https://www.instagram.com/pitfal.solutions/',
+    facebook: 'https://www.facebook.com/pitfal.solutions',
+    linkedin: 'https://www.linkedin.com/in/thomas-archuleta/',
   },
 } as const;
 
@@ -46,7 +46,7 @@ export const SERVICES = {
       'Headshots',
       'Lifestyle & editorial',
     ],
-    image: 'finished/site/services-photography.jpg',
+    image: 'site/services-photography.jpg',
     href: '/services/photography',
   },
   videography: {
@@ -62,7 +62,7 @@ export const SERVICES = {
       'Interview & testimonial video',
       'Color grading & post-production',
     ],
-    image: 'finished/site/services-videography.jpg',
+    image: 'site/services-videography.jpg',
     href: '/services/videography',
   },
   drone: {
@@ -78,7 +78,7 @@ export const SERVICES = {
       'Event overviews',
       'FAA Part 107 certified',
     ],
-    image: 'finished/site/services-drone.jpg',
+    image: 'site/services-drone.jpg',
     href: '/services/commercial-drone',
   },
   ai: {
@@ -94,7 +94,7 @@ export const SERVICES = {
       'Workflow automation',
       'Software prototyping',
     ],
-    image: 'finished/site/services-ai.jpg',
+    image: 'site/services-ai.jpg',
     href: '/services/ai-software',
   },
 } as const;
@@ -332,31 +332,31 @@ export const PORTFOLIO_CATEGORIES = {
     slug: 'brands',
     title: 'Brand Photography',
     description: 'Commercial and brand photography for businesses',
-    image: 'finished/site/portfolio-brands.jpg',
+    image: 'site/portfolio-brands.jpg',
   },
   portraits: {
     slug: 'portraits',
     title: 'Portraits',
     description: 'Headshots, family portraits, and personal branding',
-    image: 'finished/site/portfolio-portraits.jpg',
+    image: 'site/portfolio-portraits.jpg',
   },
   events: {
     slug: 'events',
     title: 'Events',
     description: 'Corporate events, weddings, and special occasions',
-    image: 'finished/site/portfolio-events.jpg',
+    image: 'site/portfolio-events.jpg',
   },
 } as const;
 
 export type PortfolioCategorySlug = keyof typeof PORTFOLIO_CATEGORIES;
 
 // =============================================================================
-// SITE IMAGES (S3 keys — upload to s3://pitfal-prod-media/finished/site/...)
+// SITE IMAGES (S3 keys — upload to s3://pitfal-prod-media/site/...)
 // =============================================================================
 
 export const SITE_IMAGES = {
-  hero: 'finished/site/hero-bg.jpg',
-  about: 'finished/site/about-portrait.jpg',
+  hero: 'site/hero-bg.jpg',
+  about: 'site/about-portrait.jpg',
 } as const;
 
 // =============================================================================

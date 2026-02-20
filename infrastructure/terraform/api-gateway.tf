@@ -876,6 +876,138 @@ resource "aws_api_gateway_integration_response" "admin_image_id_options" {
   }
 }
 
+# /api/admin/images/ready
+resource "aws_api_gateway_resource" "admin_images_ready" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_images.id
+  path_part   = "ready"
+}
+
+# ANY /api/admin/images/ready → admin Lambda
+resource "aws_api_gateway_method" "admin_images_ready_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_images_ready.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_images_ready_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_images_ready.id
+  http_method             = aws_api_gateway_method.admin_images_ready_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/images/ready (CORS)
+resource "aws_api_gateway_method" "admin_images_ready_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_images_ready.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_images_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_ready.id
+  http_method = aws_api_gateway_method.admin_images_ready_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_images_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_ready.id
+  http_method = aws_api_gateway_method.admin_images_ready_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_images_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_ready.id
+  http_method = aws_api_gateway_method.admin_images_ready_options.http_method
+  status_code = aws_api_gateway_method_response.admin_images_ready_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_images_ready_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/images/assign
+resource "aws_api_gateway_resource" "admin_images_assign" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_images.id
+  path_part   = "assign"
+}
+
+# ANY /api/admin/images/assign → admin Lambda
+resource "aws_api_gateway_method" "admin_images_assign_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_images_assign.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_images_assign_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_images_assign.id
+  http_method             = aws_api_gateway_method.admin_images_assign_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/images/assign (CORS)
+resource "aws_api_gateway_method" "admin_images_assign_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_images_assign.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_images_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_assign.id
+  http_method = aws_api_gateway_method.admin_images_assign_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_images_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_assign.id
+  http_method = aws_api_gateway_method.admin_images_assign_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_images_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_images_assign.id
+  http_method = aws_api_gateway_method.admin_images_assign_options.http_method
+  status_code = aws_api_gateway_method_response.admin_images_assign_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_images_assign_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # /api/admin/inquiries
 resource "aws_api_gateway_resource" "admin_inquiries" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -1417,6 +1549,275 @@ resource "aws_api_gateway_integration_response" "client_gallery_bulk_download_op
   }
 }
 
+# ─────────────────────────────────────────────
+# Public Gallery Routes (no auth required)
+# Handled by admin Lambda before auth check
+# ─────────────────────────────────────────────
+
+# /api/galleries
+resource "aws_api_gateway_resource" "galleries" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.api.id
+  path_part   = "galleries"
+}
+
+# ANY /api/galleries → admin Lambda (public, no auth)
+resource "aws_api_gateway_method" "galleries_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.galleries.id
+  http_method             = aws_api_gateway_method.galleries_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/galleries (CORS)
+resource "aws_api_gateway_method" "galleries_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries.id
+  http_method = aws_api_gateway_method.galleries_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "galleries_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries.id
+  http_method = aws_api_gateway_method.galleries_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "galleries_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries.id
+  http_method = aws_api_gateway_method.galleries_options.http_method
+  status_code = aws_api_gateway_method_response.galleries_options.status_code
+  depends_on  = [aws_api_gateway_integration.galleries_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/galleries/featured
+resource "aws_api_gateway_resource" "galleries_featured" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.galleries.id
+  path_part   = "featured"
+}
+
+# ANY /api/galleries/featured → admin Lambda
+resource "aws_api_gateway_method" "galleries_featured_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_featured.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_featured_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.galleries_featured.id
+  http_method             = aws_api_gateway_method.galleries_featured_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/galleries/featured (CORS)
+resource "aws_api_gateway_method" "galleries_featured_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_featured.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_featured_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_featured.id
+  http_method = aws_api_gateway_method.galleries_featured_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "galleries_featured_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_featured.id
+  http_method = aws_api_gateway_method.galleries_featured_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "galleries_featured_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_featured.id
+  http_method = aws_api_gateway_method.galleries_featured_options.http_method
+  status_code = aws_api_gateway_method_response.galleries_featured_options.status_code
+  depends_on  = [aws_api_gateway_integration.galleries_featured_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/galleries/{category}
+resource "aws_api_gateway_resource" "galleries_category" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.galleries.id
+  path_part   = "{category}"
+}
+
+# ANY /api/galleries/{category} → admin Lambda
+resource "aws_api_gateway_method" "galleries_category_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_category.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_category_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.galleries_category.id
+  http_method             = aws_api_gateway_method.galleries_category_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/galleries/{category} (CORS)
+resource "aws_api_gateway_method" "galleries_category_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_category.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_category_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category.id
+  http_method = aws_api_gateway_method.galleries_category_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "galleries_category_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category.id
+  http_method = aws_api_gateway_method.galleries_category_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "galleries_category_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category.id
+  http_method = aws_api_gateway_method.galleries_category_options.http_method
+  status_code = aws_api_gateway_method_response.galleries_category_options.status_code
+  depends_on  = [aws_api_gateway_integration.galleries_category_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/galleries/{category}/{slug}
+resource "aws_api_gateway_resource" "galleries_category_slug" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.galleries_category.id
+  path_part   = "{slug}"
+}
+
+# ANY /api/galleries/{category}/{slug} → admin Lambda
+resource "aws_api_gateway_method" "galleries_category_slug_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_category_slug.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_category_slug_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.galleries_category_slug.id
+  http_method             = aws_api_gateway_method.galleries_category_slug_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/galleries/{category}/{slug} (CORS)
+resource "aws_api_gateway_method" "galleries_category_slug_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_category_slug.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_category_slug_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category_slug.id
+  http_method = aws_api_gateway_method.galleries_category_slug_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "galleries_category_slug_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category_slug.id
+  http_method = aws_api_gateway_method.galleries_category_slug_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "galleries_category_slug_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_category_slug.id
+  http_method = aws_api_gateway_method.galleries_category_slug_options.http_method
+  status_code = aws_api_gateway_method_response.galleries_category_slug_options.status_code
+  depends_on  = [aws_api_gateway_integration.galleries_category_slug_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # API Gateway deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -1499,6 +1900,26 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.admin_settings.id,
       aws_api_gateway_method.admin_settings_any.id,
       aws_api_gateway_integration.admin_settings_any.id,
+      # Admin images ready/assign
+      aws_api_gateway_resource.admin_images_ready.id,
+      aws_api_gateway_method.admin_images_ready_any.id,
+      aws_api_gateway_integration.admin_images_ready_any.id,
+      aws_api_gateway_resource.admin_images_assign.id,
+      aws_api_gateway_method.admin_images_assign_any.id,
+      aws_api_gateway_integration.admin_images_assign_any.id,
+      # Public gallery routes
+      aws_api_gateway_resource.galleries.id,
+      aws_api_gateway_method.galleries_any.id,
+      aws_api_gateway_integration.galleries_any.id,
+      aws_api_gateway_resource.galleries_featured.id,
+      aws_api_gateway_method.galleries_featured_any.id,
+      aws_api_gateway_integration.galleries_featured_any.id,
+      aws_api_gateway_resource.galleries_category.id,
+      aws_api_gateway_method.galleries_category_any.id,
+      aws_api_gateway_integration.galleries_category_any.id,
+      aws_api_gateway_resource.galleries_category_slug.id,
+      aws_api_gateway_method.galleries_category_slug_any.id,
+      aws_api_gateway_integration.galleries_category_slug_any.id,
     ]))
   }
 

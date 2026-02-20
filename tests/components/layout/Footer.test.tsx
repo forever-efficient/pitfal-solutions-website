@@ -53,7 +53,7 @@ describe('Footer', () => {
     const instagramLink = screen.getByLabelText('Instagram');
     expect(instagramLink).toHaveAttribute('target', '_blank');
     expect(instagramLink).toHaveAttribute('rel', 'noopener noreferrer');
-    expect(instagramLink).toHaveAttribute('href', 'https://instagram.com/pitfalsolutions');
+    expect(instagramLink).toHaveAttribute('href', 'https://www.instagram.com/pitfal.solutions/');
   });
 
   it('renders Book a Session CTA', () => {

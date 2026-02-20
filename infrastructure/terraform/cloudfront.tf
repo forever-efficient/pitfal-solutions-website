@@ -264,18 +264,19 @@ resource "aws_cloudfront_distribution" "website" {
     viewer_protocol_policy = "https-only"
   }
 
-  # Custom error responses - serve 404 page for missing content
+  # Custom error responses - SPA fallback so client-side routes work on direct URL access
+  # Next.js client router handles the route once index.html loads
   custom_error_response {
     error_code            = 403
-    response_code         = 404
-    response_page_path    = "/404.html"
+    response_code         = 200
+    response_page_path    = "/index.html"
     error_caching_min_ttl = 0
   }
 
   custom_error_response {
     error_code            = 404
-    response_code         = 404
-    response_page_path    = "/404.html"
+    response_code         = 200
+    response_page_path    = "/index.html"
     error_caching_min_ttl = 0
   }
 

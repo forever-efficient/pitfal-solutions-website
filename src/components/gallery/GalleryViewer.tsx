@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
 import { SectionDivider } from './SectionDivider';
 import { SectionNav } from './SectionNav';
@@ -178,15 +177,12 @@ export function GalleryViewer({ images, title, sections }: GalleryViewerProps) {
               role="listitem"
               aria-label={image.alt || `Image ${flatIndex + 1} of ${orderedImages.length}`}
             >
-              <div className="relative bg-neutral-200 rounded-lg overflow-hidden">
-                <Image
+              <div className="relative bg-neutral-200 rounded-lg overflow-hidden min-h-[200px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={getImageUrl(image.key)}
                   alt={image.alt || `${title} - Image ${flatIndex + 1}`}
-                  width={640}
-                  height={480}
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                  loading="lazy"
                 />
                 <div
                   className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-lg"
@@ -257,14 +253,11 @@ export function GalleryViewer({ images, title, sections }: GalleryViewerProps) {
             className="max-w-[90vw] max-h-[85vh] relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={getImageUrl(current.key)}
               alt={current.alt || `${title} - Image ${lightboxIndex + 1}`}
-              width={1920}
-              height={1280}
-              sizes="90vw"
               className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
-              priority
             />
           </div>
 

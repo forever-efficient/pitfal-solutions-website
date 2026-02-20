@@ -379,6 +379,26 @@ export const adminImages = {
       method: 'DELETE',
       body: JSON.stringify({ imageKey, galleryId }),
     }),
+
+  listReady: () =>
+    request<{
+      images: Array<{
+        key: string;
+        filename: string;
+        uploadedAt: string;
+        size: number;
+        url: string;
+      }>;
+    }>('/api/admin/images/ready'),
+
+  assign: (keys: string[], galleryId: string) =>
+    request<{ assigned: number; failed: number; failedKeys: string[] }>(
+      '/api/admin/images/assign',
+      {
+        method: 'POST',
+        body: JSON.stringify({ keys, galleryId }),
+      }
+    ),
 };
 
 // =============================================================================
@@ -445,6 +465,57 @@ export interface ProcessingSettings {
   processingMode: 'auto' | 'manual';
   imagenProfileId: string;
 }
+
+// =============================================================================
+// Public Gallery API (no auth)
+// =============================================================================
+
+export const publicGalleries = {
+  getFeatured: () =>
+    request<{
+      galleries: Array<{
+        id: string;
+        title: string;
+        category: string;
+        type: string;
+        slug: string;
+        coverImage: string | null;
+        href: string;
+      }>;
+    }>('/api/galleries/featured'),
+
+  getByCategory: (category: string) =>
+    request<{
+      galleries: Array<{
+        id: string;
+        title: string;
+        category: string;
+        slug: string;
+        coverImage: string | null;
+        imageCount: number;
+        description: string;
+        createdAt: string;
+      }>;
+    }>(`/api/galleries/${category}`),
+
+  getGallery: (category: string, slug: string) =>
+    request<{
+      gallery: {
+        id: string;
+        title: string;
+        description?: string;
+        category: string;
+        slug: string;
+        images: Array<{ key: string; alt?: string }>;
+        heroImage?: string;
+        createdAt: string;
+      };
+    }>(`/api/galleries/${category}/${slug}`),
+};
+
+// =============================================================================
+// Admin Processing Jobs
+// =============================================================================
 
 export const adminProcessing = {
   listJobs: (galleryId: string) =>

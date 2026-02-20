@@ -16,27 +16,6 @@
       "PutRequest": {
         "Item": {
           "PK": { "S": "SETTINGS" },
-          "SK": { "S": "site-info" },
-          "value": { "M": {
-            "businessName": { "S": "Pitfal Solutions" },
-            "tagline": { "S": "Swing the Gap" },
-            "email": { "S": "info@pitfal.solutions" },
-            "phone": { "S": "(970) 703-6336" },
-            "address": { "S": "Denver, CO" },
-            "businessHours": { "S": "7am-10pm daily" },
-            "socialLinks": { "M": {
-              "instagram": { "S": "https://instagram.com/pitfalsolutions" },
-              "facebook": { "S": "https://facebook.com/pitfalsolutions" },
-              "linkedin": { "S": "https://linkedin.com/company/pitfalsolutions" }
-            }}
-          }}
-        }
-      }
-    },
-    {
-      "PutRequest": {
-        "Item": {
-          "PK": { "S": "SETTINGS" },
           "SK": { "S": "services" },
           "value": { "L": [
             { "M": {

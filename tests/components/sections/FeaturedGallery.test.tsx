@@ -1,47 +1,103 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import { FeaturedGallery } from '@/components/sections/FeaturedGallery';
 
+const mockGetFeatured = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/api', () => ({
+  publicGalleries: {
+    getFeatured: mockGetFeatured,
+  },
+}));
+
+vi.mock('@/lib/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/utils')>();
+  return {
+    ...actual,
+    getImageUrl: (key: string) => `https://cdn.example.com/${key}`,
+  };
+});
+
+const MOCK_GALLERIES = [
+  {
+    id: 'g1',
+    title: 'Tech Startup Rebrand',
+    category: 'brands',
+    type: 'portfolio',
+    slug: 'tech-startup-rebrand',
+    coverImage: 'gallery/g1/cover.jpg',
+    href: '/portfolio/brands/tech-startup-rebrand',
+  },
+  {
+    id: 'g2',
+    title: 'Johnson Wedding',
+    category: 'events',
+    type: 'portfolio',
+    slug: 'johnson-wedding',
+    coverImage: null,
+    href: '/portfolio/events/johnson-wedding',
+  },
+  {
+    id: 'g3',
+    title: 'Smith Family Session',
+    category: 'portraits',
+    type: 'portfolio',
+    slug: 'family-session',
+    coverImage: null,
+    href: '/portfolio/portraits/family-session',
+  },
+];
+
 describe('FeaturedGallery', () => {
-  it('renders the section header', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetFeatured.mockImplementation(() =>
+      Promise.resolve({ galleries: MOCK_GALLERIES })
+    );
+  });
+
+  it('renders the section header', async () => {
     render(<FeaturedGallery />);
     expect(screen.getByText('Past Solutions')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Featured Projects' })).toBeInTheDocument();
   });
 
-  it('renders section description', () => {
+  it('renders section description', async () => {
     render(<FeaturedGallery />);
     expect(screen.getByText(/A selection of recent work/i)).toBeInTheDocument();
   });
 
-  it('renders all three featured projects from gallery manifests', () => {
+  it('shows skeleton loading state initially', () => {
     render(<FeaturedGallery />);
-    // Featured galleries sorted by date desc: tech-startup (2026-01), johnson-wedding (2025-10-25), family-session (2025-10-18)
-    expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
+    const skeletons = document.querySelectorAll('.animate-pulse');
+    expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('renders featured galleries from API after loading', async () => {
+    render(<FeaturedGallery />);
+    await waitFor(() => {
+      expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
+    });
     expect(screen.getByText('Johnson Wedding')).toBeInTheDocument();
     expect(screen.getByText('Smith Family Session')).toBeInTheDocument();
   });
 
-  it('renders category labels from gallery data', () => {
+  it('renders project links with correct hrefs', async () => {
     render(<FeaturedGallery />);
-    expect(screen.getByText('Brand Photography')).toBeInTheDocument();
-    expect(screen.getByText('Portraits')).toBeInTheDocument();
-    expect(screen.getByText('Events')).toBeInTheDocument();
-  });
-
-  it('renders project links with correct hrefs', () => {
-    render(<FeaturedGallery />);
-    const links = screen.getAllByRole('link');
-
-    const projectLinks = links.filter(
-      (link) => {
+    await waitFor(() => {
+      const links = screen.getAllByRole('link');
+      const projectLinks = links.filter((link) => {
         const href = link.getAttribute('href');
         return href?.includes('/portfolio/') && href !== '/portfolio';
-      }
-    );
+      });
+      expect(projectLinks).toHaveLength(3);
+    });
 
-    expect(projectLinks).toHaveLength(3);
-    // Sorted by date desc
+    const links = screen.getAllByRole('link');
+    const projectLinks = links.filter((link) => {
+      const href = link.getAttribute('href');
+      return href?.includes('/portfolio/') && href !== '/portfolio';
+    });
     expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/brands/tech-startup-rebrand');
     expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/events/johnson-wedding');
     expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/portraits/family-session');
@@ -54,9 +110,37 @@ describe('FeaturedGallery', () => {
     expect(viewAllLink).toHaveAttribute('href', '/portfolio');
   });
 
-  it('renders EyeIcon for hover state', () => {
+  it('shows static fallbacks when API returns empty galleries', async () => {
+    mockGetFeatured.mockImplementation(() =>
+      Promise.resolve({ galleries: [] })
+    );
     render(<FeaturedGallery />);
-    // EyeIcon should be in each project card
+    await waitFor(() => {
+      // Loading spinner should be gone
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons).toHaveLength(0);
+    });
+    // Static fallback titles should appear
+    expect(screen.getByText('Urban Portrait Session')).toBeInTheDocument();
+    expect(screen.getByText('Corporate Brand Shoot')).toBeInTheDocument();
+    expect(screen.getByText('Wedding Celebration')).toBeInTheDocument();
+  });
+
+  it('shows static fallbacks on API error', async () => {
+    mockGetFeatured.mockImplementation(() => Promise.reject(new Error('Network error')));
+    render(<FeaturedGallery />);
+    await waitFor(() => {
+      const skeletons = document.querySelectorAll('.animate-pulse');
+      expect(skeletons).toHaveLength(0);
+    });
+    expect(screen.getByText('Urban Portrait Session')).toBeInTheDocument();
+  });
+
+  it('renders EyeIcon in each project card after loading', async () => {
+    render(<FeaturedGallery />);
+    await waitFor(() => {
+      expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
+    });
     const projectCards = document.querySelectorAll('.group');
     expect(projectCards).toHaveLength(3);
     projectCards.forEach((card) => {

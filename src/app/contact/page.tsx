@@ -69,7 +69,7 @@ export default function ContactPage() {
               {/* Social */}
               <div>
                 <h3 className="text-lg font-semibold text-neutral-900 mb-3">
-                  Follow Us
+                  Social Links
                 </h3>
                 <div className="flex gap-4">
                   <a

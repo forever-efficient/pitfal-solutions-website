@@ -57,8 +57,8 @@ export function ServicesOverview() {
             Services Provided
           </h2>
           <p className="text-lg text-neutral-600">
-            From photography and video to aerial imaging and AI solutions — every
-            project receives full creative and technical attention.
+            From photography and videography to aerial imaging and AI solutions, 
+            every project receives complete creative and technical attention.
           </p>
         </div>
 

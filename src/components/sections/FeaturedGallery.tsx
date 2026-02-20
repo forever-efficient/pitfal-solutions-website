@@ -1,31 +1,49 @@
-import Image from 'next/image';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ArrowRightIcon, EyeIcon } from '@/components/icons';
-import { getFeaturedGalleries } from '@/lib/galleries';
-import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import { publicGalleries } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 
-export function FeaturedGallery() {
-  const featured = getFeaturedGalleries();
+interface FeaturedItem {
+  id: string;
+  title: string;
+  category: string;
+  href: string;
+  coverImage: string | null;
+}
 
-  // Fall back to static placeholders if no featured galleries exist yet
-  const featuredWork =
-    featured.length > 0
-      ? featured.map((g) => ({
-          id: g.slug,
-          title: g.title,
-          category:
-            PORTFOLIO_CATEGORIES[g.category as keyof typeof PORTFOLIO_CATEGORIES]?.title ||
-            g.category,
-          href: `/portfolio/${g.category}/${g.slug}`,
-          coverImage: g.images[0]?.key || '',
-        }))
-      : [
-          { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits', coverImage: '' },
-          { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands', coverImage: '' },
-          { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events', coverImage: '' },
-        ];
+const STATIC_FALLBACKS: FeaturedItem[] = [
+  { id: '1', title: 'Urban Portrait Session', category: 'Portraits', href: '/portfolio/portraits', coverImage: null },
+  { id: '2', title: 'Corporate Brand Shoot', category: 'Brand', href: '/portfolio/brands', coverImage: null },
+  { id: '3', title: 'Wedding Celebration', category: 'Events', href: '/portfolio/events', coverImage: null },
+];
+
+export function FeaturedGallery() {
+  const [featuredWork, setFeaturedWork] = useState<FeaturedItem[]>(STATIC_FALLBACKS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    publicGalleries.getFeatured()
+      .then(data => {
+        if (data.galleries.length > 0) {
+          setFeaturedWork(data.galleries.map(g => ({
+            id: g.id,
+            title: g.title,
+            category: g.category,
+            href: g.href,
+            coverImage: g.coverImage,
+          })));
+        }
+        // If no featured galleries, keep fallbacks
+      })
+      .catch(() => {
+        // Keep static fallbacks on error
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <Section size="lg" background="white">
@@ -44,47 +62,47 @@ export function FeaturedGallery() {
           </p>
         </div>
 
-        {/* Gallery grid - 3 columns on desktop, 1 on mobile */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {featuredWork.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-              {/* Cover image or gradient fallback */}
-              {item.coverImage ? (
-                <Image
-                  src={getImageUrl(item.coverImage)}
-                  alt={`${item.title} preview`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
-              )}
-
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
-
-              {/* Content - always visible */}
-              <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
-                  {item.category}
-                </span>
-                <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
-                  {item.title}
-                </h3>
-              </div>
-
-              {/* View icon */}
-              <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
-                <EyeIcon size={24} className="text-neutral-900" />
-              </div>
-            </Link>
-          ))}
-        </div>
+        {/* Gallery grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="aspect-[4/3] bg-neutral-200 rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {featuredWork.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
+              >
+                {item.coverImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={getImageUrl(item.coverImage)}
+                    alt={`${item.title} preview`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
+                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                  <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
+                    {item.category}
+                  </span>
+                  <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
+                    {item.title}
+                  </h3>
+                </div>
+                <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
+                  <EyeIcon size={24} className="text-neutral-900" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* View all CTA */}
         <div className="text-center mt-12">
