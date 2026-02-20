@@ -7,25 +7,15 @@ import { Button } from '@/components/ui/Button';
 import { publicGalleries } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 
-function shuffle<T>(arr: T[]): T[] {
-  const result = [...arr];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = result[i] as T;
-    result[i] = result[j] as T;
-    result[j] = tmp;
-  }
-  return result;
-}
-
 export function RecentWorkCarousel({ className, showHeader = true, showCta = true }: { className?: string; showHeader?: boolean; showCta?: boolean }) {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicGalleries.getFeaturedImages()
-      .then(({ images }) => setImages(shuffle(images).slice(0, 20)))
-      .catch(() => {})
+    // Server returns pre-shuffled images already capped at the carousel limit.
+    publicGalleries.getFeaturedImages(20)
+      .then(({ images }) => setImages(images))
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -90,9 +80,17 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
                 className="h-[300px] w-[240px] flex-shrink-0 rounded-xl overflow-hidden"
               >
                 <img
-                  src={getImageUrl(key)}
+                  src={getImageUrl(key, 'sm')}
                   alt="Recent work"
                   className="w-full h-full object-cover"
+                  width={240}
+                  height={300}
+                  decoding="async"
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    img.onerror = null;
+                    img.src = getImageUrl(key);
+                  }}
                 />
               </div>
             ))}

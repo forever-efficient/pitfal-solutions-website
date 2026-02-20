@@ -180,9 +180,10 @@ export function GalleryViewer({ images, title, sections }: GalleryViewerProps) {
               <div className="relative bg-neutral-200 rounded-lg overflow-hidden min-h-[200px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={getImageUrl(image.key)}
+                  src={getImageUrl(image.key, 'lg')}
                   alt={image.alt || `${title} - Image ${flatIndex + 1}`}
                   className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(image.key); }}
                 />
                 <div
                   className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-lg"

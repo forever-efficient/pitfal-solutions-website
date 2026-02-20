@@ -1140,17 +1140,21 @@ async function handleImagesAssign(
   );
 
   if (assignedImages.length > 0) {
-    // Append to gallery images array
-    const updatedImages = [...(gallery.images || []), ...assignedImages];
-    await updateItem({
-      TableName: GALLERIES_TABLE,
-      Key: { id: body.galleryId },
-      UpdateExpression: 'SET images = :images, updatedAt = :updatedAt',
-      ExpressionAttributeValues: {
-        ':images': updatedImages,
-        ':updatedAt': new Date().toISOString(),
-      },
-    });
+    // Append to gallery images array, deduplicating by key
+    const existingKeys = new Set((gallery.images || []).map(img => img.key));
+    const newImages = assignedImages.filter(img => !existingKeys.has(img.key));
+    if (newImages.length > 0) {
+      const updatedImages = [...(gallery.images || []), ...newImages];
+      await updateItem({
+        TableName: GALLERIES_TABLE,
+        Key: { id: body.galleryId },
+        UpdateExpression: 'SET images = :images, updatedAt = :updatedAt',
+        ExpressionAttributeValues: {
+          ':images': updatedImages,
+          ':updatedAt': new Date().toISOString(),
+        },
+      });
+    }
   }
 
   log('INFO', 'Images assigned to gallery', ctx, {
@@ -1182,12 +1186,26 @@ async function handlePublicGalleries(
 
   // GET /api/galleries/featured/images
   if (resource.includes('/galleries/featured/images')) {
+    const limitParam = event.queryStringParameters?.limit;
+    const limit = Math.min(Math.max(parseInt(limitParam || '20', 10) || 20, 1), 100);
+
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
-    const featuredImages = allGalleries
+    const allKeys = allGalleries
       .filter(g => g.featured && (g.type === 'portfolio' || g.type === 'client'))
       .flatMap(g => (g.images || []).map(img => img.key));
-    log('INFO', 'Featured gallery images fetched', ctx, { count: featuredImages.length });
-    return success({ images: featuredImages }, 200, requestOrigin);
+
+    // Fisher-Yates shuffle server-side so the client always gets a random
+    // selection and never needs to download more keys than it will display.
+    for (let i = allKeys.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = allKeys[i] as string;
+      allKeys[i] = allKeys[j] as string;
+      allKeys[j] = tmp;
+    }
+
+    const images = allKeys.slice(0, limit);
+    log('INFO', 'Featured gallery images fetched', ctx, { total: allKeys.length, returned: images.length, limit });
+    return success({ images }, 200, requestOrigin);
   }
 
   // GET /api/galleries/featured

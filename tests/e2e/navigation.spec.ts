@@ -5,10 +5,12 @@ test.describe('Navigation - Desktop', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    // Scroll a bit to ensure header is in "scrolled" state with visible nav
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // Scroll to trigger header transition from transparent → scrolled
     await page.evaluate(() => window.scrollTo(0, 50));
-    await page.waitForTimeout(300);
+    // Wait for React to process the scroll event — header gains shadow-sm when
+    // isScrolled=true, confirming hydration is complete and nav is interactive
+    await page.locator('header.shadow-sm').waitFor({ state: 'visible' });
   });
 
   test('navigates to About page', async ({ page }) => {
@@ -41,9 +43,11 @@ test.describe('Navigation - Desktop', () => {
 
   test('navigates to FAQ page from footer', async ({ page }) => {
     const footer = page.locator('footer');
-    // Scroll footer into view for Firefox compatibility
-    await footer.scrollIntoViewIfNeeded();
-    await footer.getByRole('link', { name: /faq/i }).click();
+    const faqLink = footer.getByRole('link', { name: /faq/i });
+    await faqLink.scrollIntoViewIfNeeded();
+    // Wait for scroll animation to settle before clicking
+    await faqLink.waitFor({ state: 'visible' });
+    await faqLink.click();
     await expect(page).toHaveURL(/\/faq\/?$/);
   });
 
@@ -105,25 +109,23 @@ test.describe('Navigation - Mobile', () => {
   test.use({ viewport: { width: 375, height: 667 } });
 
   test('mobile menu opens and shows navigation links', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const openMenuButton = page.getByRole('button', { name: 'Open menu' });
     await openMenuButton.click();
 
-    // Wait for menu animation
-    await page.waitForTimeout(300);
-
-    // Mobile nav should show links
     await expect(page.getByRole('link', { name: 'About' }).first()).toBeVisible();
   });
 
   test('mobile menu navigates correctly', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     await page.getByRole('button', { name: 'Open menu' }).click();
+
+    // Wait for the slide-in animation to finish before Playwright tries to click the moving element
     await page.waitForTimeout(300);
 
-    // Click About link in mobile menu
+    // Click About link in mobile menu 
     await page.getByRole('link', { name: 'About' }).first().click();
 
     await expect(page).toHaveURL(/\/about\/?$/);
@@ -132,7 +134,7 @@ test.describe('Navigation - Mobile', () => {
 
 test.describe('Navigation - Footer Links', () => {
   test('footer service links work', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const footer = page.locator('footer');
     const brandPhotoLink = footer.getByRole('link', { name: /brand photography/i });
@@ -144,7 +146,7 @@ test.describe('Navigation - Footer Links', () => {
   });
 
   test('footer company links work', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const footer = page.locator('footer');
     const aboutLink = footer.getByRole('link', { name: 'About' });
@@ -158,7 +160,7 @@ test.describe('Navigation - Browser History', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
 
   test('browser back button works', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => window.scrollTo(0, 50));
 
     const nav = page.locator('nav').filter({ hasText: 'About' });
@@ -170,7 +172,7 @@ test.describe('Navigation - Browser History', () => {
   });
 
   test('browser forward button works', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => window.scrollTo(0, 50));
 
     const nav = page.locator('nav').filter({ hasText: 'About' });

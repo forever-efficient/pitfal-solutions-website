@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Contact Form', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
   });
 
   test('contact page loads with form', async ({ page }) => {
@@ -78,7 +78,7 @@ test.describe('Contact Form', () => {
 
 test.describe('Contact Form - Validation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
   });
 
   test('shows validation error for short message', async ({ page }) => {
@@ -154,7 +154,7 @@ test.describe('Contact Form - Validation', () => {
 
 test.describe('Contact Form - Submission', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
   });
 
   test('submit button triggers form submission', async ({ page }) => {
@@ -239,16 +239,14 @@ test.describe('Contact Form - Submission', () => {
     await messageInput.fill('I would like to book a photography session please.');
     await submitButton.click();
 
-    // Wait for submission to process and check for any error indication
-    await page.waitForTimeout(2000);
-
     // Form should still be visible (not success state) or error shown
-    const formStillVisible = await page.getByLabel(/name/i).isVisible();
-    const errorVisible = await page.getByRole('alert').isVisible().catch(() => false);
-    const errorTextVisible = await page.getByText(/error|went wrong|network/i).isVisible().catch(() => false);
-
-    // Either form is still there (no success) or error is shown
-    expect(formStillVisible || errorVisible || errorTextVisible).toBeTruthy();
+    // Uses Playwright's built-in waiters rather than hard timeouts
+    await expect(async () => {
+      const formStillVisible = await page.getByLabel(/name/i).isVisible();
+      const errorVisible = await page.getByRole('alert').isVisible().catch(() => false);
+      const errorTextVisible = await page.getByText(/error|went wrong|network/i).isVisible().catch(() => false);
+      expect(formStillVisible || errorVisible || errorTextVisible).toBeTruthy();
+    }).toPass({ timeout: 5000 });
   });
 
   test('can send another message after success', async ({ page }) => {
@@ -289,7 +287,7 @@ test.describe('Contact Form - Submission', () => {
 
 test.describe('Contact Form - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
   });
 
   test('form fields are keyboard accessible', async ({ page }) => {

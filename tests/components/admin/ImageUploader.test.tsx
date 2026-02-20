@@ -97,13 +97,13 @@ describe('ImageUploader', () => {
     expect(images[1]).toHaveAttribute('alt', 'Gallery image');
   });
 
-  it('renders images with correct src from MEDIA_URL', () => {
+  it('renders images with correct thumbnail src', () => {
     renderUploader();
     const images = screen.getAllByRole('img');
-    // MEDIA_URL is empty string in test env, so src is /{key}
+    // getImageUrl with 'sm' returns processed WebP thumbnail
     expect(images[0]).toHaveAttribute(
       'src',
-      '/finished/gal-123/photo1.jpg'
+      'https://media.pitfal.solutions/processed/finished/gal-123/photo1/600w.webp'
     );
   });
 

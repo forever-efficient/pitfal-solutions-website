@@ -40,6 +40,15 @@ function log(level: 'INFO' | 'WARN' | 'ERROR', message: string, context: LogCont
   console.log(JSON.stringify({ timestamp: new Date().toISOString(), level, message, ...context, ...(data && { data }) }));
 }
 
+/** Resolve processed thumbnail path to match thumbnail-generator Lambda output (replaces gallery/ with processed/) */
+function getProcessedKey(key: string, width: number): string {
+  const baseName = key.replace(/\.[^/.]+$/, '');
+  const processedPath = baseName.startsWith('gallery/')
+    ? baseName.replace(/^gallery\//, 'processed/')
+    : `processed/${baseName}`;
+  return `${processedPath}/${width}w.webp`;
+}
+
 function getRequestContext(event: APIGatewayProxyEvent): LogContext {
   return {
     requestId: event.requestContext?.requestId || randomUUID(),
@@ -321,20 +330,15 @@ async function handleBulkDownload(
       let downloadFilename = originalFilename;
 
       if (size === 'web') {
-        const baseName = key.replace(/\.[^/.]+$/, '');
-        const webKey = `processed/${baseName}/1920w.webp`;
+        const webKey = getProcessedKey(key, 1920);
         const cached = await objectExists(MEDIA_BUCKET!, webKey);
+
         if (cached) {
           downloadKey = webKey;
         } else {
-          try {
-            downloadKey = await generateWebVersion(key, webKey, ctx);
-          } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Unknown error';
-            log('ERROR', 'Failed to generate web-sized version in bulk', ctx, { key, error: msg });
-            throw err;
-          }
+          log('WARN', 'Web-sized version missing in cache, falling back to original', ctx, { key, webKey });
         }
+
         const webFilename = originalFilename.replace(/\.[^/.]+$/, '.webp');
         downloadFilename = `web_${webFilename}`;
       }
@@ -390,24 +394,14 @@ async function handleDownload(
   const originalFilename = body.imageKey.split('/').pop() || 'photo';
 
   if (size === 'web') {
-    // Web-sized: check cache first, generate on-demand if needed
-    const baseName = body.imageKey.replace(/\.[^/.]+$/, '');
-    const webKey = `processed/${baseName}/1920w.webp`;
+    const webKey = getProcessedKey(body.imageKey, 1920);
     const cached = await objectExists(MEDIA_BUCKET!, webKey);
 
     if (cached) {
       log('INFO', 'Web-sized version found in cache', ctx, { webKey });
       downloadKey = webKey;
     } else {
-      // Generate web-sized version on-demand
-      log('INFO', 'Generating web-sized version on-demand', ctx, { webKey });
-      try {
-        downloadKey = await generateWebVersion(body.imageKey, webKey, ctx);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error';
-        log('ERROR', 'Failed to generate web-sized version', ctx, { error: msg });
-        return error('Failed to generate web-sized image', 500, { requestOrigin });
-      }
+      log('WARN', 'Web-sized version missing in cache, falling back to original', ctx, { imageKey: body.imageKey, webKey });
     }
   }
 
@@ -429,56 +423,5 @@ async function handleDownload(
   return success({ downloadUrl }, 200, requestOrigin);
 }
 
-/**
- * Fetch the original image from S3, resize to 1920px wide using sharp,
- * upload the result to S3 for caching, and return the S3 key.
- */
-async function generateWebVersion(
-  originalKey: string,
-  webKey: string,
-  ctx: LogContext
-): Promise<string> {
-  const { S3Client: S3, GetObjectCommand: GetCmd, PutObjectCommand: PutCmd } = await import('@aws-sdk/client-s3');
-  const sharp = (await import('sharp')).default;
-  const s3 = new S3({});
 
-  // Fetch original
-  log('INFO', 'Fetching original image for resize', ctx, { originalKey });
-  const getResult = await s3.send(new GetCmd({
-    Bucket: MEDIA_BUCKET!,
-    Key: originalKey,
-  }));
-
-  const chunks: Buffer[] = [];
-  const stream = getResult.Body as NodeJS.ReadableStream;
-  for await (const chunk of stream) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as unknown as ArrayBuffer));
-  }
-  const originalBuffer = Buffer.concat(chunks);
-  log('INFO', `Original image fetched (${(originalBuffer.length / 1024 / 1024).toFixed(1)}MB)`, ctx);
-
-  // Resize to 1920px wide, maintaining aspect ratio
-  const resizedBuffer = await sharp(originalBuffer)
-    .resize({ width: 1920, withoutEnlargement: true })
-    .webp({ quality: 85 })
-    .toBuffer();
-
-  log('INFO', `Resized to web version (${(resizedBuffer.length / 1024).toFixed(0)}KB)`, ctx);
-
-  // Upload to S3 for caching
-  await s3.send(new PutCmd({
-    Bucket: MEDIA_BUCKET!,
-    Key: webKey,
-    Body: resizedBuffer,
-    ContentType: 'image/webp',
-    Metadata: {
-      'source-key': originalKey,
-      'generated-at': new Date().toISOString(),
-      'resize-width': '1920',
-    },
-  }));
-
-  log('INFO', 'Web-sized version cached to S3', ctx, { webKey });
-  return webKey;
-}
 

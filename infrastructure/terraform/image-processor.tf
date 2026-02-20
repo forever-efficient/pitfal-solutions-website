@@ -238,82 +238,47 @@ resource "aws_lambda_permission" "image_processor_s3" {
 
 # S3 bucket notification for staging/RAW/ and staging/JPEG/ uploads
 resource "aws_s3_bucket_notification" "media_notifications" {
-  count  = var.enable_image_processor ? 1 : 0
   bucket = aws_s3_bucket.media.id
 
-  # RAW file triggers
+  # RAW file triggers (Only if image processor is enabled)
+  dynamic "lambda_function" {
+    for_each = var.enable_image_processor ? ["cr2", "CR2", "cr3", "CR3"] : []
+    content {
+      lambda_function_arn = aws_lambda_function.image_processor[0].arn
+      events              = ["s3:ObjectCreated:*"]
+      filter_prefix       = "staging/RAW/"
+      filter_suffix       = ".${lambda_function.value}"
+    }
+  }
+
+  # JPEG/PNG triggers (Only if image processor is enabled)
+  dynamic "lambda_function" {
+    for_each = var.enable_image_processor ? ["jpg", "jpeg", "JPG", "JPEG", "png", "PNG"] : []
+    content {
+      lambda_function_arn = aws_lambda_function.image_processor[0].arn
+      events              = ["s3:ObjectCreated:*"]
+      filter_prefix       = "staging/JPEG/"
+      filter_suffix       = ".${lambda_function.value}"
+    }
+  }
+
+  # Thumbnail Generator triggers (Always enabled, gallery/* uploads/removals)
   lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
+    lambda_function_arn = aws_lambda_function.thumbnail_generator.arn
     events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/RAW/"
-    filter_suffix       = ".cr2"
+    filter_prefix       = "gallery/"
   }
 
   lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/RAW/"
-    filter_suffix       = ".CR2"
+    lambda_function_arn = aws_lambda_function.thumbnail_generator.arn
+    events              = ["s3:ObjectRemoved:*"]
+    filter_prefix       = "gallery/"
   }
 
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/RAW/"
-    filter_suffix       = ".cr3"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/RAW/"
-    filter_suffix       = ".CR3"
-  }
-
-  # JPEG/PNG triggers
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".jpg"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".jpeg"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".JPG"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".JPEG"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".png"
-  }
-
-  lambda_function {
-    lambda_function_arn = aws_lambda_function.image_processor[0].arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_prefix       = "staging/JPEG/"
-    filter_suffix       = ".PNG"
-  }
-
-  depends_on = [aws_lambda_permission.image_processor_s3]
+  depends_on = [
+    aws_lambda_permission.image_processor_s3,
+    aws_lambda_permission.thumbnail_generator_s3
+  ]
 }
 
 # ─────────────────────────────────────────────

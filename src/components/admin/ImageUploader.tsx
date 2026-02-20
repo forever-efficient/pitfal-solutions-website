@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { adminImages, adminGalleries } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
 interface GalleryImage {
@@ -24,8 +25,6 @@ interface ImageUploaderProps {
   onUpdate: (images: GalleryImage[]) => void;
   onHeroChange?: () => void;
 }
-
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 
 export function ImageUploader({
   galleryId,
@@ -245,9 +244,10 @@ export function ImageUploader({
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`${MEDIA_URL}/${image.key}`}
+                    src={getImageUrl(image.key, 'sm')}
                     alt={image.alt || 'Gallery image'}
                     className="w-full h-32 object-cover"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(image.key); }}
                   />
                   {isCover && (
                     <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-primary-600 text-white text-xs font-medium rounded">

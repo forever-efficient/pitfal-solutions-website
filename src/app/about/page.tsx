@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
@@ -39,12 +38,10 @@ export default function AboutPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Photographer portrait */}
             <figure className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
-              <Image
+              <img
                 src={getImageUrl(SITE_IMAGES.about)}
                 alt="Portrait of the Pitfal Solutions photographer"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
+                className="absolute inset-0 w-full h-full object-cover"
               />
             </figure>
 

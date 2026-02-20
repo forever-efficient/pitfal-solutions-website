@@ -36,17 +36,9 @@
     @apply bg-primary-200 text-primary-900;
   }
 
-  /* Smooth image loading */
+  /* Smooth image loading transition (opt-in via .img-fade class) */
   img {
     @apply transition-opacity duration-300;
-  }
-
-  img[loading="lazy"] {
-    @apply opacity-0;
-  }
-
-  img[loading="lazy"].loaded {
-    @apply opacity-100;
   }
 }
 

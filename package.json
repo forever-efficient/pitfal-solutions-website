@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "rm -rf .next out && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -19,6 +19,8 @@
     "test:coverage": "vitest run --coverage",
     "test:changed": "vitest run --changed",
     "test:e2e": "playwright test",
+    "test:e2e:all": "playwright test --project=chromium --project=firefox --project=webkit",
+    "test:e2e:prod": "CI=true playwright test",
     "test:e2e:ui": "playwright test --ui",
     "optimize:images": "npx tsx scripts/optimize-images.ts",
     "prepare": "husky",

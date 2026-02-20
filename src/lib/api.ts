@@ -502,8 +502,8 @@ export const publicGalleries = {
     return _featuredCache.promise;
   },
 
-  getFeaturedImages: () =>
-    request<{ images: string[] }>('/api/galleries/featured/images'),
+  getFeaturedImages: (limit = 20) =>
+    request<{ images: string[] }>(`/api/galleries/featured/images?limit=${limit}`),
 
   getByCategory: (category: string) =>
     request<{

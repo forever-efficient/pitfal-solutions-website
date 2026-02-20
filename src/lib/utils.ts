@@ -80,15 +80,39 @@ export function truncate(text: string, length: number): string {
 }
 
 /**
- * Get image URL from S3/CloudFront
+ * Get image URL from S3/CloudFront.
+ * When a size is provided, returns the pre-generated WebP thumbnail produced
+ * by the thumbnail-generator Lambda. That Lambda stores thumbnails at:
+ *   processed/{galleryId}/{filename}/{width}w.webp
+ * (it replaces the "gallery/" prefix with "processed/" in the base path).
+ * Falls back to the original key when size is 'original' or omitted.
  */
 export function getImageUrl(
   key: string,
-  _size?: 'sm' | 'md' | 'lg' | 'xl' | 'original'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'original'
 ): string {
   const mediaBaseUrl =
     process.env.NEXT_PUBLIC_MEDIA_URL || 'https://media.pitfal.solutions';
-  return `${mediaBaseUrl}/${key}`;
+
+  if (!size || size === 'original') {
+    return `${mediaBaseUrl}/${key}`;
+  }
+
+  // Width map matches the thumbnail-generator Lambda output convention
+  const widthMap: Record<string, number> = {
+    sm: 600,
+    md: 900,
+    lg: 1200,
+    xl: 1920,
+  };
+
+  const width = widthMap[size];
+  const baseName = key.replace(/\.[^/.]+$/, '');
+  // Thumbnail generator replaces "gallery/" with "processed/" (not prepended)
+  const processedPath = baseName.startsWith('gallery/')
+    ? baseName.replace(/^gallery\//, 'processed/')
+    : `processed/${baseName}`;
+  return `${mediaBaseUrl}/${processedPath}/${width}w.webp`;
 }
 
 /**

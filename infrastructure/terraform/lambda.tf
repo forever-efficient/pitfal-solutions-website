@@ -122,7 +122,7 @@ resource "aws_lambda_function" "contact" {
       ENVIRONMENT          = var.environment
       USE_CUSTOM_DOMAIN    = tostring(var.use_custom_domain)
       CUSTOM_DOMAIN        = var.domain_name
-      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name},http://localhost:3000,http://localhost:3098,http://localhost:3099" : "*"
     }
   }
 
@@ -204,7 +204,7 @@ resource "aws_lambda_function" "client_auth" {
       ADMIN_TABLE          = aws_dynamodb_table.admin.name
       GALLERY_TOKEN_SECRET = random_password.gallery_token_secret.result
       ENVIRONMENT          = var.environment
-      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name},http://localhost:3000,http://localhost:3098,http://localhost:3099" : "*"
     }
   }
 
@@ -302,7 +302,7 @@ resource "aws_lambda_function" "client_gallery" {
       MEDIA_BUCKET         = aws_s3_bucket.media.id
       GALLERY_TOKEN_SECRET = random_password.gallery_token_secret.result
       ENVIRONMENT          = var.environment
-      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+      CORS_ALLOWED_ORIGINS = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name},http://localhost:3000,http://localhost:3098,http://localhost:3099" : "*"
     }
   }
 

@@ -61,6 +61,7 @@ help: ## List all available targets
 	@echo "Lambda & infrastructure:"
 	@echo "  make build-lambdas   Build Lambda functions (runs scripts/build-lambdas.sh)"
 	@echo "  make deploy-lambdas  Build Lambdas and deploy via Terraform (terraform apply)"
+	@echo "  make backfill-thumbnails  Trigger thumbnail generation for existing gallery images"
 	@echo ""
 	@echo "Quality:"
 	@echo "  make test            Run unit tests (pnpm test)"
@@ -180,6 +181,13 @@ deploy-lambdas: build-lambdas ## Build Lambdas and deploy via Terraform
 	terraform -chdir=infrastructure/terraform apply -auto-approve
 	@echo ""
 	@echo "Lambda functions deployed."
+
+backfill-thumbnails: ## Trigger thumbnail generation for existing gallery images (carousel fix)
+	@export MEDIA_BUCKET=$$(terraform -chdir=infrastructure/terraform output -raw media_bucket_name) && \
+	 export GALLERIES_TABLE=$$(terraform -chdir=infrastructure/terraform output -raw dynamodb_galleries_table) && \
+	 ./scripts/backfill-thumbnails.sh
+	@echo ""
+	@echo "After 1-2 minutes, invalidate CloudFront: make invalidate"
 
 # --- Quality -----------------------------------------------------------------
 

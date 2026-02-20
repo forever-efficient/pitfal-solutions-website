@@ -2,9 +2,8 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { adminGalleries } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { useToast } from './Toast';
-
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 
 interface FocalPoint {
   x: number;
@@ -149,7 +148,8 @@ export function HeroPositionEditor({
     setHeight(DEFAULTS.height);
   };
 
-  const imgSrc = `${MEDIA_URL}/${heroImage}`;
+  const imgSrc = getImageUrl(heroImage, 'lg');
+  const imgSrcFallback = getImageUrl(heroImage);
 
   return (
     <div className="bg-white rounded-xl border border-neutral-200 p-6 space-y-6">
@@ -189,6 +189,7 @@ export function HeroPositionEditor({
             alt="Hero preview"
             className="absolute inset-0 w-full h-full pointer-events-none"
             draggable={false}
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = imgSrcFallback; }}
             style={{
               objectFit: 'cover',
               objectPosition: `${focalPoint.x}% ${focalPoint.y}%`,

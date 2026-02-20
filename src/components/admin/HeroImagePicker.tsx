@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
 interface GalleryImage {
@@ -15,8 +16,6 @@ interface HeroImagePickerProps {
   heroImage?: string;
   onUpdate: (heroImage: string | null | undefined) => void;
 }
-
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 
 const HERO_PAGE_SIZE = 48;
 
@@ -80,9 +79,10 @@ export function HeroImagePicker({ galleryId, images, heroImage, onUpdate }: Hero
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`${MEDIA_URL}/${image.key}`}
+              src={getImageUrl(image.key, 'sm')}
               alt={image.alt || ''}
               className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(image.key); }}
             />
             {heroImage === image.key && (
               <div className="absolute inset-0 bg-primary-600/20 flex items-center justify-center">

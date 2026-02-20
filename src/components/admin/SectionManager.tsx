@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
 import type { GallerySection } from '@/lib/api';
+import { getImageUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
 interface GalleryImage {
@@ -17,7 +18,6 @@ interface SectionManagerProps {
   onUpdate: (sections: GallerySection[]) => void;
 }
 
-const MEDIA_URL = process.env.NEXT_PUBLIC_MEDIA_URL || '';
 const SECTION_IMAGES_PAGE_SIZE = 24;
 const AVAILABLE_PAGE_SIZE = 24;
 
@@ -229,9 +229,10 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                             <div key={img.key} className="aspect-square relative group rounded overflow-hidden">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={`${MEDIA_URL}/${img.key}`}
+                                src={getImageUrl(img.key, 'sm')}
                                 alt={img.alt || ''}
                                 className="w-full h-full object-cover"
+                                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(img.key); }}
                               />
                               <button
                                 onClick={() => removeImageFromSection(section.id, img.key)}
@@ -285,9 +286,10 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
                             >
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={`${MEDIA_URL}/${img.key}`}
+                                src={getImageUrl(img.key, 'sm')}
                                 alt={img.alt || ''}
                                 className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity"
+                                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(img.key); }}
                               />
                             </button>
                           ))}

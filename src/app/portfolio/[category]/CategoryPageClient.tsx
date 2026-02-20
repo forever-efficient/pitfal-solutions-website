@@ -32,7 +32,7 @@ export function CategoryPageClient({ category }: { category: string }) {
           id: g.id,
           slug: g.slug,
           title: g.title,
-          thumbnail: g.coverImage ? getImageUrl(g.coverImage) : '',
+          thumbnail: g.coverImage ? getImageUrl(g.coverImage, 'md') : '',
           imageCount: g.imageCount,
           description: g.description,
         })));

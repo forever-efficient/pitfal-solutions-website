@@ -181,28 +181,52 @@ describe('truncate', () => {
 });
 
 describe('getImageUrl', () => {
-  it('returns URL containing the key', () => {
+  it('returns original URL when no size is given', () => {
     const result = getImageUrl('images/photo.jpg');
     expect(result).toContain('images/photo.jpg');
+    expect(result).not.toContain('processed');
   });
 
-  it('returns same URL regardless of size hint', () => {
+  it("returns original URL for size 'original'", () => {
     const base = getImageUrl('images/photo.jpg');
-    expect(getImageUrl('images/photo.jpg', 'sm')).toBe(base);
-    expect(getImageUrl('images/photo.jpg', 'md')).toBe(base);
-    expect(getImageUrl('images/photo.jpg', 'lg')).toBe(base);
-    expect(getImageUrl('images/photo.jpg', 'xl')).toBe(base);
     expect(getImageUrl('images/photo.jpg', 'original')).toBe(base);
+  });
+
+  it("returns 600w.webp thumbnail URL for size 'sm'", () => {
+    const result = getImageUrl('finished/gallery1/photo.jpg', 'sm');
+    expect(result).toContain('processed/finished/gallery1/photo/600w.webp');
+  });
+
+  it("returns 900w.webp thumbnail URL for size 'md'", () => {
+    const result = getImageUrl('finished/gallery1/photo.jpg', 'md');
+    expect(result).toContain('processed/finished/gallery1/photo/900w.webp');
+  });
+
+  it("returns 1200w.webp thumbnail URL for size 'lg'", () => {
+    const result = getImageUrl('finished/gallery1/photo.jpg', 'lg');
+    expect(result).toContain('processed/finished/gallery1/photo/1200w.webp');
+  });
+
+  it("returns 1920w.webp thumbnail URL for size 'xl'", () => {
+    const result = getImageUrl('finished/gallery1/photo.jpg', 'xl');
+    expect(result).toContain('processed/finished/gallery1/photo/1920w.webp');
+  });
+
+  it('strips file extension from key when building thumbnail path', () => {
+    const result = getImageUrl('gallery/event/IMG_1234.CR3', 'sm');
+    expect(result).not.toContain('.CR3');
+    expect(result).toContain('600w.webp');
+  });
+
+  it('replaces gallery/ with processed/ for thumbnail-generator path (matches Lambda output)', () => {
+    const result = getImageUrl('gallery/83b2d874-c479-4b9b-82a3-a80a22d63698/1G6A5669.jpg', 'sm');
+    expect(result).toContain('processed/83b2d874-c479-4b9b-82a3-a80a22d63698/1G6A5669/600w.webp');
+    expect(result).not.toContain('processed/gallery/');
   });
 
   it('builds URL from NEXT_PUBLIC_MEDIA_URL env var', () => {
     const result = getImageUrl('site/hero-bg.jpg');
     expect(result).toMatch(/https?:\/\/.+\/site\/hero-bg\.jpg/);
-  });
-
-  it('works with gallery/ prefixed keys', () => {
-    const result = getImageUrl('gallery/g1/photo.jpg');
-    expect(result).toContain('gallery/g1/photo.jpg');
   });
 });
 

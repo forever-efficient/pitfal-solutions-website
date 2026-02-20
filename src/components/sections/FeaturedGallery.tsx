@@ -80,9 +80,10 @@ export function FeaturedGallery() {
                 {item.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={getImageUrl(item.coverImage)}
+                    src={getImageUrl(item.coverImage, 'md')}
                     alt={`${item.title} preview`}
                     className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage!); }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
