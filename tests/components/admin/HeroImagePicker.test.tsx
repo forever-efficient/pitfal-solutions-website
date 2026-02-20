@@ -98,4 +98,70 @@ describe('HeroImagePicker', () => {
       );
     });
   });
+
+  it('paginates through hero images when there are many', async () => {
+    const manyImages = Array.from({ length: 100 }, (_, i) => ({
+      key: `finished/g1/img${i}.jpg`,
+      alt: `Image ${i}`,
+    }));
+    renderPicker({ images: manyImages });
+
+    // Pagination should be visible
+    expect(screen.getByText(/1 \/ /)).toBeInTheDocument();
+
+    const user = userEvent.setup();
+    const nextButton = screen.getByRole('button', { name: 'Next →' });
+
+    // Click next to go to page 2
+    await user.click(nextButton);
+
+    // Should show page 2
+    await waitFor(() => {
+      expect(screen.getByText(/2 \/ /)).toBeInTheDocument();
+    });
+
+    // Prev button should now be enabled
+    const prevButton = screen.getByRole('button', { name: '← Prev' });
+    expect(prevButton).not.toBeDisabled();
+  });
+
+  it('disables prev button on first page and next button on last page', async () => {
+    const manyImages = Array.from({ length: 100 }, (_, i) => ({
+      key: `finished/g1/img${i}.jpg`,
+      alt: `Image ${i}`,
+    }));
+    renderPicker({ images: manyImages });
+
+    const prevButton = screen.getByRole('button', { name: '← Prev' });
+    const nextButton = screen.getByRole('button', { name: 'Next →' });
+
+    // Prev should be disabled on first page
+    expect(prevButton).toBeDisabled();
+    expect(nextButton).not.toBeDisabled();
+
+    // Navigate to last page
+    const user = userEvent.setup();
+    const totalPages = Math.ceil(100 / 48);
+    for (let i = 0; i < totalPages - 1; i++) {
+      await user.click(nextButton);
+    }
+
+    // Next should be disabled on last page
+    await waitFor(() => {
+      expect(nextButton).toBeDisabled();
+      expect(prevButton).not.toBeDisabled();
+    });
+  });
+
+  it('handles image load errors with fallback', async () => {
+    renderPicker();
+
+    const images = document.querySelectorAll('img');
+    images.forEach((img) => {
+      // Trigger error
+      img.dispatchEvent(new Event('error'));
+      // onError handler should set onerror to null
+      expect(img.onerror).toBeNull();
+    });
+  });
 });

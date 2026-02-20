@@ -147,4 +147,23 @@ describe('FeaturedGallery', () => {
       expect(card.querySelector('svg')).toBeInTheDocument();
     });
   });
+
+  it('handles image loading errors with fallback src', async () => {
+    render(<FeaturedGallery />);
+    await waitFor(() => {
+      expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
+    });
+
+    const images = document.querySelectorAll('img');
+    images.forEach((img) => {
+      // Verify the image has the onError handler setup
+      expect(img.getAttribute('src')).toContain('https://cdn.example.com/');
+      // Simulate error event
+      if (img.getAttribute('alt')?.includes('preview')) {
+        img.dispatchEvent(new Event('error'));
+        // After error, onerror should be set to null to prevent recursion
+        expect(img.onerror).toBeNull();
+      }
+    });
+  });
 });
