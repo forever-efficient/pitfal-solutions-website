@@ -67,7 +67,7 @@ export function ServicesOverview() {
           {services.map((service) => (
             <Link key={service.title} href={service.href} className="group">
               <Card hover padding="none" className="h-full overflow-hidden">
-                <div className="h-64 bg-neutral-200 relative overflow-hidden">
+                <div className="h-[325px] bg-neutral-200 relative overflow-hidden">
                   <Image
                     src={getImageUrl(service.image)}
                     alt={service.title}

@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
+import { RecentWorkCarousel } from '@/components/sections/RecentWorkCarousel';
 import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { SERVICES, PAGE_META } from '@/lib/constants';
@@ -48,13 +48,11 @@ export default function PhotographyPage() {
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="aspect-[4/3] bg-neutral-200 rounded-2xl overflow-hidden relative">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src={getImageUrl(service.image)}
                 alt={service.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
+                className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
 
@@ -83,34 +81,7 @@ export default function PhotographyPage() {
         </Container>
       </Section>
 
-      {/* Sample work placeholders */}
-      <Section size="lg" background="light">
-        <Container>
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-neutral-900 font-display">
-              Recent Work
-            </h2>
-            <p className="text-neutral-600 mt-3">Portfolio images coming soon.</p>
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="aspect-square bg-neutral-200 rounded-xl overflow-hidden relative"
-                role="img"
-                aria-label="Portfolio placeholder"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-primary-700/30" />
-              </div>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Button variant="outline" asChild>
-              <Link href="/portfolio">View Full Portfolio</Link>
-            </Button>
-          </div>
-        </Container>
-      </Section>
+      <RecentWorkCarousel />
 
       {/* Pricing placeholder */}
       <Section size="md" background="white">

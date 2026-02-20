@@ -55,7 +55,7 @@ describe('ServicesOverview', () => {
 
   it('renders service image containers', () => {
     render(<ServicesOverview />);
-    const serviceCards = document.querySelectorAll('.h-64');
+    const serviceCards = document.querySelectorAll('.h-\\[325px\\]');
     expect(serviceCards).toHaveLength(4);
   });
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
@@ -98,12 +97,10 @@ export default function PortfolioPage() {
                 aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
               >
                 <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  <Image
+                  <img
                     src={getImageUrl(category.image)}
                     alt={`${category.title} category preview`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover"
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div
                     className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
