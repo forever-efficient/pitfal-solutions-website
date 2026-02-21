@@ -36,9 +36,11 @@ vi.mock('../../../lambda/shared/session', () => ({
 }));
 
 // Mock S3 utilities
+const mockGetObjectSize = vi.hoisted(() => vi.fn());
 vi.mock('../../../lambda/shared/s3', () => ({
   generatePresignedDownloadUrl: mockGeneratePresignedDownloadUrl,
   objectExists: mockObjectExists,
+  getObjectSize: mockGetObjectSize,
   generatePresignedUploadUrl: vi.fn(),
   deleteS3Objects: vi.fn(),
 }));
@@ -110,7 +112,7 @@ const sampleGallery = {
     { id: 's2', title: 'Reception', description: 'The party', images: ['finished/gallery-1/img2.jpg', 'finished/gallery-1/img3.jpg'] },
   ],
   category: 'weddings',
-  type: 'client',
+  passwordHash: '$2a$10$hash',
 };
 
 describe('Client Gallery Lambda Handler', () => {
@@ -121,6 +123,7 @@ describe('Client Gallery Lambda Handler', () => {
     mockParseAuthToken.mockClear();
     mockGeneratePresignedDownloadUrl.mockClear();
     mockObjectExists.mockClear();
+    mockGetObjectSize.mockClear();
 
     mockGetItem.mockImplementation(async () => null);
     mockQueryItems.mockImplementation(async () => []);
@@ -128,6 +131,7 @@ describe('Client Gallery Lambda Handler', () => {
       `https://s3.amazonaws.com/test-media/${key}?signed=true`
     );
     mockObjectExists.mockResolvedValue(false);
+    mockGetObjectSize.mockResolvedValue(1024);
   });
 
   describe('OPTIONS (CORS preflight)', () => {
@@ -287,6 +291,7 @@ describe('Client Gallery Lambda Handler', () => {
   describe('POST /api/client/{galleryId}/comment', () => {
     beforeEach(() => {
       setupAuthenticatedClient();
+      mockGetItem.mockResolvedValue(sampleGallery);
     });
 
     it('adds a comment to the gallery', async () => {
@@ -370,6 +375,23 @@ describe('Client Gallery Lambda Handler', () => {
 
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 400 when imageKey is not in gallery', async () => {
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/client/{galleryId}/comment',
+        body: JSON.stringify({
+          imageKey: 'gallery/g1/nonexistent.jpg',
+          author: 'Jane',
+          text: 'Hello',
+        }),
+      });
+
+      const result = await handler(event, mockContext, () => {});
+      expect(result!.statusCode).toBe(400);
+      const body = JSON.parse(result!.body);
+      expect(body.error).toContain('Image not found');
     });
 
     it('returns 400 when author is missing', async () => {

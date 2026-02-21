@@ -10,6 +10,9 @@ vi.mock('@aws-sdk/client-s3', () => ({
   GetObjectCommand: vi.fn((params) => ({ ...params, _type: 'GetObject' })),
   PutObjectCommand: vi.fn((params) => ({ ...params, _type: 'PutObject' })),
   DeleteObjectsCommand: vi.fn((params) => ({ ...params, _type: 'DeleteObjects' })),
+  HeadObjectCommand: vi.fn((params) => ({ ...params, _type: 'HeadObject' })),
+  CopyObjectCommand: vi.fn((params) => ({ ...params, _type: 'CopyObject' })),
+  ListObjectsV2Command: vi.fn((params) => ({ ...params, _type: 'ListObjectsV2' })),
 }));
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
@@ -17,9 +20,13 @@ vi.mock('@aws-sdk/s3-request-presigner', () => ({
 }));
 
 import {
+  objectExists,
+  getObjectSize,
   generatePresignedDownloadUrl,
   generatePresignedUploadUrl,
   deleteS3Objects,
+  copyS3Object,
+  listS3Objects,
 } from '../../../lambda/shared/s3';
 
 describe('S3 utilities', () => {
@@ -66,6 +73,12 @@ describe('S3 utilities', () => {
       // The client should be the S3Client instance with send method
       expect(client).toBeDefined();
       expect(client.send).toBeDefined();
+    });
+
+    it('uses custom filename when provided', async () => {
+      await generatePresignedDownloadUrl('bucket', 'path/to/file.jpg', 3600, 'custom-name.jpg');
+      const [, command] = mockGetSignedUrl.mock.calls[0];
+      expect(command.ResponseContentDisposition).toContain('custom-name.jpg');
     });
   });
 
@@ -154,6 +167,79 @@ describe('S3 utilities', () => {
 
       const command = mockSend.mock.calls[0][0];
       expect(command.Bucket).toBe('pitfal-prod-media');
+    });
+  });
+
+  describe('objectExists', () => {
+    it('returns true when HEAD succeeds', async () => {
+      mockSend.mockResolvedValueOnce({});
+      const result = await objectExists('bucket', 'key');
+      expect(result).toBe(true);
+      expect(mockSend).toHaveBeenCalledOnce();
+    });
+
+    it('returns false when HEAD throws', async () => {
+      mockSend.mockRejectedValueOnce(new Error('Not found'));
+      const result = await objectExists('bucket', 'key');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getObjectSize', () => {
+    it('returns ContentLength when HEAD succeeds', async () => {
+      mockSend.mockResolvedValueOnce({ ContentLength: 1024 });
+      const result = await getObjectSize('bucket', 'key');
+      expect(result).toBe(1024);
+    });
+
+    it('returns 0 when ContentLength is undefined', async () => {
+      mockSend.mockResolvedValueOnce({});
+      const result = await getObjectSize('bucket', 'key');
+      expect(result).toBe(0);
+    });
+
+    it('returns 0 when HEAD throws', async () => {
+      mockSend.mockRejectedValueOnce(new Error('Not found'));
+      const result = await getObjectSize('bucket', 'key');
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('copyS3Object', () => {
+    it('sends copy command with correct params', async () => {
+      mockSend.mockResolvedValueOnce({});
+      await copyS3Object('bucket', 'source/key', 'dest/key');
+      expect(mockSend).toHaveBeenCalledOnce();
+      const command = mockSend.mock.calls[0][0];
+      expect(command.CopySource).toBe('bucket/source/key');
+      expect(command.Key).toBe('dest/key');
+    });
+  });
+
+  describe('listS3Objects', () => {
+    it('returns mapped contents from ListObjectsV2', async () => {
+      mockSend.mockResolvedValueOnce({
+        Contents: [
+          { Key: 'prefix/a.jpg', Size: 100, LastModified: new Date('2026-01-01') },
+          { Key: 'prefix/b.jpg', Size: 200 },
+        ],
+      });
+      const result = await listS3Objects('bucket', 'prefix/');
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ key: 'prefix/a.jpg', size: 100, lastModified: new Date('2026-01-01') });
+      expect(result[1]).toEqual({ key: 'prefix/b.jpg', size: 200, lastModified: expect.any(Date) });
+    });
+
+    it('returns empty array when Contents is empty', async () => {
+      mockSend.mockResolvedValueOnce({ Contents: [] });
+      const result = await listS3Objects('bucket', 'prefix/');
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array when Contents is undefined', async () => {
+      mockSend.mockResolvedValueOnce({});
+      const result = await listS3Objects('bucket', 'prefix/');
+      expect(result).toEqual([]);
     });
   });
 });

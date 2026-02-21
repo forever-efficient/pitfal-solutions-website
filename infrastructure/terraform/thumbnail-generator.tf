@@ -26,6 +26,20 @@ resource "aws_iam_role_policy_attachment" "thumbnail_generator_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy" "thumbnail_generator_dlq" {
+  name = "${local.name_prefix}-thumbnail-gen-dlq"
+  role = aws_iam_role.thumbnail_generator.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
+}
+
 resource "aws_iam_role_policy" "thumbnail_generator_s3" {
   name = "${local.name_prefix}-thumbnail-gen-s3"
   role = aws_iam_role.thumbnail_generator.id
@@ -79,6 +93,10 @@ resource "aws_lambda_function" "thumbnail_generator" {
   layers = [
     aws_lambda_layer_version.sharp.arn
   ]
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
 
   environment {
     variables = {

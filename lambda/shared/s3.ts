@@ -12,6 +12,16 @@ export async function objectExists(bucket: string, key: string): Promise<boolean
   }
 }
 
+/** Get object size in bytes via HEAD. Returns 0 if not found. */
+export async function getObjectSize(bucket: string, key: string): Promise<number> {
+  try {
+    const result = await s3Client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
+    return result.ContentLength ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function generatePresignedDownloadUrl(
   bucket: string,
   key: string,

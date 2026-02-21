@@ -8,7 +8,6 @@ import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
 import { HeroPositionEditor } from '@/components/admin/HeroPositionEditor';
-import { ProcessingQueue } from '@/components/admin/ProcessingQueue';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -105,8 +104,19 @@ function GalleryEditContent() {
 
       <GalleryEditor gallery={gallery} galleryId={id} />
 
+      {gallery.heroImage && (
+        <HeroPositionEditor
+          galleryId={id}
+          heroImage={gallery.heroImage}
+          initialFocalPoint={gallery.heroFocalPoint}
+          initialZoom={gallery.heroZoom}
+          initialGradientOpacity={gallery.heroGradientOpacity}
+          initialHeight={gallery.heroHeight}
+        />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-8">
+        <div>
           <ImageUploader
             galleryId={id}
             images={gallery.images || []}
@@ -114,17 +124,6 @@ function GalleryEditContent() {
             onUpdate={() => loadGallery()}
             onHeroChange={() => loadGallery()}
           />
-          {gallery.heroImage && (
-            <HeroPositionEditor
-              galleryId={id}
-              heroImage={gallery.heroImage}
-              initialFocalPoint={gallery.heroFocalPoint}
-              initialZoom={gallery.heroZoom}
-              initialGradientOpacity={gallery.heroGradientOpacity}
-              initialHeight={gallery.heroHeight}
-            />
-          )}
-          <ProcessingQueue galleryId={id} />
         </div>
 
         <div>
@@ -132,6 +131,7 @@ function GalleryEditContent() {
             galleryId={id}
             images={gallery.images || []}
             initialSections={gallery.sections || []}
+            initialClientSort={gallery.clientSort}
             onUpdate={() => loadGallery()}
           />
         </div>

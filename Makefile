@@ -110,6 +110,8 @@ check: ## Verify AWS CLI, pnpm, and pitfal credentials are working
 	@echo "  AWS CLI: OK"
 	@command -v pnpm >/dev/null 2>&1 || (echo "ERROR: pnpm not found. Install with: npm install -g pnpm" && exit 1)
 	@echo "  pnpm: OK"
+	@test -f node_modules/.bin/next || (echo "ERROR: Dependencies not installed. Run: pnpm install" && exit 1)
+	@echo "  node_modules: OK"
 	@aws sts get-caller-identity --profile $(AWS_PROFILE) --region $(AWS_REGION) --output text >/dev/null 2>&1 || \
 		(echo "ERROR: AWS profile '$(AWS_PROFILE)' not configured or credentials expired." && \
 		 echo "       Run: aws configure --profile $(AWS_PROFILE)" && exit 1)

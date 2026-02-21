@@ -120,13 +120,23 @@ test.describe('Navigation - Mobile', () => {
   test('mobile menu navigates correctly', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await page.getByRole('button', { name: 'Open menu' }).click();
+    // Open the menu
+    const menuButton = page.getByRole('button', { name: 'Open menu' });
+    await menuButton.click();
 
-    // Wait for the slide-in animation to finish before Playwright tries to click the moving element
-    await page.waitForTimeout(300);
+    // Wait for the menu dialog to appear
+    const menu = page.locator('div[role="dialog"]');
+    await menu.waitFor({ state: 'visible', timeout: 5000 });
 
-    // Click About link in mobile menu 
-    await page.getByRole('link', { name: 'About' }).first().click();
+    // Wait for animation to complete
+    await page.waitForTimeout(500);
+
+    // Wait for the About link to be ready and visible
+    const aboutLink = page.getByRole('link', { name: 'About' }).first();
+    await aboutLink.waitFor({ state: 'visible', timeout: 5000 });
+
+    // Click the About link
+    await aboutLink.click();
 
     await expect(page).toHaveURL(/\/about\/?$/);
   });

@@ -1,4 +1,5 @@
 export { AdminSidebar } from './AdminSidebar';
+export { DashboardUploader } from './DashboardUploader';
 export { StatCard } from './StatCard';
 export { GalleryEditor } from './GalleryEditor';
 export { ImageUploader } from './ImageUploader';

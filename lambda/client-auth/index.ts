@@ -58,7 +58,6 @@ interface GalleryRecord {
   id: string;
   passwordHash?: string;
   title: string;
-  type: string;
 }
 
 interface GalleryTokenPayload {

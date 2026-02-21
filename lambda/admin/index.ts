@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } f
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { shuffleArray } from '../shared/array';
 import { getItem, putItem, updateItem, deleteItem, queryItems, scanItems, buildUpdateExpression } from '../shared/db';
 import {
   success,
@@ -99,16 +100,21 @@ interface GallerySection {
   images: string[]; // S3 keys referencing images in the gallery's images array
 }
 
+interface ClientSort {
+  by: 'name' | 'date' | 'size' | 'random';
+  order?: 'asc' | 'desc';
+}
+
 interface GalleryRecord {
   id: string;
   title: string;
   description?: string;
   category: string;
-  type: string;
   slug: string;
   images: Array<{ key: string; alt?: string }>;
   heroImage?: string; // S3 key for gallery cover/hero image
   sections?: GallerySection[];
+  clientSort?: ClientSort;
   passwordHash?: string;
   featured?: boolean;
   createdAt: string;
@@ -378,7 +384,6 @@ async function handleGalleries(
         id: g.id,
         title: g.title,
         category: g.category,
-        type: g.type,
         slug: g.slug,
         imageCount: g.images?.length || 0,
         sectionCount: g.sections?.length || 0,
@@ -395,7 +400,6 @@ async function handleGalleries(
       title?: string;
       description?: string;
       category?: string;
-      type?: string;
       slug?: string;
       password?: string;
       featured?: boolean;
@@ -408,8 +412,8 @@ async function handleGalleries(
       return badRequest('Invalid JSON', requestOrigin);
     }
 
-    if (!body.title || !body.category || !body.type || !body.slug) {
-      return badRequest('title, category, type, and slug are required', requestOrigin);
+    if (!body.title || !body.category || !body.slug) {
+      return badRequest('title, category, and slug are required', requestOrigin);
     }
 
     // Validate sections if provided
@@ -426,7 +430,6 @@ async function handleGalleries(
       title: body.title.trim(),
       description: body.description?.trim() || '',
       category: body.category,
-      type: body.type,
       slug: body.slug,
       images: [],
       featured: body.featured || false,
@@ -482,7 +485,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'type', 'slug', 'featured', 'images', 'heroImage', 'sections', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight'];
+    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -565,25 +568,31 @@ async function handleImages(
       return badRequest('filename is required', requestOrigin);
     }
 
-    // Determine upload target from file extension
-    const filename = body.filename as string;
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
-    const rawExtensions = new Set(['cr2', 'cr3', 'raw']);
-    const jpegExtensions = new Set(['jpg', 'jpeg', 'png']);
-    let prefix: string;
-    let contentType: string;
-
-    if (rawExtensions.has(ext)) {
-      prefix = 'staging/RAW';
-      contentType = 'application/octet-stream';
-    } else if (jpegExtensions.has(ext)) {
-      prefix = 'staging/JPEG';
-      contentType = (body.contentType as string) || 'image/jpeg';
-    } else {
-      return badRequest('Unsupported file type. Use CR2, CR3, RAW, JPG, JPEG, or PNG.', requestOrigin);
+    const rawFilename = body.filename as string;
+    // Reject path traversal, null bytes, and unsafe characters
+    if (
+      rawFilename.includes('..') ||
+      rawFilename.includes('\0') ||
+      rawFilename.includes('/') ||
+      rawFilename.includes('\\')
+    ) {
+      return badRequest('Invalid filename', requestOrigin);
+    }
+    // Restrict to alphanumeric, dots, underscores, hyphens
+    const safeFilename = rawFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    if (safeFilename.length === 0) {
+      return badRequest('Invalid filename', requestOrigin);
     }
 
-    const key = `${prefix}/${randomUUID()}-${filename}`;
+    // All uploads go directly to staging/ready/
+    const filename = safeFilename;
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    const acceptedExtensions = new Set(['jpg', 'jpeg', 'png']);
+    if (!acceptedExtensions.has(ext)) {
+      return badRequest('Unsupported file type. Use JPG, JPEG, or PNG.', requestOrigin);
+    }
+    const contentType = (body.contentType as string) || 'image/jpeg';
+    const key = `staging/ready/${filename}`;
     const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, contentType, 3600);
 
     log('INFO', 'Upload URL generated', ctx, { key });
@@ -1072,23 +1081,47 @@ async function handleImagesReady(
   ctx: LogContext,
   requestOrigin?: string
 ): Promise<APIGatewayProxyResult> {
-  if (method !== 'GET') {
-    return methodNotAllowed(undefined, requestOrigin);
+  if (method === 'GET') {
+    const objects = await listS3Objects(MEDIA_BUCKET!, 'staging/ready/');
+    const images = objects
+      .filter(obj => obj.key !== 'staging/ready/')  // exclude the "folder" itself
+      .map(obj => ({
+        key: obj.key,
+        filename: obj.key.split('/').pop() || obj.key,
+        uploadedAt: obj.lastModified.toISOString(),
+        size: obj.size,
+        url: `${process.env.CLOUDFRONT_URL || ''}/media/${obj.key}`,
+      }));
+
+    log('INFO', 'Ready queue listed', ctx, { count: images.length });
+    return success({ images }, 200, requestOrigin);
   }
 
-  const objects = await listS3Objects(MEDIA_BUCKET!, 'staging/ready/');
-  const images = objects
-    .filter(obj => obj.key !== 'staging/ready/')  // exclude the "folder" itself
-    .map(obj => ({
-      key: obj.key,
-      filename: obj.key.split('/').pop() || obj.key,
-      uploadedAt: obj.lastModified.toISOString(),
-      size: obj.size,
-      url: `${process.env.CLOUDFRONT_URL || ''}/media/${obj.key}`,
-    }));
+  if (method === 'DELETE') {
+    let body: { keys?: string[] };
+    try {
+      body = JSON.parse(event.body || '{}');
+    } catch {
+      return badRequest('Invalid JSON', requestOrigin);
+    }
 
-  log('INFO', 'Ready queue listed', ctx, { count: images.length });
-  return success({ images }, 200, requestOrigin);
+    const keys = body.keys as string[];
+    if (!Array.isArray(keys) || keys.length === 0) {
+      return badRequest('keys array is required', requestOrigin);
+    }
+
+    // Validate all keys are within staging/ready/ to prevent accidental deletes
+    const invalid = keys.filter(k => !k.startsWith('staging/ready/'));
+    if (invalid.length > 0) {
+      return badRequest('All keys must be under staging/ready/', requestOrigin);
+    }
+
+    await deleteS3Objects(MEDIA_BUCKET!, keys);
+    log('INFO', 'Deleted images from staging/ready/', ctx, { count: keys.length });
+    return success({ deleted: keys.length }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed(undefined, requestOrigin);
 }
 
 // ============ IMAGES ASSIGN HANDLER ============
@@ -1191,19 +1224,10 @@ async function handlePublicGalleries(
 
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const allKeys = allGalleries
-      .filter(g => g.featured && (g.type === 'portfolio' || g.type === 'client'))
+      .filter(g => g.featured)
       .flatMap(g => (g.images || []).map(img => img.key));
 
-    // Fisher-Yates shuffle server-side so the client always gets a random
-    // selection and never needs to download more keys than it will display.
-    for (let i = allKeys.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = allKeys[i] as string;
-      allKeys[i] = allKeys[j] as string;
-      allKeys[j] = tmp;
-    }
-
-    const images = allKeys.slice(0, limit);
+    const images = shuffleArray(allKeys).slice(0, limit);
     log('INFO', 'Featured gallery images fetched', ctx, { total: allKeys.length, returned: images.length, limit });
     return success({ images }, 200, requestOrigin);
   }
@@ -1212,14 +1236,13 @@ async function handlePublicGalleries(
   if (resource.includes('/galleries/featured')) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const featured = allGalleries
-      .filter(g => g.featured && (g.type === 'portfolio' || g.type === 'client'))
+      .filter(g => g.featured)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 3)
       .map(g => ({
         id: g.id,
         title: g.title,
         category: g.category,
-        type: g.type,
         slug: g.slug,
         coverImage: g.heroImage || g.images?.[0]?.key || null,
         href: `/portfolio/${g.category}/${g.slug}`,
@@ -1252,7 +1275,7 @@ async function handlePublicGalleries(
   if (categoryParam) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const galleries = allGalleries
-      .filter(g => g.category === categoryParam && g.type === 'portfolio')
+      .filter(g => g.category === categoryParam && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map(g => ({
         id: g.id,

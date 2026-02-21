@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/admin/StatCard';
 import { ReadyQueue } from '@/components/admin/ReadyQueue';
+import { DashboardUploader } from '@/components/admin/DashboardUploader';
 import { useToast } from '@/components/admin/Toast';
 import { adminGalleries, adminInquiries } from '@/lib/api';
 
@@ -14,6 +15,7 @@ export default function AdminDashboardPage() {
     inquiries: 0,
     newInquiries: 0,
   });
+  const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,8 +67,10 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      <DashboardUploader onUploaded={() => setRefreshKey(k => k + 1)} />
+
       <div className="bg-white rounded-xl border border-neutral-200 p-6">
-        <ReadyQueue />
+        <ReadyQueue refreshKey={refreshKey} />
       </div>
     </div>
   );

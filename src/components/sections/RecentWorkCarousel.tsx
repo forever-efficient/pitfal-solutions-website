@@ -10,12 +10,13 @@ import { getImageUrl } from '@/lib/utils';
 export function RecentWorkCarousel({ className, showHeader = true, showCta = true }: { className?: string; showHeader?: boolean; showCta?: boolean }) {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     // Server returns pre-shuffled images already capped at the carousel limit.
     publicGalleries.getFeaturedImages(20)
       .then(({ images }) => setImages(images))
-      .catch(() => { })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -54,6 +55,10 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
                 className="h-[300px] w-[240px] flex-shrink-0 rounded-xl bg-neutral-200 animate-pulse"
               />
             ))}
+          </div>
+        ) : error ? (
+          <div className="flex gap-4 px-4 items-center justify-center min-h-[300px]">
+            <p className="text-neutral-500 text-sm">Unable to load images</p>
           </div>
         ) : images.length === 0 ? (
           <div className="flex gap-4 px-4">

@@ -92,6 +92,8 @@ describe('RecentWorkCarousel', () => {
       const skeletons = document.querySelectorAll('.animate-pulse');
       expect(skeletons).toHaveLength(0);
     });
+
+    expect(screen.getByText('Unable to load images')).toBeInTheDocument();
   });
 
   it('renders View Full Portfolio CTA when showCta is true', () => {

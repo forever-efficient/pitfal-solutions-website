@@ -56,6 +56,13 @@ async function getS3ObjectAsBuffer(key: string): Promise<Buffer> {
 export const handler = async (event: OrchestratorEvent): Promise<void> => {
   const { jobId, galleryId, rawKeys } = event;
 
+  if (!IMAGENAI_API_KEY?.trim()) {
+    throw new Error('IMAGENAI_API_KEY is not configured. Set the environment variable to enable RAW processing.');
+  }
+  if (!IMAGENAI_PROFILE_ID?.trim()) {
+    throw new Error('IMAGENAI_PROFILE_ID is not configured. Set the environment variable to enable RAW processing.');
+  }
+
   console.log(JSON.stringify({ level: 'INFO', message: 'Orchestrator started', jobId, galleryId, fileCount: rawKeys.length }));
 
   try {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
-import type { GallerySection } from '@/lib/api';
+import type { GallerySection, ClientSort, ClientSortBy, ClientSortOrder } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
@@ -15,7 +15,8 @@ interface SectionManagerProps {
   galleryId: string;
   images: GalleryImage[];
   initialSections: GallerySection[];
-  onUpdate: (sections: GallerySection[]) => void;
+  initialClientSort?: ClientSort | null;
+  onUpdate: (sections: GallerySection[], clientSort?: ClientSort | null) => void;
 }
 
 const SECTION_IMAGES_PAGE_SIZE = 24;
@@ -25,9 +26,17 @@ function generateId(): string {
   return crypto.randomUUID();
 }
 
-export function SectionManager({ galleryId, images, initialSections, onUpdate }: SectionManagerProps) {
+const SORT_OPTIONS: { value: ClientSortBy; label: string }[] = [
+  { value: 'date', label: 'Date (upload order)' },
+  { value: 'name', label: 'Name (filename)' },
+  { value: 'size', label: 'Size (file size)' },
+  { value: 'random', label: 'Random' },
+];
+
+export function SectionManager({ galleryId, images, initialSections, initialClientSort, onUpdate }: SectionManagerProps) {
   const { showSuccess, showError } = useToast();
   const [sections, setSections] = useState<GallerySection[]>(initialSections);
+  const [clientSort, setClientSort] = useState<ClientSort | null>(initialClientSort ?? null);
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sectionPage, setSectionPage] = useState<Record<string, number>>({});
@@ -97,8 +106,12 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
 
     setSaving(true);
     try {
-      await adminGalleries.update(galleryId, { sections });
-      onUpdate(sections);
+      const sortToSave = clientSort ?? { by: 'date' as ClientSortBy, order: 'asc' as ClientSortOrder };
+      await adminGalleries.update(galleryId, {
+        sections,
+        clientSort: sortToSave,
+      });
+      onUpdate(sections, sortToSave);
       showSuccess('Sections saved');
     } catch {
       showError('Failed to save sections');
@@ -122,6 +135,46 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
         >
           + Add Section
         </button>
+      </div>
+
+      {/* Client view sort */}
+      <div className="mb-4 pb-4 border-b border-neutral-200">
+        <p className="text-xs font-medium text-neutral-500 mb-2">Client view sort</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={clientSort?.by ?? 'date'}
+            onChange={(e) =>
+              setClientSort((prev) => ({
+                by: e.target.value as ClientSortBy,
+                order: prev?.order ?? 'asc',
+              }))
+            }
+            className="text-sm border border-neutral-200 rounded px-2 py-1.5 bg-white"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {clientSort?.by !== 'random' && (
+            <select
+              value={clientSort?.order ?? 'asc'}
+              onChange={(e) =>
+                setClientSort((prev) =>
+                  prev ? { ...prev, order: e.target.value as ClientSortOrder } : null
+                )
+              }
+              className="text-sm border border-neutral-200 rounded px-2 py-1.5 bg-white"
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          )}
+        </div>
+        <p className="text-xs text-neutral-400 mt-1">
+          How images appear in the client gallery. Random uses the same shuffle as the homepage carousel.
+        </p>
       </div>
 
       {sections.length === 0 ? (
@@ -331,21 +384,19 @@ export function SectionManager({ galleryId, images, initialSections, onUpdate }:
         </div>
       )}
 
-      {/* Save button */}
-      {sections.length > 0 && (
-        <div className="mt-4 flex items-center gap-3">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
-          >
-            {saving ? 'Saving...' : 'Save Sections'}
-          </button>
-          <span className="text-xs text-neutral-400">
-            {unassignedImages.length} unassigned {unassignedImages.length === 1 ? 'image' : 'images'}
-          </span>
-        </div>
-      )}
+      {/* Save button - always show so deleting all sections can be persisted */}
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
+        >
+          {saving ? 'Saving...' : 'Save Sections'}
+        </button>
+        <span className="text-xs text-neutral-400">
+          {unassignedImages.length} unassigned {unassignedImages.length === 1 ? 'image' : 'images'}
+        </span>
+      </div>
     </div>
   );
 }

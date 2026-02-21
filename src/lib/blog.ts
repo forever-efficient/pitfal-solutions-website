@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
-import html from 'remark-html';
+import remarkRehype from 'remark-rehype';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeStringify from 'rehype-stringify';
 import { BLOG_CATEGORIES } from '@/lib/constants';
 
 const BLOG_DIR = path.join(process.cwd(), 'content/blog');
@@ -80,7 +82,11 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   const raw = fs.readFileSync(path.join(BLOG_DIR, file), 'utf-8');
   const { data, content: rawContent } = matter(raw);
 
-  const result = await remark().use(html).process(rawContent);
+  const result = await remark()
+    .use(remarkRehype)
+    .use(rehypeSanitize)
+    .use(rehypeStringify)
+    .process(rawContent);
 
   return {
     slug,

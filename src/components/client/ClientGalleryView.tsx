@@ -679,27 +679,25 @@ interface ImageGridProps {
 
 function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, requiresPassword }: ImageGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
       {images.map((image) => {
         const globalIndex = imageIndexMap.get(image.key) ?? 0;
         return (
           <div
             key={image.key}
-            className="relative group rounded-lg overflow-hidden"
+            className="relative group rounded-lg overflow-hidden break-inside-avoid mb-4"
           >
             <button
               onClick={() => onImageClick(globalIndex)}
               className="block w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden text-left relative"
             >
-              <div className="relative bg-neutral-200 rounded-lg overflow-hidden aspect-video z-0">
+              <div className="relative bg-neutral-200 rounded-lg overflow-hidden min-h-[200px] z-0">
                 {/* Using standard img tag with z-index fixes that resolved visibility issues */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={getImageUrl(image.key)}
+                  src={getImageUrl(image.key, 'lg')}
                   alt={image.alt || `Photo ${globalIndex + 1}`}
-                  width={640}
-                  height={480}
-                  className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 relative z-10"
+                  className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300 relative z-10"
                   loading="eager"
                 />
               </div>

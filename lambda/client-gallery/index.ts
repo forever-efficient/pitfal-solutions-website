@@ -11,7 +11,8 @@ import {
   corsResponse,
 } from '../shared/response';
 import { parseAuthToken } from '../shared/session';
-import { generatePresignedDownloadUrl, objectExists } from '../shared/s3';
+import { generatePresignedDownloadUrl, objectExists, getObjectSize } from '../shared/s3';
+import { shuffleArray } from '../shared/array';
 
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
@@ -97,6 +98,14 @@ interface GallerySection {
   images: string[];
 }
 
+type ClientSortBy = 'name' | 'date' | 'size' | 'random';
+type ClientSortOrder = 'asc' | 'desc';
+
+interface ClientSort {
+  by: ClientSortBy;
+  order?: ClientSortOrder;
+}
+
 interface GalleryRecord {
   id: string;
   title: string;
@@ -104,8 +113,8 @@ interface GalleryRecord {
   images: Array<{ key: string; alt?: string }>;
   heroImage?: string;
   sections?: GallerySection[];
+  clientSort?: ClientSort;
   category: string;
-  type: string;
   heroFocalPoint?: { x: number; y: number };
   heroZoom?: number;
   heroGradientOpacity?: number;
@@ -178,6 +187,55 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   return methodNotAllowed(undefined, requestOrigin);
 };
 
+function getFilename(key: string): string {
+  return key.split('/').pop() || key;
+}
+
+async function applyClientSort(
+  images: Array<{ key: string; alt?: string }>,
+  sort: ClientSort,
+  bucket: string
+): Promise<Array<{ key: string; alt?: string }>> {
+  if (!images.length) return images;
+
+  const keyToIndex = new Map<string, number>();
+  images.forEach((img, i) => keyToIndex.set(img.key, i));
+
+  if (sort.by === 'random') {
+    return shuffleArray(images);
+  }
+
+  const order = sort.order ?? 'asc';
+  const mult = order === 'asc' ? 1 : -1;
+
+  if (sort.by === 'name') {
+    return [...images].sort((a, b) => {
+      const na = getFilename(a.key).toLowerCase();
+      const nb = getFilename(b.key).toLowerCase();
+      return mult * na.localeCompare(nb);
+    });
+  }
+
+  if (sort.by === 'date') {
+    return [...images].sort((a, b) => {
+      const ia = keyToIndex.get(a.key) ?? 0;
+      const ib = keyToIndex.get(b.key) ?? 0;
+      return mult * (ia - ib);
+    });
+  }
+
+  if (sort.by === 'size') {
+    const sizes = await Promise.all(
+      images.map(async (img) => ({ img, size: await getObjectSize(bucket, img.key) }))
+    );
+    return sizes
+      .sort((a, b) => mult * (a.size - b.size))
+      .map(({ img }) => img);
+  }
+
+  return images;
+}
+
 async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigin?: string) {
   const gallery = await getItem<GalleryRecord>({
     TableName: GALLERIES_TABLE,
@@ -198,23 +256,54 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
     ScanIndexForward: true,
   });
 
-  log('INFO', 'Gallery fetched', ctx, { imageCount: gallery.images?.length || 0, commentCount: comments.length });
+  let images = gallery.images || [];
+  let sections = gallery.sections || [];
+
+  if (gallery.clientSort && images.length > 0 && MEDIA_BUCKET) {
+    const keyToImg = new Map(images.map((img) => [img.key, img]));
+
+    if (sections.length > 0) {
+      const assignedKeys = new Set(sections.flatMap((s) => s.images));
+      const sortedSections: GallerySection[] = [];
+      const sortedImages: Array<{ key: string; alt?: string }> = [];
+
+      for (const section of sections) {
+        const sectionImgs = section.images
+          .map((k) => keyToImg.get(k))
+          .filter((x): x is { key: string; alt?: string } => x !== undefined);
+        const sorted = await applyClientSort(sectionImgs, gallery.clientSort, MEDIA_BUCKET);
+        sortedSections.push({ ...section, images: sorted.map((i) => i.key) });
+        sortedImages.push(...sorted);
+      }
+
+      const unassigned = images.filter((img) => !assignedKeys.has(img.key));
+      const sortedUnassigned = await applyClientSort(unassigned, gallery.clientSort, MEDIA_BUCKET);
+      sortedImages.push(...sortedUnassigned);
+
+      sections = sortedSections;
+      images = sortedImages;
+    } else {
+      images = await applyClientSort(images, gallery.clientSort, MEDIA_BUCKET);
+    }
+  }
+
+  log('INFO', 'Gallery fetched', ctx, { imageCount: images.length, commentCount: comments.length });
 
   return success({
     gallery: {
       id: gallery.id,
       title: gallery.title,
       description: gallery.description,
-      images: gallery.images,
+      images,
       heroImage: gallery.heroImage || null,
-      sections: gallery.sections || [],
+      sections,
       category: gallery.category,
       heroFocalPoint: gallery.heroFocalPoint,
       heroZoom: gallery.heroZoom,
       heroGradientOpacity: gallery.heroGradientOpacity,
       heroHeight: gallery.heroHeight,
     },
-    comments: comments.map(c => ({
+    comments: comments.map((c) => ({
       id: c.commentId,
       imageKey: c.imageKey,
       author: c.author,
@@ -247,6 +336,20 @@ async function handleAddComment(
 
   if (body.author.length > 100) {
     return badRequest('Author name must be less than 100 characters', requestOrigin);
+  }
+
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE,
+    Key: { id: galleryId },
+  });
+
+  if (!gallery) {
+    return notFound('Gallery not found', requestOrigin);
+  }
+
+  const imageExists = gallery.images?.some(img => img.key === body.imageKey);
+  if (!imageExists) {
+    return badRequest('Image not found in gallery', requestOrigin);
   }
 
   const commentId = randomUUID();

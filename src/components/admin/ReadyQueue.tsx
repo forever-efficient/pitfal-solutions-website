@@ -22,6 +22,7 @@ interface GalleryOption {
 interface ReadyQueueProps {
   galleryId?: string;
   onAssigned?: () => void;
+  refreshKey?: number;
 }
 
 const PAGE_SIZE = 10;
@@ -39,12 +40,13 @@ function formatBytes(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
+export function ReadyQueue({ galleryId, onAssigned, refreshKey }: ReadyQueueProps) {
   const { showError, showSuccess } = useToast();
   const [images, setImages] = useState<ReadyImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [imagePage, setImagePage] = useState(0);
 
@@ -67,7 +69,7 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
 
   useEffect(() => {
     fetchReady();
-  }, [fetchReady]);
+  }, [fetchReady, refreshKey]);
 
   // Pre-select gallery if provided via prop
   useEffect(() => {
@@ -152,6 +154,21 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
       showError('Failed to assign images');
     } finally {
       setAssigning(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (selected.size === 0) return;
+    setDeleting(true);
+    try {
+      const result = await adminImages.deleteFromReady(Array.from(selected));
+      showSuccess(`Deleted ${result.deleted} image(s)`);
+      setSelected(new Set());
+      fetchReady();
+    } catch {
+      showError('Failed to delete images');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -255,6 +272,14 @@ export function ReadyQueue({ galleryId, onAssigned }: ReadyQueueProps) {
           {/* Assign controls */}
           {selected.size > 0 && (
             <div className="flex items-start gap-3 pt-2">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {deleting ? 'Deleting...' : `Delete ${selected.size} Selected`}
+              </button>
+
               {/* Gallery picker */}
               <div className="relative flex-1 max-w-sm" ref={pickerRef}>
                 <button

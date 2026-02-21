@@ -221,7 +221,6 @@ describe('Client Auth Lambda Handler', () => {
       mockGetItem.mockImplementation(async () => ({
         id: 'g1',
         title: 'Test Gallery',
-        type: 'client',
         // No passwordHash — cannot POST-login a public gallery
       }));
       const result = await handler(
@@ -236,7 +235,6 @@ describe('Client Auth Lambda Handler', () => {
         id: 'g1',
         passwordHash: '$2a$10$existinghash',
         title: 'My Gallery',
-        type: 'client',
       }));
       mockCompare.mockImplementation(async () => false);
       const result = await handler(
@@ -253,7 +251,7 @@ describe('Client Auth Lambda Handler', () => {
         id: 'g1',
         passwordHash: '$2a$10$existinghash',
         title: 'Wedding Photos',
-        type: 'client',
+        passwordHash: '$2a$10$hash',
       }));
       mockCompare.mockImplementation(async () => true);
 
@@ -289,7 +287,6 @@ describe('Client Auth Lambda Handler', () => {
         id: 'g1',
         passwordHash: '$2a$10$hash',
         title: 'My Gallery',
-        type: 'client',
       }));
       mockCompare.mockImplementation(async () => true);
 
@@ -370,7 +367,7 @@ describe('Client Auth Lambda Handler', () => {
       const tokenForA = makeToken('galleryA', 'Gallery A');
       mockParseAuthToken.mockImplementation(() => tokenForA);
       // Gallery B has no password
-      mockGetItem.mockImplementation(async () => ({ id: 'galleryB', title: 'Gallery B', type: 'portfolio' }));
+      mockGetItem.mockImplementation(async () => ({ id: 'galleryB', title: 'Gallery B' }));
 
       const result = await handler(
         createEvent({ httpMethod: 'GET', queryStringParameters: { galleryId: 'galleryB' } }),
@@ -390,7 +387,6 @@ describe('Client Auth Lambda Handler', () => {
       mockGetItem.mockImplementation(async () => ({
         id: 'galleryB',
         title: 'Gallery B',
-        type: 'client',
         passwordHash: '$2a$10$hash',
       }));
 
@@ -408,7 +404,6 @@ describe('Client Auth Lambda Handler', () => {
         mockGetItem.mockImplementation(async () => ({
           id: 'g1',
           title: 'Family Session',
-          type: 'portfolio',
         }));
 
         const result = await handler(
@@ -435,7 +430,7 @@ describe('Client Auth Lambda Handler', () => {
       it('re-validates gallery when noPassword token is used (gallery still has no password)', async () => {
         const token = makeToken('g1', 'Gallery', true);
         mockParseAuthToken.mockImplementation(() => token);
-        mockGetItem.mockImplementation(async () => ({ id: 'g1', title: 'Gallery', type: 'portfolio' }));
+        mockGetItem.mockImplementation(async () => ({ id: 'g1', title: 'Gallery' }));
 
         const result = await handler(
           createEvent({ httpMethod: 'GET', queryStringParameters: { galleryId: 'g1' } }),
@@ -452,7 +447,6 @@ describe('Client Auth Lambda Handler', () => {
         mockGetItem.mockImplementation(async () => ({
           id: 'g1',
           title: 'Gallery',
-          type: 'client',
           passwordHash: '$2a$10$newpasswordhash',
         }));
 
@@ -471,7 +465,6 @@ describe('Client Auth Lambda Handler', () => {
         mockGetItem.mockImplementation(async () => ({
           id: 'g1',
           title: 'Client Gallery',
-          type: 'client',
           passwordHash: '$2a$10$hash',
         }));
 

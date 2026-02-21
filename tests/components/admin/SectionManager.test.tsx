@@ -106,15 +106,19 @@ describe('SectionManager', () => {
             images: ['finished/g1/one.jpg'],
           },
         ],
+        clientSort: { by: 'date', order: 'asc' },
       });
-      expect(onUpdate).toHaveBeenCalledWith([
-        {
-          id: 's1',
-          title: 'Ceremony',
-          description: 'Key moments',
-          images: ['finished/g1/one.jpg'],
-        },
-      ]);
+      expect(onUpdate).toHaveBeenCalledWith(
+        [
+          {
+            id: 's1',
+            title: 'Ceremony',
+            description: 'Key moments',
+            images: ['finished/g1/one.jpg'],
+          },
+        ],
+        { by: 'date', order: 'asc' }
+      );
       expect(screen.getByRole('alert')).toHaveTextContent('Sections saved');
     });
   });
@@ -140,8 +144,35 @@ describe('SectionManager', () => {
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith('g1', {
         sections: [{ id: 's1', title: 'A', images: [] }],
+        clientSort: { by: 'date', order: 'asc' },
       });
-      expect(onUpdate).toHaveBeenCalledWith([{ id: 's1', title: 'A', images: [] }]);
+      expect(onUpdate).toHaveBeenCalledWith(
+        [{ id: 's1', title: 'A', images: [] }],
+        { by: 'date', order: 'asc' }
+      );
+    });
+  });
+
+  it('persists when deleting all sections', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    renderManager({
+      initialSections: [{ id: 's1', title: 'Only Section', images: [] }],
+      onUpdate,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Delete section' }));
+    expect(screen.getByText('No sections yet. Add a section to organize your gallery images.')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Save Sections' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('g1', {
+        sections: [],
+        clientSort: { by: 'date', order: 'asc' },
+      });
+      expect(onUpdate).toHaveBeenCalledWith([], { by: 'date', order: 'asc' });
+      expect(screen.getByRole('alert')).toHaveTextContent('Sections saved');
     });
   });
 
@@ -157,6 +188,77 @@ describe('SectionManager', () => {
       expect(screen.getByRole('alert')).toHaveTextContent(
         'Failed to save sections'
       );
+    });
+  });
+
+  it('changes sort by and order via dropdowns', async () => {
+    const user = userEvent.setup();
+    renderManager({
+      initialSections: [{ id: 's1', title: 'Section', images: [] }],
+      initialClientSort: { by: 'date', order: 'asc' },
+    });
+
+    const sortBySelect = screen.getByDisplayValue('Date (upload order)');
+    await user.selectOptions(sortBySelect, 'name');
+    await user.selectOptions(screen.getByDisplayValue('Ascending'), 'desc');
+
+    await user.click(screen.getByRole('button', { name: 'Save Sections' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({
+        clientSort: { by: 'name', order: 'desc' },
+      }));
+    });
+  });
+
+  it('hides order dropdown when random is selected', async () => {
+    const user = userEvent.setup();
+    renderManager({
+      initialSections: [{ id: 's1', title: 'Section', images: [] }],
+    });
+
+    await user.selectOptions(screen.getByDisplayValue('Date (upload order)'), 'random');
+    expect(screen.queryByDisplayValue('Ascending')).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue('Descending')).not.toBeInTheDocument();
+  });
+
+  it('moves section up and down', async () => {
+    const user = userEvent.setup();
+    renderManager({
+      initialSections: [
+        { id: 's1', title: 'First', images: [] },
+        { id: 's2', title: 'Second', images: [] },
+      ],
+    });
+
+    const moveDownButtons = screen.getAllByRole('button', { name: 'Move down' });
+    await user.click(moveDownButtons[0]!);
+    await user.click(screen.getByRole('button', { name: 'Save Sections' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({
+        sections: [
+          { id: 's2', title: 'Second', images: [] },
+          { id: 's1', title: 'First', images: [] },
+        ],
+      }));
+    });
+  });
+
+  it('removes image from section', async () => {
+    const user = userEvent.setup();
+    renderManager({
+      initialSections: [{ id: 's1', title: 'Ceremony', images: ['finished/g1/one.jpg'] }],
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Expand' }));
+    await user.click(screen.getByRole('button', { name: 'Remove from section' }));
+    await user.click(screen.getByRole('button', { name: 'Save Sections' }));
+
+    await waitFor(() => {
+      expect(mockUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({
+        sections: [{ id: 's1', title: 'Ceremony', images: [] }],
+      }));
     });
   });
 

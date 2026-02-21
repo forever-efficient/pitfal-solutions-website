@@ -20,7 +20,6 @@ import { writeFile, readFile, unlink, mkdir } from 'fs/promises';
 import { join, basename, extname } from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { randomUUID } from 'crypto';
 import { applyProfessionalEdits } from './editor';
 
 const execFileAsync = promisify(execFile);
@@ -118,8 +117,7 @@ async function processRawImage(
 ): Promise<string> {
   const fileName = basename(key);
   const nameWithoutExt = basename(fileName, extname(fileName));
-  const uuid = randomUUID().slice(0, 8);
-  const outputFileName = `${uuid}-${nameWithoutExt}.jpg`;
+  const outputFileName = `${nameWithoutExt}.jpg`;
   const readyKey = `${READY_PREFIX}${outputFileName}`;
 
   const tmpDir = `/tmp/${Date.now()}`;
@@ -184,8 +182,7 @@ async function processJpegImage(
 ): Promise<string> {
   const fileName = basename(key);
   const nameWithoutExt = basename(fileName, extname(fileName));
-  const uuid = randomUUID().slice(0, 8);
-  const outputFileName = `${uuid}-${nameWithoutExt}.jpg`;
+  const outputFileName = `${nameWithoutExt}.jpg`;
   const readyKey = `${READY_PREFIX}${outputFileName}`;
 
   // Download JPEG

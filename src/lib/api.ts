@@ -38,6 +38,14 @@ export interface GallerySection {
   images: string[];
 }
 
+export type ClientSortBy = 'name' | 'date' | 'size' | 'random';
+export type ClientSortOrder = 'asc' | 'desc';
+
+export interface ClientSort {
+  by: ClientSortBy;
+  order?: ClientSortOrder;
+}
+
 export interface BulkDownloadResult {
   downloads: Array<{
     key: string;
@@ -264,7 +272,6 @@ export const adminGalleries = {
         id: string;
         title: string;
         category: string;
-        type: string;
         slug: string;
         imageCount: number;
         sectionCount: number;
@@ -282,11 +289,11 @@ export const adminGalleries = {
         title: string;
         description?: string;
         category: string;
-        type: string;
         slug: string;
         images: Array<{ key: string; alt?: string }>;
         heroImage?: string;
         sections?: GallerySection[];
+        clientSort?: ClientSort;
         featured?: boolean;
         passwordEnabled?: boolean;
         heroFocalPoint?: { x: number; y: number };
@@ -302,7 +309,6 @@ export const adminGalleries = {
     title: string;
     description?: string;
     category: string;
-    type?: string;
     slug: string;
     password?: string;
     featured?: boolean;
@@ -314,7 +320,6 @@ export const adminGalleries = {
         id: string;
         title: string;
         category: string;
-        type: string;
         slug: string;
         createdAt: string;
         updatedAt: string;
@@ -330,12 +335,12 @@ export const adminGalleries = {
       title?: string;
       description?: string;
       category?: string;
-      type?: string;
       slug?: string;
       featured?: boolean;
       images?: Array<{ key: string; alt?: string }>;
       heroImage?: string | null;
       sections?: GallerySection[];
+      clientSort?: ClientSort | null;
       password?: string;
       heroFocalPoint?: { x: number; y: number } | null;
       heroZoom?: number | null;
@@ -368,10 +373,10 @@ export const adminGalleries = {
 // =============================================================================
 
 export const adminImages = {
-  getUploadUrl: (galleryId: string, filename: string, contentType: string, isRaw = false) =>
+  getUploadUrl: (filename: string, contentType: string) =>
     request<{ uploadUrl: string; key: string }>('/api/admin/images', {
       method: 'POST',
-      body: JSON.stringify({ galleryId, filename, contentType, isRaw }),
+      body: JSON.stringify({ filename, contentType }),
     }),
 
   updateAlt: (imageKey: string, galleryId: string, alt: string) =>
@@ -405,6 +410,12 @@ export const adminImages = {
         body: JSON.stringify({ keys, galleryId }),
       }
     ),
+
+  deleteFromReady: (keys: string[]) =>
+    request<{ deleted: number }>('/api/admin/images/ready', {
+      method: 'DELETE',
+      body: JSON.stringify({ keys }),
+    }),
 };
 
 // =============================================================================
@@ -481,7 +492,6 @@ type FeaturedResult = {
     id: string;
     title: string;
     category: string;
-    type: string;
     slug: string;
     coverImage: string | null;
     href: string;

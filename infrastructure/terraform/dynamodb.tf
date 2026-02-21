@@ -80,11 +80,6 @@ resource "aws_dynamodb_table" "galleries" {
   }
 
   attribute {
-    name = "type"
-    type = "S"
-  }
-
-  attribute {
     name = "createdAt"
     type = "S"
   }
@@ -98,14 +93,6 @@ resource "aws_dynamodb_table" "galleries" {
   global_secondary_index {
     name            = "category-index"
     hash_key        = "category"
-    range_key       = "createdAt"
-    projection_type = "ALL"
-  }
-
-  # GSI for querying by type (portfolio vs client)
-  global_secondary_index {
-    name            = "type-index"
-    hash_key        = "type"
     range_key       = "createdAt"
     projection_type = "ALL"
   }
