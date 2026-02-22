@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ArrowRightIcon, EyeIcon } from '@/components/icons';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
 import { publicGalleries } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
 
@@ -23,13 +24,23 @@ const STATIC_FALLBACKS: FeaturedItem[] = [
 
 export function FeaturedGallery() {
   const [featuredWork, setFeaturedWork] = useState<FeaturedItem[]>(STATIC_FALLBACKS);
+  const [serviceCards, setServiceCards] = useState<FeaturedItem[]>([
+    { id: 'v', title: 'Cinematic Video Production', category: 'videography', slug: '', coverImage: null },
+    { id: 'd', title: 'Aerial Photography & Videography', category: 'drone', slug: '', coverImage: null },
+    { id: 'a', title: 'Custom AI Solutions', category: 'ai', slug: '', coverImage: null },
+  ]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicGalleries.getFeatured()
-      .then(data => {
-        if (data.galleries.length > 0) {
-          setFeaturedWork(data.galleries.map(g => ({
+    Promise.all([
+      publicGalleries.getFeatured(),
+      publicGalleries.getByCategory('videography'),
+      publicGalleries.getByCategory('drone'),
+      publicGalleries.getByCategory('ai'),
+    ])
+      .then(([featured, videography, drone, ai]) => {
+        if (featured.galleries.length > 0) {
+          setFeaturedWork(featured.galleries.map(g => ({
             id: g.id,
             title: g.title,
             category: g.category,
@@ -37,7 +48,30 @@ export function FeaturedGallery() {
             coverImage: g.coverImage,
           })));
         }
-        // If no featured galleries, keep fallbacks
+        // Update service cards with first gallery from each category, or use fallback
+        setServiceCards([
+          {
+            id: videography.galleries[0]?.id || 'v',
+            title: videography.galleries[0]?.title || 'Cinematic Video Production',
+            category: 'videography',
+            slug: videography.galleries[0]?.slug || '',
+            coverImage: videography.galleries[0]?.coverImage || null,
+          },
+          {
+            id: drone.galleries[0]?.id || 'd',
+            title: drone.galleries[0]?.title || 'Aerial Photography & Videography',
+            category: 'drone',
+            slug: drone.galleries[0]?.slug || '',
+            coverImage: drone.galleries[0]?.coverImage || null,
+          },
+          {
+            id: ai.galleries[0]?.id || 'a',
+            title: ai.galleries[0]?.title || 'Custom AI Solutions',
+            category: 'ai',
+            slug: ai.galleries[0]?.slug || '',
+            coverImage: ai.galleries[0]?.coverImage || null,
+          },
+        ]);
       })
       .catch(() => {
         // Keep static fallbacks on error
@@ -64,45 +98,89 @@ export function FeaturedGallery() {
 
         {/* Gallery grid */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="aspect-[4/3] bg-neutral-200 rounded-2xl animate-pulse" />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="aspect-[4/3] bg-neutral-200 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mt-6 lg:mt-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="aspect-[4/3] bg-neutral-200 rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          </>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {featuredWork.map((item) => (
-              <Link
-                key={item.id}
-                href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
-                className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
-              >
-                {item.coverImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={getImageUrl(item.coverImage, 'md')}
-                    alt={`${item.title} preview`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage!); }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
-                    {item.category}
-                  </span>
-                  <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
-                    {item.title}
-                  </h3>
-                </div>
-                <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
-                  <EyeIcon size={24} className="text-neutral-900" />
-                </div>
-              </Link>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-6 lg:mb-8">
+              {featuredWork.map((item) => (
+                <Link
+                  key={item.id}
+                  href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
+                  className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  {item.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={getImageUrl(item.coverImage, 'md')}
+                      alt={`${item.title} preview`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage!); }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
+                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                    <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
+                      {item.category}
+                    </span>
+                    <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
+                      {item.title}
+                    </h3>
+                  </div>
+                  <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
+                    <EyeIcon size={24} className="text-neutral-900" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Service cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {serviceCards.map((item) => {
+                const categoryInfo = PORTFOLIO_CATEGORIES[item.category as keyof typeof PORTFOLIO_CATEGORIES];
+                const fallbackImage = categoryInfo?.image || 'site/portfolio-videography.jpg';
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.slug ? `/portfolio/${item.category}/${item.slug}` : `/portfolio/${item.category}`}
+                    className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getImageUrl(item.coverImage || fallbackImage, 'md')}
+                      alt={`${item.title} preview`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage || fallbackImage); }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
+                    <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                      <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">
+                        {item.category}
+                      </span>
+                      <h3 className="text-white font-bold text-xl lg:text-2xl leading-tight">
+                        {item.title}
+                      </h3>
+                    </div>
+                    <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md">
+                      <EyeIcon size={24} className="text-neutral-900" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* View all CTA */}

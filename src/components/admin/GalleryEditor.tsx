@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
 import { useToast } from './Toast';
 
 interface GalleryEditorProps {
@@ -92,9 +93,9 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
             onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
           >
-            <option value="brands">Brands</option>
-            <option value="portraits">Portraits</option>
-            <option value="events">Events</option>
+            {Object.entries(PORTFOLIO_CATEGORIES).map(([key, info]) => (
+              <option key={key} value={key}>{info.title}</option>
+            ))}
           </select>
         </div>
       </div>

@@ -346,6 +346,24 @@ export const PORTFOLIO_CATEGORIES = {
     description: 'Corporate events, weddings, and special occasions',
     image: 'site/portfolio-events.jpg',
   },
+  videography: {
+    slug: 'videography',
+    title: 'Videography',
+    description: 'Brand films, event videography, and social media reels',
+    image: 'site/portfolio-videography.jpg',
+  },
+  drone: {
+    slug: 'drone',
+    title: 'Commercial Drone',
+    description: 'FAA-compliant aerial photography and videography',
+    image: 'site/portfolio-drone.jpg',
+  },
+  ai: {
+    slug: 'ai',
+    title: 'AI & Software',
+    description: 'Custom AI integrations and software development',
+    image: 'site/portfolio-ai.jpg',
+  },
 } as const;
 
 export type PortfolioCategorySlug = keyof typeof PORTFOLIO_CATEGORIES;

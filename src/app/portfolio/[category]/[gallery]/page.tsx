@@ -3,7 +3,7 @@ import { GalleryPageClient } from './GalleryPageClient';
 // At build time, fetch gallery slugs from the API to pre-render known pages.
 // Newly created galleries are accessible via SPA routing (CloudFront SPA fallback).
 export async function generateStaticParams() {
-  const CATEGORIES = ['brands', 'portraits', 'events'];
+  const CATEGORIES = ['brands', 'portraits', 'events', 'videography', 'drone', 'ai'];
   const baseUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     'https://ei1btpxkmb.execute-api.us-west-2.amazonaws.com/prod';

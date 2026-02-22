@@ -18,7 +18,7 @@ interface CategoryWithCount {
 }
 
 export default function PortfolioPage() {
-  const [categories, setCategories] = useState<CategoryWithCount[]>([
+  const [photographyCategories, setPhotographyCategories] = useState<CategoryWithCount[]>([
     {
       slug: PORTFOLIO_CATEGORIES.brands.slug,
       title: PORTFOLIO_CATEGORIES.brands.title,
@@ -42,17 +42,50 @@ export default function PortfolioPage() {
     },
   ]);
 
+  const [serviceCategories, setServiceCategories] = useState<CategoryWithCount[]>([
+    {
+      slug: PORTFOLIO_CATEGORIES.videography.slug,
+      title: PORTFOLIO_CATEGORIES.videography.title,
+      description: PORTFOLIO_CATEGORIES.videography.description,
+      image: PORTFOLIO_CATEGORIES.videography.image,
+      count: 0,
+    },
+    {
+      slug: PORTFOLIO_CATEGORIES.drone.slug,
+      title: PORTFOLIO_CATEGORIES.drone.title,
+      description: PORTFOLIO_CATEGORIES.drone.description,
+      image: PORTFOLIO_CATEGORIES.drone.image,
+      count: 0,
+    },
+    {
+      slug: PORTFOLIO_CATEGORIES.ai.slug,
+      title: PORTFOLIO_CATEGORIES.ai.title,
+      description: PORTFOLIO_CATEGORIES.ai.description,
+      image: PORTFOLIO_CATEGORIES.ai.image,
+      count: 0,
+    },
+  ]);
+
   useEffect(() => {
     // Fetch counts for each category in parallel
     Promise.all([
       publicGalleries.getByCategory('brands'),
       publicGalleries.getByCategory('portraits'),
       publicGalleries.getByCategory('events'),
-    ]).then(([brands, portraits, events]) => {
-      setCategories(prev => prev.map(cat => {
+      publicGalleries.getByCategory('videography'),
+      publicGalleries.getByCategory('drone'),
+      publicGalleries.getByCategory('ai'),
+    ]).then(([brands, portraits, events, videography, drone, ai]) => {
+      setPhotographyCategories(prev => prev.map(cat => {
         if (cat.slug === 'brands') return { ...cat, count: brands.galleries.length };
         if (cat.slug === 'portraits') return { ...cat, count: portraits.galleries.length };
         if (cat.slug === 'events') return { ...cat, count: events.galleries.length };
+        return cat;
+      }));
+      setServiceCategories(prev => prev.map(cat => {
+        if (cat.slug === 'videography') return { ...cat, count: videography.galleries.length };
+        if (cat.slug === 'drone') return { ...cat, count: drone.galleries.length };
+        if (cat.slug === 'ai') return { ...cat, count: ai.galleries.length };
         return cat;
       }));
     }).catch(() => {
@@ -73,22 +106,30 @@ export default function PortfolioPage() {
               Featured Projects
             </h1>
             <p className="text-xl text-neutral-600">
-              Explore past collection of photography and videography projects to see what the future can bring you.
+              Explore our collection of photography and videography projects to see what the future can bring you.
               Each gallery showcases the commitment to quality and creativity you will receive.
             </p>
           </div>
         </Container>
       </Section>
 
-      {/* Category grid */}
+      {/* Photography Section */}
       <Section size="lg" background="white">
         <Container>
+          <div className="mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
+              Photography
+            </h2>
+            <p className="text-neutral-600 text-lg">
+              Professional photography for every occasion
+            </p>
+          </div>
           <div
             className="grid md:grid-cols-3 gap-6 lg:gap-8"
             role="list"
-            aria-label="Portfolio categories"
+            aria-label="Photography categories"
           >
-            {categories.map((category) => (
+            {photographyCategories.map((category) => (
               <Link
                 key={category.slug}
                 href={`/portfolio/${category.slug}`}
@@ -118,9 +159,65 @@ export default function PortfolioPage() {
                     <ArrowRightIcon size={20} className="text-neutral-900" />
                   </div>
                 </article>
-                <h2 className="text-xl font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
+                <h3 className="text-xl font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
                   {category.title}
-                </h2>
+                </h3>
+                <p className="text-neutral-600 text-sm">{category.description}</p>
+              </Link>
+            ))}
+          </div>
+        </Container>
+      </Section>
+
+      {/* Services Section */}
+      <Section size="lg" background="light">
+        <Container>
+          <div className="mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
+              Services
+            </h2>
+            <p className="text-neutral-600 text-lg">
+              Additional services to complement your creative projects
+            </p>
+          </div>
+          <div
+            className="grid md:grid-cols-3 gap-6 lg:gap-8"
+            role="list"
+            aria-label="Service categories"
+          >
+            {serviceCategories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/portfolio/${category.slug}`}
+                className="group block"
+                role="listitem"
+                aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
+              >
+                <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
+                  <img
+                    src={getImageUrl(category.image)}
+                    alt={`${category.title} category preview`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  <div
+                    className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
+                    aria-hidden="true"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className="bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium px-3 py-1 rounded-full">
+                      {category.count} {category.count === 1 ? 'gallery' : 'galleries'}
+                    </span>
+                  </div>
+                  <div
+                    className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-100 scale-90"
+                    aria-hidden="true"
+                  >
+                    <ArrowRightIcon size={20} className="text-neutral-900" />
+                  </div>
+                </article>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
+                  {category.title}
+                </h3>
                 <p className="text-neutral-600 text-sm">{category.description}</p>
               </Link>
             ))}

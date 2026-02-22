@@ -7,6 +7,9 @@ export function generateStaticParams() {
     { category: 'brands' },
     { category: 'portraits' },
     { category: 'events' },
+    { category: 'videography' },
+    { category: 'drone' },
+    { category: 'ai' },
   ];
 }
 
