@@ -1238,7 +1238,6 @@ async function handlePublicGalleries(
     const featured = allGalleries
       .filter(g => g.featured)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 3)
       .map(g => ({
         id: g.id,
         title: g.title,

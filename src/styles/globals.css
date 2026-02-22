@@ -7,6 +7,7 @@
   /* Font tokens used by Tailwind's fontFamily config */
   --font-inter: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-cormorant: "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --background: 255 255 255;
   --foreground: 17 24 39;
   --muted: 243 244 246;

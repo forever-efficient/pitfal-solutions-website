@@ -32,46 +32,61 @@ export function FeaturedGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      publicGalleries.getFeatured(),
-      publicGalleries.getByCategory('videography'),
-      publicGalleries.getByCategory('drone'),
-      publicGalleries.getByCategory('ai'),
-    ])
-      .then(([featured, videography, drone, ai]) => {
-        if (featured.galleries.length > 0) {
-          setFeaturedWork(featured.galleries.map(g => ({
-            id: g.id,
-            title: g.title,
-            category: g.category,
-            slug: g.slug,
-            coverImage: g.coverImage,
-          })));
-        }
-        // Update service cards with first gallery from each category, or use fallback
-        setServiceCards([
-          {
-            id: videography.galleries[0]?.id || 'v',
-            title: videography.galleries[0]?.title || 'Cinematic Video Production',
-            category: 'videography',
-            slug: videography.galleries[0]?.slug || '',
-            coverImage: videography.galleries[0]?.coverImage || null,
-          },
-          {
-            id: drone.galleries[0]?.id || 'd',
-            title: drone.galleries[0]?.title || 'Aerial Photography & Videography',
-            category: 'drone',
-            slug: drone.galleries[0]?.slug || '',
-            coverImage: drone.galleries[0]?.coverImage || null,
-          },
-          {
-            id: ai.galleries[0]?.id || 'a',
-            title: ai.galleries[0]?.title || 'Custom AI Solutions',
-            category: 'ai',
-            slug: ai.galleries[0]?.slug || '',
-            coverImage: ai.galleries[0]?.coverImage || null,
-          },
-        ]);
+    publicGalleries.getFeatured()
+      .then((featured) => {
+        // --- 1. Top Row (Photography: Portraits, Brands, Events) ---
+        // Filter out only photography categories from all featured galleries
+        const photographyFeatured = featured.galleries.filter(g =>
+          ['portraits', 'brands', 'events'].includes(g.category)
+        );
+
+        // Map each photography slot to either a featured gallery OR the static fallback
+        const updatedFeatured = STATIC_FALLBACKS.map(fallback => {
+          const featuredForCategory = photographyFeatured.find(g => g.category === fallback.category);
+          if (featuredForCategory) {
+            return {
+              id: featuredForCategory.id,
+              title: featuredForCategory.title,
+              category: featuredForCategory.category,
+              slug: featuredForCategory.slug,
+              coverImage: featuredForCategory.coverImage,
+            };
+          }
+          return fallback;
+        });
+        setFeaturedWork(updatedFeatured);
+
+        // --- 2. Bottom Row (Services: Videography, Drone, AI) ---
+        // Map each service slot: 1. Featured of category, else 2. Static fallback
+        const updatedServiceCards = [
+          { category: 'videography', defaultTitle: 'Cinematic Video Production', defaultId: 'v' },
+          { category: 'drone', defaultTitle: 'Aerial Photography & Videography', defaultId: 'd' },
+          { category: 'ai', defaultTitle: 'Custom AI Solutions', defaultId: 'a' }
+        ].map(slot => {
+          // A: Is there a featured gallery for this service category?
+          const featuredForService = featured.galleries.find(g => g.category === slot.category);
+
+          if (featuredForService) {
+            return {
+              id: featuredForService.id,
+              title: featuredForService.title,
+              category: featuredForService.category,
+              slug: featuredForService.slug,
+              coverImage: featuredForService.coverImage,
+            };
+          }
+
+          // B: Ultimate fallback to static info (removed latestInCategory check)
+          return {
+            id: slot.defaultId,
+            title: slot.defaultTitle,
+            category: slot.category,
+            slug: '',
+            coverImage: null,
+          };
+        });
+
+        setServiceCards(updatedServiceCards);
       })
       .catch(() => {
         // Keep static fallbacks on error
@@ -154,7 +169,7 @@ export function FeaturedGallery() {
                 return (
                   <Link
                     key={item.id}
-                    href={item.slug ? `/portfolio/${item.category}/${item.slug}` : `/portfolio/${item.category}`}
+                    href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
                     className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

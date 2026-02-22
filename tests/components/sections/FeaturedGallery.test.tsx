@@ -3,10 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { FeaturedGallery } from '@/components/sections/FeaturedGallery';
 
 const mockGetFeatured = vi.hoisted(() => vi.fn());
+const mockGetByCategory = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api', () => ({
   publicGalleries: {
     getFeatured: mockGetFeatured,
+    getByCategory: mockGetByCategory,
   },
 }));
 
@@ -51,6 +53,9 @@ describe('FeaturedGallery', () => {
     mockGetFeatured.mockImplementation(() =>
       Promise.resolve({ galleries: MOCK_GALLERIES })
     );
+    mockGetByCategory.mockImplementation(() =>
+      Promise.resolve({ galleries: [] })
+    );
   });
 
   it('renders the section header', async () => {
@@ -82,22 +87,22 @@ describe('FeaturedGallery', () => {
   it('renders project links with correct hrefs', async () => {
     render(<FeaturedGallery />);
     await waitFor(() => {
-      const links = screen.getAllByRole('link');
-      const projectLinks = links.filter((link) => {
-        const href = link.getAttribute('href');
-        return href?.includes('/portfolio/') && href !== '/portfolio';
-      });
-      expect(projectLinks).toHaveLength(3);
+      expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
     });
 
     const links = screen.getAllByRole('link');
-    const projectLinks = links.filter((link) => {
+    // Featured work items use /portfolio/viewer?category=X&slug=Y
+    // Service cards use /portfolio/X or /portfolio/X/Y
+    // Find featured work links specifically
+    const featuredLinks = links.filter((link) => {
       const href = link.getAttribute('href');
-      return href?.includes('/portfolio/') && href !== '/portfolio';
+      return href?.includes('/portfolio/viewer?');
     });
-    expect(projectLinks[0]).toHaveAttribute('href', '/portfolio/viewer?category=brands&slug=tech-startup-rebrand');
-    expect(projectLinks[1]).toHaveAttribute('href', '/portfolio/viewer?category=events&slug=johnson-wedding');
-    expect(projectLinks[2]).toHaveAttribute('href', '/portfolio/viewer?category=portraits&slug=family-session');
+
+    expect(featuredLinks).toHaveLength(3);
+    expect(featuredLinks[0]).toHaveAttribute('href', '/portfolio/viewer?category=portraits&slug=family-session');
+    expect(featuredLinks[1]).toHaveAttribute('href', '/portfolio/viewer?category=brands&slug=tech-startup-rebrand');
+    expect(featuredLinks[2]).toHaveAttribute('href', '/portfolio/viewer?category=events&slug=johnson-wedding');
   });
 
   it('renders View Full Portfolio CTA', () => {
@@ -125,6 +130,7 @@ describe('FeaturedGallery', () => {
 
   it('shows static fallbacks on API error', async () => {
     mockGetFeatured.mockImplementation(() => Promise.reject(new Error('Network error')));
+    mockGetByCategory.mockImplementation(() => Promise.reject(new Error('Network error')));
     render(<FeaturedGallery />);
     await waitFor(() => {
       const skeletons = document.querySelectorAll('.animate-pulse');
@@ -139,7 +145,8 @@ describe('FeaturedGallery', () => {
       expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
     });
     const projectCards = document.querySelectorAll('.group');
-    expect(projectCards).toHaveLength(3);
+    // Now renders 3 featured work cards + 3 service cards = 6 total
+    expect(projectCards).toHaveLength(6);
     projectCards.forEach((card) => {
       expect(card.querySelector('svg')).toBeInTheDocument();
     });
@@ -162,5 +169,31 @@ describe('FeaturedGallery', () => {
         expect(img.onerror).toBeNull();
       }
     });
+  });
+
+  it('renders service cards when explicitly featured', async () => {
+    mockGetFeatured.mockImplementation(() =>
+      Promise.resolve({
+        galleries: [
+          ...MOCK_GALLERIES,
+          {
+            id: 'v1',
+            title: 'Studio Session',
+            category: 'videography',
+            slug: 'studio-session',
+            coverImage: 'gallery/v1/cover.jpg',
+          }
+        ]
+      })
+    );
+
+    render(<FeaturedGallery />);
+    await waitFor(() => {
+      expect(screen.getByText('Studio Session')).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    const links = screen.getAllByRole('link');
+    const studioLink = links.find(l => l.textContent?.includes('Studio Session'));
+    expect(studioLink).toHaveAttribute('href', '/portfolio/viewer?category=videography&slug=studio-session');
   });
 });

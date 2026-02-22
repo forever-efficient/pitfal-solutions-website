@@ -70,6 +70,7 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         display: ['var(--font-playfair)', 'Georgia', 'serif'],
+        accent: ['var(--font-cormorant)', 'Georgia', 'serif'],
       },
       spacing: {
         '18': '4.5rem',

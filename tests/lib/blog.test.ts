@@ -67,4 +67,137 @@ describe('lib/blog', () => {
     expect(getPostSlugs()).toEqual([]);
     expect(await getPost('style-guide')).toBeNull();
   });
+
+  it('handles missing featured property by defaulting to false', () => {
+    // Create a temporary post file without featured property
+    const testPostPath = '/test/blog/no-featured.mdx';
+    const testPostContent = `---
+title: No Featured Post
+description: Test post without featured
+date: 2024-01-01
+category: guides
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['no-featured.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const posts = getAllPosts();
+    expect(posts[0]?.featured).toBe(false);
+  });
+
+  it('handles missing coverImage property by setting undefined', () => {
+    const testPostPath = '/test/blog/no-image.mdx';
+    const testPostContent = `---
+title: Post No Image
+description: Test post without cover image
+date: 2024-01-01
+category: guides
+featured: true
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['no-image.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const posts = getAllPosts();
+    expect(posts[0]?.coverImage).toBeUndefined();
+  });
+
+  it('defaults to slug when post title is missing', () => {
+    const testPostContent = `---
+description: No title post
+date: 2024-01-01
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['no-title.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const posts = getAllPosts();
+    expect(posts[0]?.title).toBe('no-title');
+  });
+
+  it('defaults empty string for missing description', () => {
+    const testPostContent = `---
+title: No Description Post
+date: 2024-01-01
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['no-desc.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const posts = getAllPosts();
+    expect(posts[0]?.description).toBe('');
+  });
+
+  it('getPost defaults category to guides when missing', async () => {
+    const testPostContent = `---
+title: No Category Post
+description: Missing category
+date: 2024-01-01
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['no-cat.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const post = await getPost('no-cat');
+    expect(post?.category).toBe('guides');
+  });
+
+  it('getPost defaults featured to false when missing', async () => {
+    const testPostContent = `---
+title: Missing Featured
+description: Test
+date: 2024-01-01
+category: guides
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['missing-featured.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const post = await getPost('missing-featured');
+    expect(post?.featured).toBe(false);
+  });
+
+  it('getPost defaults coverImage to undefined when missing', async () => {
+    const testPostContent = `---
+title: Missing Cover
+description: Test
+date: 2024-01-01
+featured: true
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['missing-cover.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const post = await getPost('missing-cover');
+    expect(post?.coverImage).toBeUndefined();
+  });
+
+  it('getPost defaults date to empty string when missing', async () => {
+    const testPostContent = `---
+title: Missing Date
+description: Test
+---
+Test content`;
+
+    vi.spyOn(fs, 'existsSync').mockReturnValue(true);
+    vi.spyOn(fs, 'readdirSync').mockReturnValue(['missing-date.mdx']);
+    vi.spyOn(fs, 'readFileSync').mockReturnValue(testPostContent);
+
+    const post = await getPost('missing-date');
+    expect(post?.date).toBe('');
+  });
 });

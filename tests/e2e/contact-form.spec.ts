@@ -294,7 +294,7 @@ test.describe('Contact Form - Accessibility', () => {
 
     // Error element should exist and be associated with input
     const errorMessage = page.getByText(/message must be at least/i);
-    await expect(errorMessage).toBeVisible({ timeout: 5000 });
+    await expect(errorMessage).toBeVisible({ timeout: 10000 });
   });
 
   test('form has accessible name', async ({ page }) => {

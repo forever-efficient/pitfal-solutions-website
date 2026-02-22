@@ -302,7 +302,7 @@ describe('GalleryEditor', () => {
   it('renders category options', () => {
     renderEditor();
     const select = getCategorySelect();
-    expect(within(select).getByText('Brands')).toBeInTheDocument();
+    expect(within(select).getByText('Brand Photography')).toBeInTheDocument();
     expect(within(select).getByText('Portraits')).toBeInTheDocument();
     expect(within(select).getByText('Events')).toBeInTheDocument();
   });

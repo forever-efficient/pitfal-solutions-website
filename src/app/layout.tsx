@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Cormorant_Garamond } from 'next/font/google';
 import '@/styles/globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
@@ -6,6 +7,13 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { BUSINESS, SEO } from '@/lib/constants';
 import { LocalBusinessJsonLd } from '@/components/seo';
 import { SiteShell } from '@/components/layout/SiteShell';
+
+const cormorant = Cormorant_Garamond({
+  weight: ['400', '500', '600', '700'],
+  subsets: ['latin'],
+  variable: '--font-cormorant',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -80,7 +88,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-white font-sans text-neutral-900 antialiased">
+      <body className={`min-h-screen bg-white font-sans text-neutral-900 antialiased ${cormorant.variable}`}>
         <LocalBusinessJsonLd />
         {/* Skip to main content link for accessibility */}
         <a

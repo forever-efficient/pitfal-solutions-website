@@ -159,7 +159,7 @@ export function ContactForm() {
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6" aria-label="Contact form">
+          <form onSubmit={handleSubmit} className="space-y-6" aria-label="Contact form" noValidate>
             {/* Honeypot field - hidden from users, bots will fill this */}
             <input
               type="text"
