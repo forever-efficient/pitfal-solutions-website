@@ -130,10 +130,22 @@ describe('ClientGalleryView', () => {
     mockClientLogout.mockResolvedValue({ authenticated: false });
     mockClientGalleryGet.mockResolvedValue(galleryResponse);
     setBulkState();
+
+    // Mock IntersectionObserver
+    const mockIntersectionObserver = vi.fn();
+    mockIntersectionObserver.mockReturnValue({
+      observe: vi.fn(),
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    });
+    vi.stubGlobal('IntersectionObserver', mockIntersectionObserver);
+
+    // Mock scrollTo
+    vi.stubGlobal('scrollTo', vi.fn());
   });
 
   it('shows loading state before gallery fetch resolves', () => {
-    mockClientGalleryGet.mockReturnValue(new Promise(() => {}));
+    mockClientGalleryGet.mockReturnValue(new Promise(() => { }));
     render(<ClientGalleryView galleryId="g1" />);
     expect(screen.getByText('Loading gallery...')).toBeInTheDocument();
   });
@@ -159,7 +171,7 @@ describe('ClientGalleryView', () => {
     render(<ClientGalleryView galleryId="g1" initialTitle="Preview Title" />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Preview Title' })).toBeInTheDocument();
+      expect(screen.getByText('Preview Title')).toBeInTheDocument();
     });
 
     expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument();
@@ -189,10 +201,10 @@ describe('ClientGalleryView', () => {
     render(<ClientGalleryView galleryId="g1" requiresPassword={true} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Download All (4 images)' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Download All' })).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Download All (4 images)' }));
+    await user.click(screen.getByRole('button', { name: 'Download All' }));
     await user.click(screen.getByRole('button', { name: 'Full Size' }));
 
     expect(mockStartBulkDownload).toHaveBeenCalledWith(
@@ -206,7 +218,7 @@ describe('ClientGalleryView', () => {
     );
 
     const sectionButtons = screen.getAllByRole('button', {
-      name: 'Download section (2 images)',
+      name: 'Download Section',
     });
     await user.click(sectionButtons[0]!);
     await user.click(screen.getByRole('button', { name: 'Web Size' }));
@@ -266,7 +278,7 @@ describe('ClientGalleryView', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: 'Download All (4 images)' })
+        screen.getByRole('button', { name: 'Download All' })
       ).toHaveTextContent('Downloading 1 of 2');
     });
 

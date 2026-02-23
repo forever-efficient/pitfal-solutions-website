@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
 import { publicGalleries } from '@/lib/api';
@@ -90,18 +91,13 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
                 key={i}
                 className="h-[300px] w-[240px] flex-shrink-0 rounded-xl overflow-hidden"
               >
-                <img
+                <Image
                   src={getImageUrl(key, 'sm')}
                   alt="Recent work"
-                  className="w-full h-full object-cover"
                   width={240}
                   height={300}
-                  decoding="async"
-                  onError={(e) => {
-                    const img = e.currentTarget;
-                    img.onerror = null;
-                    img.src = getImageUrl(key);
-                  }}
+                  className="w-full h-full object-cover"
+                  unoptimized // External media keys
                 />
               </div>
             ))}

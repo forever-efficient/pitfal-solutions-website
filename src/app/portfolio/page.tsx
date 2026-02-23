@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { ArrowRightIcon } from '@/components/icons';
@@ -138,10 +139,13 @@ export default function PortfolioPage() {
                 aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
               >
                 <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  <img
+                  <Image
                     src={getImageUrl(category.image)}
                     alt={`${category.title} category preview`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover"
+                    priority={category.slug === 'brand-photography'}
                   />
                   <div
                     className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
@@ -194,10 +198,12 @@ export default function PortfolioPage() {
                 aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
               >
                 <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  <img
+                  <Image
                     src={getImageUrl(category.image)}
                     alt={`${category.title} category preview`}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
                   />
                   <div
                     className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"

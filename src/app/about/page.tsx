@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { HeartIcon, ShieldCheckIcon, UsersIcon } from '@/components/icons';
@@ -37,10 +38,13 @@ export default function AboutPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Photographer portrait */}
             <figure className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
-              <img
+              <Image
                 src={getImageUrl(SITE_IMAGES.about)}
                 alt={`Portrait of ${BUSINESS.name} founder`}
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+                priority
               />
             </figure>
 

@@ -8,6 +8,7 @@ import { getImageUrl } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
 import { DownloadButton } from './DownloadButton';
 import { useBulkDownload } from './useBulkDownload';
+import { ClientSectionNav } from './ClientSectionNav';
 
 interface GalleryImage {
   key: string;
@@ -49,6 +50,8 @@ export function ClientGalleryView({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const bulkDownload = useBulkDownload(galleryId);
 
   useEffect(() => {
@@ -65,6 +68,42 @@ export function ClientGalleryView({
       })
       .finally(() => setLoading(false));
   }, [galleryId]);
+
+  // Scroll spy for section navigation
+  useEffect(() => {
+    if (!gallery?.sections || gallery.sections.length === 0) return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '-10% 0px -80% 0px',
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSectionId(entry.target.id.replace('section-', ''));
+        }
+      });
+    }, observerOptions);
+
+    const sectionElements = document.querySelectorAll('[id^="section-"]');
+    sectionElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [gallery?.sections, loading]);
+
+  const toggleSectionCollapse = (sectionId: string) => {
+    setCollapsedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
 
   const handleLogout = async () => {
     await clientAuth.logout();
@@ -163,7 +202,7 @@ export function ClientGalleryView({
                 priority
               />
             </Link>
-            <h1 className="font-display text-xl font-bold text-neutral-900 hidden sm:block">
+            <h1 className="font-display text-xl font-bold text-neutral-900">
               {initialTitle || gallery.title}
             </h1>
           </div>
@@ -174,7 +213,6 @@ export function ClientGalleryView({
             {requiresPassword && gallery.images.length > 0 && !gallery.heroImage && (
               <BulkDownloadButton
                 label="Download All"
-                total={gallery.images.length}
                 isDownloading={bulkDownload.isDownloading}
                 progress={bulkDownload.progress}
                 error={bulkDownload.error}
@@ -200,6 +238,25 @@ export function ClientGalleryView({
         </div>
       </div>
 
+      {/* Dynamic Section Navigation (Scroll-spy) */}
+      {hasSections && (
+        <div className="sticky top-16 md:top-20 z-30 bg-white/80 backdrop-blur-md border-b border-neutral-200">
+          <div className="max-w-7xl mx-auto px-4">
+            <ClientSectionNav
+              sections={[
+                ...(gallery.sections || []),
+                ...(gallery.images.some(img => !new Set(gallery.sections?.flatMap(s => s.images) || []).has(img.key))
+                  ? [{ id: 'unassigned', title: 'Other Photos', images: [] }]
+                  : [])
+              ]}
+              activeId={activeSectionId}
+              onToggleCollapse={toggleSectionCollapse}
+              collapsedSections={collapsedSections}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Hero Image */}
       {gallery.heroImage && (() => {
         const focalX = gallery.heroFocalPoint?.x ?? 50;
@@ -209,59 +266,58 @@ export function ClientGalleryView({
         const heroHeight = gallery.heroHeight ?? 'md';
         const heightClass = heroHeight === 'sm' ? 'h-[35vh]' : heroHeight === 'lg' ? 'h-[75vh]' : 'h-[55vh]';
         return (
-        <div className={`relative w-full overflow-hidden bg-neutral-900 ${heightClass}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={getImageUrl(gallery.heroImage!)}
-            alt="Gallery Cover"
-            className="absolute inset-0 w-full h-full"
-            style={{
-              objectFit: 'cover',
-              objectPosition: `${focalX}% ${focalY}%`,
-              opacity: 0.9,
-              transform: zoom !== 1 ? `scale(${zoom})` : undefined,
-              transformOrigin: `${focalX}% ${focalY}%`,
-            }}
-          />
-          <div
-            className="absolute inset-0 bg-gradient-to-t from-black to-transparent"
-            style={{ opacity: gradientOpacity }}
-          />
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto flex items-end justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
-                {gallery.title}
-              </h2>
-              {gallery.category && (
-                <p className="text-lg opacity-90 capitalize">
-                  {gallery.category}
+          <div className={`relative w-full overflow-hidden bg-neutral-900 ${heightClass}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getImageUrl(gallery.heroImage!)}
+              alt="Gallery Cover"
+              className="absolute inset-0 w-full h-full"
+              style={{
+                objectFit: 'cover',
+                objectPosition: `${focalX}% ${focalY}%`,
+                opacity: 0.9,
+                transform: zoom !== 1 ? `scale(${zoom})` : undefined,
+                transformOrigin: `${focalX}% ${focalY}%`,
+              }}
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-black to-transparent"
+              style={{ opacity: gradientOpacity }}
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-8 text-white max-w-7xl mx-auto flex items-end justify-between gap-4 flex-wrap">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-display font-bold mb-2">
+                  {gallery.title}
+                </h2>
+                {gallery.category && (
+                  <p className="text-lg opacity-90 capitalize">
+                    {gallery.category}
+                  </p>
+                )}
+              </div>
+              {gallery.description && (
+                <p className="self-end text-base opacity-85 max-w-xs md:max-w-sm leading-relaxed">
+                  {gallery.description}
                 </p>
               )}
+              {requiresPassword && gallery.images.length > 0 && (
+                <BulkDownloadButton
+                  label="Download All"
+                  isDownloading={bulkDownload.isDownloading}
+                  progress={bulkDownload.progress}
+                  error={bulkDownload.error}
+                  onClearError={bulkDownload.clearError}
+                  onDownload={(size) =>
+                    bulkDownload.startBulkDownload(
+                      gallery.images.map((img) => img.key),
+                      size
+                    )
+                  }
+                  variant="hero"
+                />
+              )}
             </div>
-            {gallery.description && (
-              <p className="self-end text-base opacity-85 max-w-xs md:max-w-sm leading-relaxed">
-                {gallery.description}
-              </p>
-            )}
-            {requiresPassword && gallery.images.length > 0 && (
-              <BulkDownloadButton
-                label="Download All"
-                total={gallery.images.length}
-                isDownloading={bulkDownload.isDownloading}
-                progress={bulkDownload.progress}
-                error={bulkDownload.error}
-                onClearError={bulkDownload.clearError}
-                onDownload={(size) =>
-                  bulkDownload.startBulkDownload(
-                    gallery.images.map((img) => img.key),
-                    size
-                  )
-                }
-                variant="hero"
-              />
-            )}
           </div>
-        </div>
         );
       })()}
 
@@ -276,43 +332,66 @@ export function ClientGalleryView({
                 .filter((img): img is GalleryImage => img !== undefined);
 
               if (sectionImages.length === 0) return null;
+              const isCollapsed = collapsedSections.has(section.id);
 
               return (
-                <div key={section.id}>
+                <div key={section.id} id={`section-${section.id}`} className="scroll-mt-40">
                   <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-2xl font-display font-semibold text-neutral-900">
-                        {section.title}
-                      </h3>
-                      {section.description && (
-                        <p className="text-neutral-500 mt-1">
-                          {section.description}
-                        </p>
+                    <button
+                      onClick={() => toggleSectionCollapse(section.id)}
+                      className="group flex items-start gap-4 text-left hover:opacity-80 transition-opacity"
+                    >
+                      <div className="mt-1 p-1 rounded-md bg-neutral-100 group-hover:bg-neutral-200 transition-colors">
+                        <svg
+                          className={`w-5 h-5 text-neutral-500 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-display font-semibold text-neutral-900">
+                          {section.title}
+                        </h3>
+                        {section.description && (
+                          <p className="text-neutral-500 mt-1 max-w-2xl">
+                            {section.description}
+                          </p>
+                        )}
+                        <span className="text-sm text-neutral-400 mt-1 block">
+                          {sectionImages.length} {sectionImages.length === 1 ? 'photo' : 'photos'}
+                        </span>
+                      </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      {requiresPassword && (
+                        <BulkDownloadButton
+                          label="Download Section"
+                          isDownloading={bulkDownload.isDownloading}
+                          progress={bulkDownload.progress}
+                          error={bulkDownload.error}
+                          onClearError={bulkDownload.clearError}
+                          onDownload={(size) =>
+                            bulkDownload.startBulkDownload(section.images, size)
+                          }
+                          variant="section"
+                        />
                       )}
                     </div>
-                    {requiresPassword && (
-                      <BulkDownloadButton
-                        label="Download section"
-                        total={sectionImages.length}
-                        isDownloading={bulkDownload.isDownloading}
-                        progress={bulkDownload.progress}
-                        error={bulkDownload.error}
-                        onClearError={bulkDownload.clearError}
-                        onDownload={(size) =>
-                          bulkDownload.startBulkDownload(section.images, size)
-                        }
-                        variant="section"
-                      />
-                    )}
                   </div>
-                  <ImageGrid
-                    images={sectionImages}
-                    imageIndexMap={imageIndexMap}
-                    onImageClick={setLightboxIndex}
-                    comments={comments}
-                    galleryId={galleryId}
-                    requiresPassword={requiresPassword}
-                  />
+
+                  <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
+                    <ImageGrid
+                      images={sectionImages}
+                      imageIndexMap={imageIndexMap}
+                      onImageClick={setLightboxIndex}
+                      comments={comments}
+                      galleryId={galleryId}
+                      requiresPassword={requiresPassword}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -322,31 +401,51 @@ export function ClientGalleryView({
               const assignedKeys = new Set(gallery.sections?.flatMap(s => s.images) || []);
               const unassignedImages = gallery.images.filter(img => !assignedKeys.has(img.key));
 
-              if (unassignedImages.length > 0) {
-                return (
-                  <div>
-                    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-                      <h3 className="text-2xl font-display font-semibold text-neutral-900">
-                        Other Photos
-                      </h3>
-                      {requiresPassword && (
-                        <BulkDownloadButton
-                          label="Download section"
-                          total={unassignedImages.length}
-                          isDownloading={bulkDownload.isDownloading}
-                          progress={bulkDownload.progress}
-                          error={bulkDownload.error}
-                          onClearError={bulkDownload.clearError}
-                          onDownload={(size) =>
-                            bulkDownload.startBulkDownload(
-                              unassignedImages.map((img) => img.key),
-                              size
-                            )
-                          }
-                          variant="section"
-                        />
-                      )}
-                    </div>
+              const isCollapsed = collapsedSections.has('unassigned');
+              return (
+                <div id="section-unassigned" className="scroll-mt-40">
+                  <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                    <button
+                      onClick={() => toggleSectionCollapse('unassigned')}
+                      className="group flex items-start gap-4 text-left hover:opacity-80 transition-opacity"
+                    >
+                      <div className="mt-1 p-1 rounded-md bg-neutral-100 group-hover:bg-neutral-200 transition-colors">
+                        <svg
+                          className={`w-5 h-5 text-neutral-500 transition-transform duration-300 ${isCollapsed ? '-rotate-90' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-display font-semibold text-neutral-900">
+                          Other Photos
+                        </h3>
+                        <span className="text-sm text-neutral-400 mt-1 block">
+                          {unassignedImages.length} {unassignedImages.length === 1 ? 'photo' : 'photos'}
+                        </span>
+                      </div>
+                    </button>
+                    {requiresPassword && (
+                      <BulkDownloadButton
+                        label="Download Section"
+                        isDownloading={bulkDownload.isDownloading}
+                        progress={bulkDownload.progress}
+                        error={bulkDownload.error}
+                        onClearError={bulkDownload.clearError}
+                        onDownload={(size) =>
+                          bulkDownload.startBulkDownload(
+                            unassignedImages.map((img) => img.key),
+                            size
+                          )
+                        }
+                        variant="section"
+                      />
+                    )}
+                  </div>
+                  <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
                     <ImageGrid
                       images={unassignedImages}
                       imageIndexMap={imageIndexMap}
@@ -356,8 +455,8 @@ export function ClientGalleryView({
                       requiresPassword={requiresPassword}
                     />
                   </div>
-                );
-              }
+                </div>
+              );
               return null;
             })()}
           </div>
@@ -505,7 +604,6 @@ export function ClientGalleryView({
 
 interface BulkDownloadButtonProps {
   label: string;
-  total: number;
   isDownloading: boolean;
   progress: { current: number; total: number } | null;
   error: string | null;
@@ -516,7 +614,6 @@ interface BulkDownloadButtonProps {
 
 function BulkDownloadButton({
   label,
-  total,
   isDownloading,
   progress,
   error,
@@ -557,9 +654,8 @@ function BulkDownloadButton({
   const isHero = variant === 'hero';
   const menuContent = (
     <div
-      className={`absolute right-0 z-50 min-w-[160px] rounded-lg border border-neutral-200 bg-white shadow-xl overflow-hidden ${
-        isHero ? 'bottom-full mb-2 border-white/30 bg-neutral-900/95' : 'top-full mt-2'
-      }`}
+      className={`absolute right-0 z-50 min-w-[160px] rounded-lg border border-neutral-200 bg-white shadow-xl overflow-hidden ${isHero ? 'bottom-full mb-2 border-white/30 bg-neutral-900/95' : 'top-full mt-2'
+        }`}
       onClick={(e) => e.stopPropagation()}
     >
       <button
@@ -568,9 +664,8 @@ function BulkDownloadButton({
           onDownload('full');
           setShowMenu(false);
         }}
-        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-neutral-50 transition-colors ${
-          isHero ? 'text-white hover:bg-white/10' : 'text-neutral-700'
-        }`}
+        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 hover:bg-neutral-50 transition-colors ${isHero ? 'text-white hover:bg-white/10' : 'text-neutral-700'
+          }`}
       >
         <BulkDownloadIcon className={`w-4 h-4 shrink-0 ${isHero ? 'text-white/80' : 'text-neutral-500'}`} />
         <span>Full Size</span>
@@ -581,11 +676,10 @@ function BulkDownloadButton({
           onDownload('web');
           setShowMenu(false);
         }}
-        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 border-t transition-colors ${
-          isHero
-            ? 'border-white/20 text-white hover:bg-white/10'
-            : 'border-neutral-100 text-neutral-700 hover:bg-neutral-50'
-        }`}
+        className={`w-full px-4 py-2.5 text-left text-sm flex items-center gap-2 border-t transition-colors ${isHero
+          ? 'border-white/20 text-white hover:bg-white/10'
+          : 'border-neutral-100 text-neutral-700 hover:bg-neutral-50'
+          }`}
       >
         <WebSizeIcon className={`w-4 h-4 shrink-0 ${isHero ? 'text-white/80' : 'text-neutral-500'}`} />
         <span>Web Size</span>
@@ -607,7 +701,7 @@ function BulkDownloadButton({
         aria-expanded={showMenu}
         aria-haspopup="true"
         aria-live="polite"
-        aria-label={total > 0 ? `${label} (${total} images)` : label}
+        aria-label={label}
       >
         <BulkDownloadIcon className="w-4 h-4 shrink-0" />
         {isDownloading ? progressText : label}
