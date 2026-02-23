@@ -13,7 +13,7 @@ export default function ContactPage() {
   return (
     <>
       {/* Hero */}
-      <Section size="lg" className="pt-32 bg-neutral-50">
+      <Section size="md" className="pt-32 pb-8 md:pb-12 bg-neutral-50">
         <Container>
           <div className="max-w-3xl">
             <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
@@ -31,7 +31,7 @@ export default function ContactPage() {
       </Section>
 
       {/* Contact form section */}
-      <Section size="lg" background="white">
+      <Section size="md" background="white" className="pt-8 md:pt-12">
         <Container>
           <div className="grid lg:grid-cols-3 gap-12">
             {/* Form */}

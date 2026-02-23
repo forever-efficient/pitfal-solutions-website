@@ -218,17 +218,9 @@ describe('DashboardUploader', () => {
     renderUploader(onUploaded);
 
     // First file succeeds, second fails
-    let callCount = 0;
-    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) {
-        return Promise.resolve(new Response('OK', { status: 200 }));
-      }
-      // Reject, but handle it in the component
-      return new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Upload failed')), 10);
-      });
-    });
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(new Response('OK', { status: 200 }))
+      .mockRejectedValueOnce(new Error('Upload failed'));
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const files = [
@@ -239,7 +231,14 @@ describe('DashboardUploader', () => {
     await user.upload(input, files);
 
     await waitFor(() => {
-      expect(screen.getByText('photo1.jpg')).toBeInTheDocument();
+      // Check for success indicator for first file
+      const items = screen.getAllByRole('listitem');
+      const photo1Item = items.find(item => item.textContent?.includes('photo1.jpg'));
+      const photo2Item = items.find(item => item.textContent?.includes('photo2.jpg'));
+
+      expect(photo1Item).toBeInTheDocument();
+      expect(photo2Item).toBeInTheDocument();
+      expect(photo2Item).toHaveTextContent('Failed');
       expect(onUploaded).toHaveBeenCalled();
     }, { timeout: 3000 });
   });

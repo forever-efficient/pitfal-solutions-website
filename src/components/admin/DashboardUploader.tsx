@@ -48,7 +48,8 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
           });
           setFiles(prev => prev.map(e => e.id === id ? { ...e, status: 'done' } : e));
           anyUploaded = true;
-        } catch {
+        } catch (error) {
+          console.error('Upload failed for file:', file.name, error);
           setFiles(prev => prev.map(e => e.id === id ? { ...e, status: 'error' } : e));
         }
       }
@@ -71,9 +72,8 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          dragOver ? 'border-primary-400 bg-primary-50' : 'border-neutral-300'
-        }`}
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${dragOver ? 'border-primary-400 bg-primary-50' : 'border-neutral-300'
+          }`}
       >
         <input
           type="file"

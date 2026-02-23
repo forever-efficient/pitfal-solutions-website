@@ -227,9 +227,9 @@ export const COPY = {
     heroDescription: `At ${BUSINESS.name}, storytelling is a passion. Whether through a lens, a drone, or a line of code — it's all about creating work that resonates and inspires.`,
     philosophyTitle: 'The Philosophy',
     philosophy: [
-      "Photography is more than just capturing images—it's about preserving emotions, telling stories, and creating visual narratives that stand the test of time.",
-      `Based in ${BUSINESS.location.full}, ${BUSINESS.name} brings a unique perspective to every project. Combining technical excellence with creative vision ensures you get the highest quality when those fleeting moments are on the line.`,
-      "Whether it's a corporate brand shoot, an intimate portrait session, or documenting a special event, the same level of dedication and artistry is brought to every project.",
+      "Excellence is built at the intersection of technical precision and creative vision. Whether the project involves a camera, a drone, or a line of code, the focus remains on delivering high-impact solutions that stand the test of time.",
+      `Based in ${BUSINESS.location.full}, ${BUSINESS.name} brings a unique perspective to every engagement. Whether through photography, videography, or aerial drone work, combining professional expertise with a dedicated eye ensures the highest quality across all media.`,
+      "Beyond the lens, the gap between vision and reality is bridged through custom AI services and software development. The same level of artistry and deliberate execution is brought to every project, ensuring both fleeting moments and complex business needs are met with excellence.",
     ],
     valuesTitle: 'Core Values',
     valuesDescription:
@@ -251,7 +251,7 @@ export const COPY = {
     {
       title: 'Connection',
       description:
-        'We build relationships with our clients, understanding their vision and creating a comfortable environment for the best results.',
+        'Relationships are built on understanding the client vision and creating a comfortable environment for the best results.',
     },
   ],
 } as const;

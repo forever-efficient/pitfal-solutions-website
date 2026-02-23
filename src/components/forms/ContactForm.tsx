@@ -140,8 +140,8 @@ export function ContactForm() {
   };
 
   return (
-    <Card variant="outlined">
-      <CardContent className="p-6 md:p-8">
+    <Card variant="outlined" padding="none">
+      <CardContent className="pt-4 px-6 pb-6 md:pt-5 md:px-8 md:pb-8">
         {status === 'success' ? (
           <div className="text-center py-8">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

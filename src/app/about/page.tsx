@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { HeartIcon, ShieldCheckIcon, UsersIcon } from '@/components/icons';
-import { BUSINESS, PAGE_META, SITE_IMAGES } from '@/lib/constants';
+import { BUSINESS, COPY, PAGE_META, SITE_IMAGES } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -22,11 +22,10 @@ export default function AboutPage() {
               About
             </p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
-              Built on Vision
+              {COPY.about.heroTitle}
             </h1>
             <p className="text-xl text-neutral-600">
-              At Pitfal Solutions, problem solving is a passion. Whether through a lens,
-              a drone, or a line of code — it&apos;s all about creating work that resonates and inspires.
+              {COPY.about.heroDescription}
             </p>
           </div>
         </Container>
@@ -40,7 +39,7 @@ export default function AboutPage() {
             <figure className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
               <img
                 src={getImageUrl(SITE_IMAGES.about)}
-                alt="Portrait of the Pitfal Solutions photographer"
+                alt={`Portrait of ${BUSINESS.name} founder`}
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </figure>
@@ -48,25 +47,12 @@ export default function AboutPage() {
             {/* Content */}
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-6 font-display">
-                The Philosophy
+                {COPY.about.philosophyTitle}
               </h2>
               <div className="prose prose-lg text-neutral-600">
-                <p>
-                  Photography is more than just capturing images—it&apos;s about
-                  preserving emotions, telling stories, and creating visual
-                  narratives that stand the test of time.
-                </p>
-                <p>
-                  Based in Denver, Colorado, Pitfal Solutions brings a unique
-                  perspective to every project. Combining technical
-                  excellence with creative vision ensures you get the highest quality
-                  when those fleeting moments are on the line.
-                </p>
-                <p>
-                  Whether it&apos;s a corporate brand shoot, an intimate portrait
-                  session, or documenting a special event, the same
-                  level of dedication and artistry is brought to every project.
-                </p>
+                {COPY.about.philosophy.map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
               </div>
 
               <div className="mt-8">
@@ -138,7 +124,7 @@ export default function AboutPage() {
               &quot;{BUSINESS.tagline}&quot;
             </p>
             <p className="mt-4 text-neutral-500">
-              This motto is a reminder to bridge the gap between vision and 
+              This motto is a reminder to bridge the gap between vision and
               reality, overcoming all obstacles.
             </p>
           </div>
