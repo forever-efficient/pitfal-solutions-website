@@ -12,3 +12,4 @@ export { HeroPositionEditor } from './HeroPositionEditor';
 export { ProcessingQueue } from './ProcessingQueue';
 export { ProcessingSettings } from './ProcessingSettings';
 export { ReadyQueue } from './ReadyQueue';
+export { ImagenEditor } from './ImagenEditor';

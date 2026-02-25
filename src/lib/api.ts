@@ -469,7 +469,7 @@ export interface ProcessingJob {
   galleryId: string;
   rawKeys: string[];
   imagenProjectId?: string;
-  status: 'queued' | 'uploading' | 'processing' | 'downloading' | 'complete' | 'failed';
+  status: 'queued' | 'uploading' | 'processing' | 'exporting' | 'downloading' | 'complete' | 'failed';
   mode: 'auto' | 'manual';
   createdAt: string;
   updatedAt: string;
@@ -547,6 +547,72 @@ export const publicGalleries = {
 // =============================================================================
 // Admin Processing Jobs
 // =============================================================================
+
+// =============================================================================
+// Admin Imagen (AI Editor)
+// =============================================================================
+
+export interface ImagenJob {
+  jobId: string;
+  rawKeys: string[];
+  imagenProjectId?: string;
+  status: 'queued' | 'uploading' | 'processing' | 'exporting' | 'downloading' | 'complete' | 'failed';
+  source: 'imagen';
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  resultKeys?: string[];
+  error?: string;
+}
+
+export interface ImagenFile {
+  key: string;
+  filename: string;
+  size: number;
+  lastModified: string;
+  url: string;
+}
+
+export const adminImagen = {
+  getUploadUrl: (filename: string, contentType: string) =>
+    request<{ uploadUrl: string; key: string }>('/api/admin/imagen/upload', {
+      method: 'POST',
+      body: JSON.stringify({ filename, contentType }),
+    }),
+
+  listUploads: () =>
+    request<{ files: ImagenFile[] }>('/api/admin/imagen/upload'),
+
+  process: (rawKeys: string[]) =>
+    request<{ jobIds: string[] }>('/api/admin/imagen/process', {
+      method: 'POST',
+      body: JSON.stringify({ rawKeys }),
+    }),
+
+  listJobs: () =>
+    request<{ jobs: ImagenJob[] }>('/api/admin/imagen/jobs'),
+
+  listEdited: () =>
+    request<{ files: ImagenFile[] }>('/api/admin/imagen/edited'),
+
+  approve: (keys: string[]) =>
+    request<{ approved: number }>('/api/admin/imagen/approve', {
+      method: 'POST',
+      body: JSON.stringify({ keys }),
+    }),
+
+  deleteEdited: (keys: string[]) =>
+    request<{ deleted: number }>('/api/admin/imagen/edited', {
+      method: 'DELETE',
+      body: JSON.stringify({ keys }),
+    }),
+
+  deleteJobs: (jobIds: string[]) =>
+    request<{ deleted: number }>('/api/admin/imagen/jobs', {
+      method: 'DELETE',
+      body: JSON.stringify({ jobIds }),
+    }),
+};
 
 export const adminProcessing = {
   listJobs: (galleryId: string) =>

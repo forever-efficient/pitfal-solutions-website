@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.stubEnv('ADMIN_TABLE', 'test-admin');
 vi.stubEnv('MEDIA_BUCKET', 'test-media');
 vi.stubEnv('IMAGENAI_API_KEY', 'test-api-key');
-vi.stubEnv('IMAGENAI_PROFILE_ID', 'profile-1');
+vi.stubEnv('IMAGENAI_PROFILE_ID_JPG', 'profile-jpg');
+vi.stubEnv('IMAGENAI_PROFILE_ID_RAW', 'profile-raw');
 
 const mockDynamoSend = vi.hoisted(() => vi.fn());
 const mockS3Send = vi.hoisted(() => vi.fn());
@@ -49,20 +50,28 @@ describe('Image Processor Orchestrator Lambda', () => {
   });
 
   it('uploads RAW files to ImagenAI and marks job as processing', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ project_id: 'proj-123' }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-      });
+    // 1. Create project (empty body, returns project_uuid)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ project_uuid: 'proj-123' }),
+    });
+    // 2. Get presigned upload links
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          files_list: [
+            { file_name: 'a.CR2', upload_link: 'https://presigned-url-1' },
+            { file_name: 'b.CR2', upload_link: 'https://presigned-url-2' },
+          ],
+        },
+      }),
+    });
+    // 3-4. PUT files to presigned URLs
+    mockFetch.mockResolvedValueOnce({ ok: true });
+    mockFetch.mockResolvedValueOnce({ ok: true });
+    // 5. Edit (start processing with profile_key)
+    mockFetch.mockResolvedValueOnce({ ok: true });
 
     await handler({
       jobId: 'job-1',
@@ -70,26 +79,37 @@ describe('Image Processor Orchestrator Lambda', () => {
       rawKeys: ['staging/gallery-1/a.CR2', 'staging/gallery-1/b.CR2'],
     });
 
-    expect(mockFetch).toHaveBeenCalledTimes(4);
+    // 5 fetch calls: create + get links + 2 uploads + edit
+    expect(mockFetch).toHaveBeenCalledTimes(5);
     expect(mockS3Send).toHaveBeenCalledTimes(2);
 
+    // Verify create project call (no body)
     const createCall = mockFetch.mock.calls[0] as [string, RequestInit];
     expect(createCall[0]).toBe('https://api.imagen-ai.com/v1/projects');
     expect(createCall[1].method).toBe('POST');
 
-    const createBody = JSON.parse(String(createCall[1].body));
-    expect(createBody).toEqual({
-      profile_key: 'profile-1',
-      type: 'RAW',
-    });
+    // Verify get_temporary_upload_links call
+    const linksCall = mockFetch.mock.calls[1] as [string, RequestInit];
+    expect(linksCall[0]).toBe('https://api.imagen-ai.com/v1/projects/proj-123/get_temporary_upload_links');
+    expect(linksCall[1].method).toBe('POST');
 
-    const uploadCall = mockFetch.mock.calls[1] as [string, RequestInit];
-    expect(uploadCall[0]).toContain('/projects/proj-123/photos');
+    // Verify PUT uploads to presigned URLs
+    const upload1 = mockFetch.mock.calls[2] as [string, RequestInit];
+    expect(upload1[0]).toBe('https://presigned-url-1');
+    expect(upload1[1].method).toBe('PUT');
 
-    const startCall = mockFetch.mock.calls[3] as [string, RequestInit];
-    expect(startCall[0]).toBe('https://api.imagen-ai.com/v1/projects/proj-123/start');
-    expect(startCall[1].method).toBe('POST');
+    const upload2 = mockFetch.mock.calls[3] as [string, RequestInit];
+    expect(upload2[0]).toBe('https://presigned-url-2');
+    expect(upload2[1].method).toBe('PUT');
 
+    // Verify edit call (profile_key passed here, not at creation)
+    const editCall = mockFetch.mock.calls[4] as [string, RequestInit];
+    expect(editCall[0]).toBe('https://api.imagen-ai.com/v1/projects/proj-123/edit');
+    expect(editCall[1].method).toBe('POST');
+    const editBody = JSON.parse(String(editCall[1].body));
+    expect(editBody).toEqual({ profile_key: 'profile-raw' });
+
+    // Verify DynamoDB status updates
     const firstUpdate = mockDynamoSend.mock.calls[0][0];
     expect(firstUpdate.TableName).toBe('test-admin');
     expect(firstUpdate.ExpressionAttributeValues[':status']).toBe('uploading');

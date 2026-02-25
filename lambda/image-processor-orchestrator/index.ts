@@ -8,13 +8,18 @@ const s3 = new S3Client({});
 const ADMIN_TABLE = process.env.ADMIN_TABLE!;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET!;
 const IMAGENAI_API_KEY = process.env.IMAGENAI_API_KEY!;
-const IMAGENAI_PROFILE_ID = process.env.IMAGENAI_PROFILE_ID || '';
+const IMAGENAI_PROFILE_ID_JPG = process.env.IMAGENAI_PROFILE_ID_JPG || '';
+const IMAGENAI_PROFILE_ID_RAW = process.env.IMAGENAI_PROFILE_ID_RAW || '';
 const IMAGENAI_BASE_URL = 'https://api.imagen-ai.com/v1';
+
+const JPG_EXTENSIONS = /\.(jpg|jpeg)$/i;
 
 interface OrchestratorEvent {
   jobId: string;
-  galleryId: string;
+  galleryId?: string;
   rawKeys: string[];
+  source?: 'imagen' | 'legacy';
+  profileId?: string;
 }
 
 async function updateJobStatus(
@@ -54,32 +59,33 @@ async function getS3ObjectAsBuffer(key: string): Promise<Buffer> {
 }
 
 export const handler = async (event: OrchestratorEvent): Promise<void> => {
-  const { jobId, galleryId, rawKeys } = event;
+  const { jobId, galleryId = '', rawKeys, source, profileId: eventProfileId } = event;
 
   if (!IMAGENAI_API_KEY?.trim()) {
     throw new Error('IMAGENAI_API_KEY is not configured. Set the environment variable to enable RAW processing.');
   }
-  if (!IMAGENAI_PROFILE_ID?.trim()) {
-    throw new Error('IMAGENAI_PROFILE_ID is not configured. Set the environment variable to enable RAW processing.');
+
+  // Determine profile: use event override, or auto-detect from file extensions
+  const isJpgBatch = rawKeys.every(key => JPG_EXTENSIONS.test(key));
+  const profileId = eventProfileId || (isJpgBatch ? IMAGENAI_PROFILE_ID_JPG : IMAGENAI_PROFILE_ID_RAW);
+
+  if (!profileId?.trim()) {
+    throw new Error(`No ImagenAI profile configured for ${isJpgBatch ? 'JPG' : 'RAW'} files. Set the environment variable.`);
   }
 
-  console.log(JSON.stringify({ level: 'INFO', message: 'Orchestrator started', jobId, galleryId, fileCount: rawKeys.length }));
+  console.log(JSON.stringify({ level: 'INFO', message: 'Orchestrator started', jobId, galleryId, source, profileId, fileCount: rawKeys.length }));
 
   try {
-    // Mark as uploading
-    await updateJobStatus(jobId, { status: 'uploading' });
+    // Mark as uploading (include source so poller knows output path)
+    await updateJobStatus(jobId, { status: 'uploading', ...(source && { source }) });
 
     // 1. Create ImagenAI project
     const createResponse = await fetch(`${IMAGENAI_BASE_URL}/projects`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${IMAGENAI_API_KEY}`,
+        'x-api-key': IMAGENAI_API_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        profile_key: IMAGENAI_PROFILE_ID,
-        type: 'RAW',
-      }),
     });
 
     if (!createResponse.ok) {
@@ -87,56 +93,92 @@ export const handler = async (event: OrchestratorEvent): Promise<void> => {
       throw new Error(`ImagenAI project creation failed: ${createResponse.status} ${errText}`);
     }
 
-    const { project_id } = await createResponse.json() as { project_id: string };
-    console.log(JSON.stringify({ level: 'INFO', message: 'ImagenAI project created', jobId, project_id }));
+    const createData = await createResponse.json() as Record<string, unknown>;
+    const nested = (createData.data || {}) as Record<string, unknown>;
+    const projectUuid = (nested.project_uuid || createData.project_uuid || createData.project_id || createData.id) as string;
+    if (!projectUuid) {
+      throw new Error(`ImagenAI project creation returned no UUID. Response: ${JSON.stringify(createData)}`);
+    }
+    console.log(JSON.stringify({ level: 'INFO', message: 'ImagenAI project created', jobId, projectUuid }));
 
-    // 2. Upload each RAW file (process in chunks of 10 to respect Lambda timeout)
-    const CHUNK_SIZE = 10;
+    // 2. Get presigned upload links from ImagenAI
+    const filesList = rawKeys.map(key => ({
+      file_name: key.split('/').pop() || 'photo.raw',
+    }));
+
+    const linksResponse = await fetch(
+      `${IMAGENAI_BASE_URL}/projects/${projectUuid}/get_temporary_upload_links`,
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': IMAGENAI_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ files_list: filesList }),
+      }
+    );
+
+    if (!linksResponse.ok) {
+      const errText = await linksResponse.text();
+      throw new Error(`Failed to get upload links: ${linksResponse.status} ${errText}`);
+    }
+
+    const linksData = await linksResponse.json() as {
+      data: { files_list: Array<{ file_name: string; upload_link: string }> };
+    };
+    const uploadLinks = linksData.data.files_list;
+
+    // 3. Upload each file to its presigned URL (chunks of 5 for large RAW files)
+    const CHUNK_SIZE = 5;
     for (let i = 0; i < rawKeys.length; i += CHUNK_SIZE) {
       const chunk = rawKeys.slice(i, i + CHUNK_SIZE);
-      await Promise.all(chunk.map(async (key) => {
+      await Promise.all(chunk.map(async (key, idx) => {
         const fileBuffer = await getS3ObjectAsBuffer(key);
         const filename = key.split('/').pop() || 'photo.raw';
+        const link = uploadLinks[i + idx];
 
-        const formData = new FormData();
-        formData.append('file', new Blob([fileBuffer]), filename);
+        if (!link?.upload_link) {
+          throw new Error(`No upload link returned for ${filename}`);
+        }
 
-        const uploadResponse = await fetch(`${IMAGENAI_BASE_URL}/projects/${project_id}/photos`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${IMAGENAI_API_KEY}`,
-          },
-          body: formData,
+        const uploadResponse = await fetch(link.upload_link, {
+          method: 'PUT',
+          body: fileBuffer,
         });
 
         if (!uploadResponse.ok) {
           const errText = await uploadResponse.text();
           throw new Error(`Failed to upload ${filename}: ${uploadResponse.status} ${errText}`);
         }
+
+        console.log(JSON.stringify({ level: 'INFO', message: 'File uploaded', jobId, filename }));
       }));
     }
 
-    // 3. Start editing
-    const startResponse = await fetch(`${IMAGENAI_BASE_URL}/projects/${project_id}/start`, {
+    // 4. Start editing (profile_key is passed here, not at project creation)
+    const editResponse = await fetch(`${IMAGENAI_BASE_URL}/projects/${projectUuid}/edit`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${IMAGENAI_API_KEY}`,
+        'x-api-key': IMAGENAI_API_KEY,
         'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        profile_key: profileId,
+      }),
     });
 
-    if (!startResponse.ok) {
-      const errText = await startResponse.text();
-      throw new Error(`Failed to start ImagenAI editing: ${startResponse.status} ${errText}`);
+    if (!editResponse.ok) {
+      const errText = await editResponse.text();
+      throw new Error(`Failed to start ImagenAI editing: ${editResponse.status} ${errText}`);
     }
 
-    // 4. Update job record with project ID and processing status
+    // 5. Update job record with project UUID and processing status
     await updateJobStatus(jobId, {
       status: 'processing',
-      imagenProjectId: project_id,
+      imagenProjectId: projectUuid,
     });
 
-    console.log(JSON.stringify({ level: 'INFO', message: 'Orchestrator complete', jobId, project_id }));
+    console.log(JSON.stringify({ level: 'INFO', message: 'Orchestrator complete', jobId, projectUuid }));
 
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);

@@ -59,7 +59,7 @@ describe('Image Processor Poller Lambda', () => {
               galleryId: 'gallery-1',
               rawKeys: ['staging/gallery-1/a.CR2'],
               imagenProjectId: 'proj-1',
-              status: 'processing',
+              status: 'exporting',
               mode: 'auto',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -84,21 +84,25 @@ describe('Image Processor Poller Lambda', () => {
   });
 
   it('downloads completed ImagenAI photos, stores in S3, updates gallery, and marks job complete', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ status: 'completed' }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          photos: [{ download_url: 'https://download.example.com/photo-1', filename: 'photo-1.jpg' }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
-      });
+    // 1. Export status check
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'completed' }),
+    });
+    // 2. Get download links
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        data: {
+          files_list: [{ file_name: 'photo-1.jpg', download_link: 'https://download.example.com/photo-1' }],
+        },
+      }),
+    });
+    // 3. Download file from presigned URL
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer,
+    });
 
     await handler();
 
@@ -156,7 +160,7 @@ describe('Image Processor Poller Lambda', () => {
 
     expect(updates).toHaveLength(1);
     expect(updates[0].ExpressionAttributeValues[':status']).toBe('failed');
-    expect(updates[0].ExpressionAttributeValues[':error']).toBe('ImagenAI processing failed');
+    expect(updates[0].ExpressionAttributeValues[':error']).toBe('ImagenAI export failed');
   });
 
   it('marks job as failed when completed-job processing throws', async () => {
@@ -180,7 +184,7 @@ describe('Image Processor Poller Lambda', () => {
     expect(updates[0].ExpressionAttributeValues[':status']).toBe('downloading');
     expect(updates[1].ExpressionAttributeValues[':status']).toBe('failed');
     expect(String(updates[1].ExpressionAttributeValues[':error'])).toContain(
-      'Failed to get photos: 502'
+      'Failed to get export download links: 502'
     );
   });
 });

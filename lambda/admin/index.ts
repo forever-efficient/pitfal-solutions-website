@@ -39,6 +39,8 @@ const INQUIRIES_TABLE = process.env.INQUIRIES_TABLE;
 const BOOKINGS_TABLE = process.env.BOOKINGS_TABLE;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
 const ORCHESTRATOR_FUNCTION_NAME = process.env.ORCHESTRATOR_FUNCTION_NAME;
+const IMAGENAI_PROFILE_ID_JPG = process.env.IMAGENAI_PROFILE_ID_JPG || '';
+const IMAGENAI_PROFILE_ID_RAW = process.env.IMAGENAI_PROFILE_ID_RAW || '';
 const COOKIE_NAME = 'pitfal_admin_session';
 
 const lambdaClient = new LambdaClient({});
@@ -171,6 +173,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return handleGalleryById(event, method, galleryId, ctx, requestOrigin);
     }
     return handleGalleries(event, method, ctx, requestOrigin);
+  }
+
+  // ImagenAI routes (must check before generic /admin/images to avoid conflicts)
+  if (resource.includes('/admin/imagen/upload')) {
+    return handleImagenUpload(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/imagen/process')) {
+    return handleImagenProcess(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/imagen/jobs')) {
+    return handleImagenJobs(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/imagen/approve')) {
+    return handleImagenApprove(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/imagen/edited')) {
+    return handleImagenEdited(event, method, ctx, requestOrigin);
   }
 
   // Image ready queue route (must check before generic images route)
@@ -1291,4 +1310,259 @@ async function handlePublicGalleries(
   }
 
   return badRequest('category parameter is required', requestOrigin);
+}
+
+// =============================================================================
+// ImagenAI Handlers
+// =============================================================================
+
+const IMAGEN_ALLOWED_EXTENSIONS = /\.(cr2|cr3|nef|arw|dng|raf|jpg|jpeg|png)$/i;
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+async function handleImagenUpload(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    // List files in imagen/RAW/
+    const objects = await listS3Objects(MEDIA_BUCKET!, 'imagen/RAW/');
+    const files = objects.map(obj => ({
+      key: obj.key,
+      filename: obj.key.split('/').pop() || '',
+      size: obj.size,
+      lastModified: obj.lastModified?.toISOString() || '',
+      url: obj.key,
+    }));
+    log('INFO', 'Listed imagen uploads', ctx, { count: files.length });
+    return success({ files }, 200, requestOrigin);
+  }
+
+  if (method === 'POST') {
+    const body = JSON.parse(event.body || '{}');
+    const { filename, contentType } = body;
+
+    if (!filename || !contentType) {
+      return badRequest('filename and contentType are required', requestOrigin);
+    }
+
+    if (!IMAGEN_ALLOWED_EXTENSIONS.test(filename)) {
+      return badRequest('Unsupported file type. Accepted: CR2, CR3, NEF, ARW, DNG, RAF, JPG, JPEG, PNG', requestOrigin);
+    }
+
+    const sanitized = sanitizeFilename(filename);
+    const key = `imagen/RAW/${randomUUID()}-${sanitized}`;
+    const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, contentType);
+
+    log('INFO', 'Generated imagen upload URL', ctx, { key });
+    return success({ uploadUrl, key }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed('Method not allowed', requestOrigin);
+}
+
+async function handleImagenProcess(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed('Method not allowed', requestOrigin);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const { rawKeys } = body;
+
+  if (!Array.isArray(rawKeys) || rawKeys.length === 0) {
+    return badRequest('rawKeys array is required and must not be empty', requestOrigin);
+  }
+
+  // Validate all keys are in imagen/RAW/
+  for (const key of rawKeys) {
+    if (!key.startsWith('imagen/RAW/')) {
+      return badRequest(`Invalid key: ${key}. All keys must start with imagen/RAW/`, requestOrigin);
+    }
+  }
+
+  if (!ORCHESTRATOR_FUNCTION_NAME) {
+    return serverError('Orchestrator function not configured', requestOrigin);
+  }
+
+  // Split keys by type: JPG/JPEG vs RAW (different ImagenAI profiles)
+  const jpgKeys = rawKeys.filter((k: string) => /\.(jpg|jpeg)$/i.test(k));
+  const rawFileKeys = rawKeys.filter((k: string) => !/\.(jpg|jpeg)$/i.test(k));
+
+  const batches: Array<{ keys: string[]; profileId: string }> = [];
+  if (jpgKeys.length > 0) batches.push({ keys: jpgKeys, profileId: IMAGENAI_PROFILE_ID_JPG });
+  if (rawFileKeys.length > 0) batches.push({ keys: rawFileKeys, profileId: IMAGENAI_PROFILE_ID_RAW });
+
+  const jobIds: string[] = [];
+
+  for (const batch of batches) {
+    const jobId = randomUUID();
+    const now = new Date().toISOString();
+    jobIds.push(jobId);
+
+    // Create job record in DynamoDB
+    await putItem({
+      TableName: ADMIN_TABLE!,
+      Item: {
+        pk: `PROCESSING_JOB#${jobId}`,
+        sk: `PROCESSING_JOB#${jobId}`,
+        jobId,
+        galleryId: '',
+        rawKeys: batch.keys,
+        status: 'queued',
+        source: 'imagen',
+        mode: 'manual',
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    // Invoke orchestrator asynchronously with the correct profile
+    await lambdaClient.send(new InvokeCommand({
+      FunctionName: ORCHESTRATOR_FUNCTION_NAME,
+      InvocationType: 'Event',
+      Payload: JSON.stringify({
+        jobId,
+        galleryId: '',
+        rawKeys: batch.keys,
+        source: 'imagen',
+        profileId: batch.profileId,
+      }),
+    }));
+  }
+
+  log('INFO', 'ImagenAI processing jobs created', ctx, { jobIds, fileCount: rawKeys.length, batchCount: batches.length });
+  return success({ jobIds }, 200, requestOrigin);
+}
+
+async function handleImagenJobs(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    const allJobs = await scanItems<Record<string, unknown>>({
+      TableName: ADMIN_TABLE!,
+      FilterExpression: 'begins_with(pk, :prefix) AND #source = :source',
+      ExpressionAttributeNames: { '#source': 'source' },
+      ExpressionAttributeValues: { ':prefix': 'PROCESSING_JOB#', ':source': 'imagen' },
+    });
+
+    const jobs = allJobs
+      .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
+
+    log('INFO', 'Listed imagen jobs', ctx, { count: jobs.length });
+    return success({ jobs }, 200, requestOrigin);
+  }
+
+  if (method === 'DELETE') {
+    const body = JSON.parse(event.body || '{}');
+    const { jobIds } = body;
+
+    if (!Array.isArray(jobIds) || jobIds.length === 0) {
+      return badRequest('jobIds array is required', requestOrigin);
+    }
+
+    let deleted = 0;
+    for (const jobId of jobIds) {
+      const pk = `PROCESSING_JOB#${jobId}`;
+      await deleteItem({ TableName: ADMIN_TABLE!, Key: { pk, sk: pk } });
+      deleted++;
+    }
+
+    log('INFO', 'Deleted imagen jobs', ctx, { count: deleted });
+    return success({ deleted }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed('Method not allowed', requestOrigin);
+}
+
+async function handleImagenEdited(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    const objects = await listS3Objects(MEDIA_BUCKET!, 'imagen/edited/');
+    const files = objects.map(obj => ({
+      key: obj.key,
+      filename: obj.key.split('/').pop() || '',
+      size: obj.size,
+      lastModified: obj.lastModified?.toISOString() || '',
+      url: obj.key,
+    }));
+    log('INFO', 'Listed imagen edited files', ctx, { count: files.length });
+    return success({ files }, 200, requestOrigin);
+  }
+
+  if (method === 'DELETE') {
+    const body = JSON.parse(event.body || '{}');
+    const { keys } = body;
+
+    if (!Array.isArray(keys) || keys.length === 0) {
+      return badRequest('keys array is required', requestOrigin);
+    }
+
+    // Validate all keys are in imagen/edited/
+    for (const key of keys) {
+      if (!key.startsWith('imagen/edited/')) {
+        return badRequest(`Invalid key: ${key}. All keys must start with imagen/edited/`, requestOrigin);
+      }
+    }
+
+    await deleteS3Objects(MEDIA_BUCKET!, keys);
+    log('INFO', 'Deleted imagen edited files', ctx, { count: keys.length });
+    return success({ deleted: keys.length }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed('Method not allowed', requestOrigin);
+}
+
+async function handleImagenApprove(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed('Method not allowed', requestOrigin);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const { keys } = body;
+
+  if (!Array.isArray(keys) || keys.length === 0) {
+    return badRequest('keys array is required', requestOrigin);
+  }
+
+  // Validate all keys are in imagen/edited/
+  for (const key of keys) {
+    if (!key.startsWith('imagen/edited/')) {
+      return badRequest(`Invalid key: ${key}. All keys must start with imagen/edited/`, requestOrigin);
+    }
+  }
+
+  let approved = 0;
+  for (const key of keys) {
+    const filename = key.split('/').pop() || `${randomUUID()}.jpg`;
+    const destKey = `staging/ready/${filename}`;
+    await copyS3Object(MEDIA_BUCKET!, key, destKey);
+    approved++;
+  }
+
+  // Delete originals from imagen/edited/ after successful copy
+  await deleteS3Objects(MEDIA_BUCKET!, keys);
+
+  log('INFO', 'Approved imagen edits to ready queue', ctx, { count: approved });
+  return success({ approved }, 200, requestOrigin);
 }

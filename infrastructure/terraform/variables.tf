@@ -203,8 +203,14 @@ variable "imagenai_api_key" {
   default     = ""
 }
 
-variable "imagenai_profile_id" {
-  description = "ImagenAI AI profile ID (the editing style to apply). Find it in the ImagenAI dashboard."
+variable "imagenai_profile_id_jpg" {
+  description = "ImagenAI profile ID for JPEG/JPG editing. Find it in the ImagenAI dashboard."
+  type        = string
+  default     = ""
+}
+
+variable "imagenai_profile_id_raw" {
+  description = "ImagenAI profile ID for RAW file editing (CR2, CR3, NEF, ARW, DNG, RAF). Find it in the ImagenAI dashboard."
   type        = string
   default     = ""
 }

@@ -57,8 +57,9 @@ resource "aws_lambda_function" "image_processor_orchestrator" {
     variables = {
       ADMIN_TABLE          = aws_dynamodb_table.admin.name
       MEDIA_BUCKET         = aws_s3_bucket.media.id
-      IMAGENAI_API_KEY     = var.imagenai_api_key
-      IMAGENAI_PROFILE_ID  = var.imagenai_profile_id
+      IMAGENAI_API_KEY         = var.imagenai_api_key
+      IMAGENAI_PROFILE_ID_JPG  = var.imagenai_profile_id_jpg
+      IMAGENAI_PROFILE_ID_RAW  = var.imagenai_profile_id_raw
     }
   }
 
@@ -122,7 +123,10 @@ resource "aws_iam_role_policy" "orchestrator_s3" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["s3:GetObject"]
-      Resource = "${aws_s3_bucket.media.arn}/staging/*"
+      Resource = [
+        "${aws_s3_bucket.media.arn}/staging/*",
+        "${aws_s3_bucket.media.arn}/imagen/RAW/*"
+      ]
     }]
   })
 }

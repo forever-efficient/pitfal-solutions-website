@@ -1,9 +1,9 @@
 # System Architecture - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.5 (Infrastructure Deployed)
-- **Last Updated:** February 2026
-- **Status:** MVP Architecture Finalized - Infrastructure deployed to AWS
+- **Version:** 1.6 (Evolved Stack)
+- **Last Updated:** February 23, 2026
+- **Status:** Implementation Complete (Phase 1) - Infrastructure deployed to AWS
 
 ---
 
@@ -41,11 +41,11 @@
 
 ### 1.2 Design Principles
 
-1. **Serverless-First:** Minimize operational overhead and costs
-2. **Static Generation:** Pre-render pages for optimal performance
-3. **Edge Caching:** Serve content from CloudFront edge locations
-4. **Pay-Per-Use:** Scale costs with actual usage
-5. **Infrastructure as Code:** All resources managed via Terraform
+1.  **Serverless-First:** Minimize operational overhead and costs
+2.  **Static Generation:** Pre-render pages for optimal performance
+3.  **Edge Caching:** Serve content from CloudFront edge locations
+4.  **Pay-Per-Use:** Scale costs with actual usage
+5.  **Infrastructure as Code:** All resources managed via Terraform
 
 ### 1.3 MVP Simplifications
 
@@ -236,11 +236,11 @@ The `process-image` Lambda is triggered **immediately** when an image is uploade
 
 **Error Handling Strategy:**
 When image processing fails (corrupt file, unsupported format, timeout):
-1. Log error details to CloudWatch (image ID, gallery ID, error type, stack trace)
-2. Update DynamoDB record with `status: 'failed'` and error message
-3. **Do NOT stop batch** - continue processing remaining images
-4. Admin sees failed images in dashboard with retry option
-5. Failed originals remain in S3 for manual inspection
+1.  Log error details to CloudWatch (image ID, gallery ID, error type, stack trace)
+2.  Update DynamoDB record with `status: 'failed'` and error message
+3.  **Do NOT stop batch** - continue processing remaining images
+4.  Admin sees failed images in dashboard with retry option
+5.  Failed originals remain in S3 for manual inspection
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1167,11 +1167,11 @@ LOCAL_API_PORT=3001
 
 **Why This Approach:**
 
-1. **Single source of truth** - All environments use the same media bucket
-2. **No sync issues** - Local dev always has current portfolio
-3. **Realistic testing** - Image loading, CDN caching works the same
-4. **Cost effective** - S3 reads are cheap, no need for separate dev bucket
-5. **Simpler setup** - No local media management required
+1.  **Single source of truth** - All environments use the same media bucket
+2.  **No sync issues** - Local dev always has current portfolio
+3.  **Realistic testing** - Image loading, CDN caching works the same
+4.  **Cost effective** - S3 reads are cheap, no need for separate dev bucket
+5.  **Simpler setup** - No local media management required
 
 **Local API Options:**
 
@@ -1243,3 +1243,5 @@ CloudWatch Log Groups:
 | 1.2 | January 2026 | Claude Code | Added Section 7.3: Local Development with S3 - configuration for connecting to production S3/CloudFront during local dev |
 | 1.3 | January 2026 | Claude Code | Added API error response schema (3.3), accepted image formats (2.4.1), image processing trigger details (2.4.2), plaiceholder for blur generation (2.4.3), CSRF protection details (6.3.1), session invalidation (6.3.2), admin password reset and cascade delete endpoints |
 | 1.4 | January 2026 | Claude Code | **Major refinements:** (1) Added 3 DynamoDB GSIs (byCategory, byFeatured, byCreatedDate) for efficient queries; (2) Changed client auth from localStorage to HttpOnly cookies with 7-day sliding sessions; (3) Updated rate limiting to use API Gateway throttling; (4) Replaced plaiceholder library with CSS-only blur approach; (5) Added cascade delete implementation details (6.4); (6) Marked /admin/inquiries as read-only for MVP; (7) Noted testimonials/FAQ as static content |
+| 1.5 | February 2026 | Claude Code | **Infrastructure hardening:** (1) Added WAF, ACM certificate management; (2) Added DMARC/SPF/DKIM for SES; (3) Added S3 lifecycle rules and logging buckets; (4) Added detailed IAM policies and deployment phases. |
+| 1.6 | February 23, 2026 | Claude Code | **Evolved Pipeline & REST API:** (1) Updated section 2.4 to reflect multi-lambda image processing (orchestrator/poller); (2) Added /portfolio/viewer route details; (3) Documented bulk download implementation; (4) Synchronized tech stack and S3 structure. |

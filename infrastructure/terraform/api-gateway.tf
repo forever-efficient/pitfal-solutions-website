@@ -1876,6 +1876,347 @@ resource "aws_api_gateway_integration_response" "galleries_category_slug_options
   }
 }
 
+# ─────────────────────────────────────────────
+# /api/admin/imagen — ImagenAI editing endpoints
+# ─────────────────────────────────────────────
+
+# /api/admin/imagen (parent resource)
+resource "aws_api_gateway_resource" "admin_imagen" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin.id
+  path_part   = "imagen"
+}
+
+# /api/admin/imagen/upload
+resource "aws_api_gateway_resource" "admin_imagen_upload" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_imagen.id
+  path_part   = "upload"
+}
+
+# ANY /api/admin/imagen/upload → admin Lambda
+resource "aws_api_gateway_method" "admin_imagen_upload_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_upload_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method             = aws_api_gateway_method.admin_imagen_upload_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/imagen/upload (CORS)
+resource "aws_api_gateway_method" "admin_imagen_upload_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_upload_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method = aws_api_gateway_method.admin_imagen_upload_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_imagen_upload_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method = aws_api_gateway_method.admin_imagen_upload_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_imagen_upload_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_upload.id
+  http_method = aws_api_gateway_method.admin_imagen_upload_options.http_method
+  status_code = aws_api_gateway_method_response.admin_imagen_upload_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_imagen_upload_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/imagen/jobs
+resource "aws_api_gateway_resource" "admin_imagen_jobs" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_imagen.id
+  path_part   = "jobs"
+}
+
+# ANY /api/admin/imagen/jobs → admin Lambda
+resource "aws_api_gateway_method" "admin_imagen_jobs_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_jobs_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method             = aws_api_gateway_method.admin_imagen_jobs_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/imagen/jobs (CORS)
+resource "aws_api_gateway_method" "admin_imagen_jobs_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_jobs_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method = aws_api_gateway_method.admin_imagen_jobs_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_imagen_jobs_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method = aws_api_gateway_method.admin_imagen_jobs_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_imagen_jobs_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_jobs.id
+  http_method = aws_api_gateway_method.admin_imagen_jobs_options.http_method
+  status_code = aws_api_gateway_method_response.admin_imagen_jobs_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_imagen_jobs_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/imagen/edited
+resource "aws_api_gateway_resource" "admin_imagen_edited" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_imagen.id
+  path_part   = "edited"
+}
+
+# ANY /api/admin/imagen/edited → admin Lambda
+resource "aws_api_gateway_method" "admin_imagen_edited_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_edited_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method             = aws_api_gateway_method.admin_imagen_edited_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/imagen/edited (CORS)
+resource "aws_api_gateway_method" "admin_imagen_edited_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_edited_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method = aws_api_gateway_method.admin_imagen_edited_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_imagen_edited_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method = aws_api_gateway_method.admin_imagen_edited_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_imagen_edited_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_edited.id
+  http_method = aws_api_gateway_method.admin_imagen_edited_options.http_method
+  status_code = aws_api_gateway_method_response.admin_imagen_edited_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_imagen_edited_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/imagen/approve
+resource "aws_api_gateway_resource" "admin_imagen_approve" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_imagen.id
+  path_part   = "approve"
+}
+
+# ANY /api/admin/imagen/approve → admin Lambda
+resource "aws_api_gateway_method" "admin_imagen_approve_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_approve_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method             = aws_api_gateway_method.admin_imagen_approve_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/imagen/approve (CORS)
+resource "aws_api_gateway_method" "admin_imagen_approve_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_approve_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method = aws_api_gateway_method.admin_imagen_approve_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_imagen_approve_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method = aws_api_gateway_method.admin_imagen_approve_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_imagen_approve_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_approve.id
+  http_method = aws_api_gateway_method.admin_imagen_approve_options.http_method
+  status_code = aws_api_gateway_method_response.admin_imagen_approve_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_imagen_approve_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/imagen/process
+resource "aws_api_gateway_resource" "admin_imagen_process" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_imagen.id
+  path_part   = "process"
+}
+
+# ANY /api/admin/imagen/process → admin Lambda
+resource "aws_api_gateway_method" "admin_imagen_process_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_process.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_process_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_imagen_process.id
+  http_method             = aws_api_gateway_method.admin_imagen_process_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+# OPTIONS /api/admin/imagen/process (CORS)
+resource "aws_api_gateway_method" "admin_imagen_process_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_imagen_process.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_imagen_process_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_process.id
+  http_method = aws_api_gateway_method.admin_imagen_process_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_imagen_process_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_process.id
+  http_method = aws_api_gateway_method.admin_imagen_process_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_imagen_process_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_imagen_process.id
+  http_method = aws_api_gateway_method.admin_imagen_process_options.http_method
+  status_code = aws_api_gateway_method_response.admin_imagen_process_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_imagen_process_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # API Gateway deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -1981,6 +2322,23 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.galleries_category_slug.id,
       aws_api_gateway_method.galleries_category_slug_any.id,
       aws_api_gateway_integration.galleries_category_slug_any.id,
+      # Admin imagen routes
+      aws_api_gateway_resource.admin_imagen.id,
+      aws_api_gateway_resource.admin_imagen_upload.id,
+      aws_api_gateway_method.admin_imagen_upload_any.id,
+      aws_api_gateway_integration.admin_imagen_upload_any.id,
+      aws_api_gateway_resource.admin_imagen_jobs.id,
+      aws_api_gateway_method.admin_imagen_jobs_any.id,
+      aws_api_gateway_integration.admin_imagen_jobs_any.id,
+      aws_api_gateway_resource.admin_imagen_edited.id,
+      aws_api_gateway_method.admin_imagen_edited_any.id,
+      aws_api_gateway_integration.admin_imagen_edited_any.id,
+      aws_api_gateway_resource.admin_imagen_approve.id,
+      aws_api_gateway_method.admin_imagen_approve_any.id,
+      aws_api_gateway_integration.admin_imagen_approve_any.id,
+      aws_api_gateway_resource.admin_imagen_process.id,
+      aws_api_gateway_method.admin_imagen_process_any.id,
+      aws_api_gateway_integration.admin_imagen_process_any.id,
     ]))
   }
 

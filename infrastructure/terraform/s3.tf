@@ -244,6 +244,34 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
       days = 30
     }
   }
+
+  # Auto-cleanup ImagenAI RAW uploads (safety net: 7 days)
+  rule {
+    id     = "imagen-raw-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "imagen/RAW/"
+    }
+
+    expiration {
+      days = 7
+    }
+  }
+
+  # Auto-cleanup ImagenAI edited images not approved within 30 days
+  rule {
+    id     = "imagen-edited-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "imagen/edited/"
+    }
+
+    expiration {
+      days = 30
+    }
+  }
 }
 
 # Logging bucket (optional)

@@ -45,56 +45,38 @@ This file provides guidance to Claude Code when working with code in this reposi
 website/
 ├── CLAUDE.md                    # This file
 ├── .mcp.json                    # MCP server configuration
-├── docs/
-│   ├── REQUIREMENTS.md          # Functional requirements (v1.5)
-│   ├── ARCHITECTURE.md          # System design (v1.4)
-│   ├── DEPLOYMENT.md            # Deployment guide (v1.2)
-│   ├── PRD.md                   # Product requirements (v1.3)
+├── Makefile                     # **Primary** build/deploy entry point
+├── docs/                        # Project documentation (v1.7)
+│   ├── REQUIREMENTS.md          # Functional requirements
+│   ├── ARCHITECTURE.md          # System design (v1.6)
+│   ├── DEPLOYMENT.md            # Deployment guide (v1.3)
+│   ├── PRD.md                   # Product requirements (v1.7)
 │   └── SKILL-WORKFLOWS.md       # How skills work together
 ├── content/                     # Static content (managed via Git)
 │   ├── testimonials.json        # Client testimonials
 │   ├── faq.json                 # Frequently asked questions
 │   ├── blog/                    # MDX blog posts
-│   │   └── style-guide.mdx      # What to wear guide
 │   └── galleries/               # Local gallery staging
-├── .claude/
-│   ├── settings.json            # Hooks and permissions
-│   └── skills/                  # Custom Claude skills
-│       ├── deploy/SKILL.md
-│       ├── build/SKILL.md
-│       ├── optimize-images/SKILL.md
-│       ├── preview/SKILL.md
-│       ├── sync-content/SKILL.md
-│       ├── logs/SKILL.md
-│       ├── db-seed/SKILL.md
-│       ├── stripe-setup/SKILL.md  # Phase 2
-│       └── gallery-manage/SKILL.md
 ├── infrastructure/
-│   └── terraform/
-│       ├── main.tf              # Provider, backend config
-│       ├── variables.tf         # Input variables
-│       ├── outputs.tf           # Output values
-│       ├── modules/             # Reusable modules
-│       │   ├── lambda/          # Lambda function module
-│       │   ├── api-gateway/     # API Gateway module
-│       │   └── dynamodb/        # DynamoDB table module
-│       ├── s3.tf                # S3 buckets
-│       ├── cloudfront.tf        # CloudFront distribution
-│       ├── lambda.tf            # Function definitions
-│       ├── api-gateway.tf       # REST API
-│       ├── dynamodb.tf          # Table definitions + GSIs
-│       ├── ses.tf               # Email configuration
-│       └── iam.tf               # IAM roles/policies
-├── src/
-│   ├── app/                     # Next.js App Router
+│   └── terraform/               # Modular infrastructure
+├── src/                         # Next.js App Source
+│   ├── app/                     # App Router pages
+│   │   ├── portfolio/           # Portfolio & Viewer routes
+│   │   └── admin/               # Admin dashboard
 │   ├── components/              # React components
-│   ├── lib/                     # Utilities and helpers
-│   └── styles/                  # Global styles
-├── public/                      # Static assets
-├── lambda/                      # Lambda function code
-├── scripts/                     # Build and deploy scripts
-├── docker-compose.yml           # Local development
-├── Dockerfile                   # Container for local dev
+│   └── lib/                     # Utilities & constants
+├── public/                      # Public assets
+├── lambda/                      # **Multi-function** serverless backend
+│   ├── admin/                   # Admin CRUD operations
+│   ├── client-auth/             # Gallery authentication
+│   ├── client-gallery/          # Public gallery access
+│   ├── contact/                 # Contact form submission
+│   ├── image-processor/         # Image processing pipeline
+│   ├── image-processor-orchestrator/
+│   ├── image-processor-poller/
+│   ├── thumbnail-generator/     # S3-triggered thumbnails
+│   └── shared/                  # Common utilities & types
+├── scripts/                     # Build and utility scripts
 ├── package.json
 ├── tsconfig.json
 ├── tailwind.config.ts
@@ -106,39 +88,33 @@ website/
 ## Required Features
 
 ### Portfolio & Gallery
-- Full-screen, responsive image/video display
-- Multiple gallery formats (grid, slideshow, stacked)
-- Category organization (Brands, Portraits, Events)
-- Video: YouTube embeds (public), S3 (client deliverables)
-- Hover effects and animations
-- Optimized image loading (WebP, lazy load, blur placeholders)
+- [x] Full-screen, responsive image/video display
+- [x] Multiple gallery formats (grid, slideshow, stacked)
+- [x] Category organization (Brands, Portraits, Events)
+- [x] Video: YouTube embeds (public), S3 (client deliverables)
+- [x] Optimized image loading (WebP, lazy load, blur placeholders)
 
 ### Client Proofing
-- Password-protected client galleries
-- Image/video commenting and selection
-- Download options with optional watermarking
-- Approval workflows
+- [x] Bulk Download implemented
+- [/] Password-protected client galleries (In Progress)
+- [ ] Image/video commenting and selection
+- [ ] Approval workflows
 
 ### Booking System
-- Calendar integration
-- Session type selection
-- Availability management
-- Automated email confirmations
-
-### E-Commerce
-- Print sales (Stripe + print lab integration)
-- Digital download sales
-- Package/pricing display
-- Order management
-
-### Blog/Content
-- SEO-optimized blog (MDX)
-- Client stories and behind-the-scenes
+- [ ] Calendar integration
+- [ ] Automated email confirmations
 
 ### Contact
-- Contact form with spam protection
-- Social media links
-- Business hours display
+- [x] Contact form with spam protection
+- [x] Social media links
+- [x] Business hours display (Static)
+- [x] Advanced Admin Inquiry viewing
+
+### Admin Dashboard
+- [x] Gallery management (Create/Edit/Delete)
+- [x] Image upload pipeline (S3 → Lambda → Prossessed)
+- [x] Inquiry viewing
+- [/] Role-based access (Basic password protection)
 
 ---
 
@@ -261,26 +237,24 @@ Skills are defined in `.claude/skills/*/SKILL.md`. See `docs/SKILL-WORKFLOWS.md`
 ```bash
 # Development
 pnpm dev                    # Start dev server
-pnpm build                  # Production build
-pnpm start                  # Start production server
-pnpm lint                   # Run ESLint
-pnpm type-check             # TypeScript check
-
-# Testing
-pnpm test                   # Run tests
-pnpm test:e2e               # End-to-end tests
-
-# Infrastructure
-cd infrastructure/terraform
-terraform plan              # Preview changes
-terraform apply             # Deploy infrastructure
+make status                 # Show current deployment config
+make setup                  # Sync Terraform outputs (one-time)
 
 # Deployment
-pnpm build                  # Build static site
-aws s3 sync out/ s3://bucket-name  # Sync to S3
+make deploy                 # **Recommended** Full deployment
+make build-lambdas          # Build backend functions
+make deploy-lambdas         # Build + Apply Terraform for Lambdas
+
+# Quality/Testing
+pnpm lint                   # Run ESLint
+pnpm type-check             # TypeScript check
+pnpm test                   # Run unit tests
+pnpm test:e2e               # Playwright E2E tests
+make test-all               # All tests (Unit + Lambda + E2E)
 
 # Image Optimization
-pnpm optimize:images        # Batch optimize
+pnpm optimize:images        # Batch optimize originals
+make backfill-thumbnails    # Generate thumbnails for existing S3 images
 ```
 
 ---

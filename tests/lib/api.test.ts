@@ -4,11 +4,13 @@ import {
   adminAuth,
   adminGalleries,
   adminImages,
+  adminImagen,
   adminInquiries,
   adminNotify,
   adminProcessing,
   clientAuth,
   clientGallery,
+  publicGalleries,
 } from '@/lib/api';
 
 type ApiSuccess<T> = { success: true; data: T };
@@ -488,6 +490,162 @@ describe('lib/api', () => {
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({ processingMode: 'auto' }),
+      })
+    );
+  });
+
+  it('calls auth helpers and public galleries endpoints', async () => {
+    mockFetchJson({
+      success: true,
+      data: {
+        authenticated: true,
+        galleryId: 'g/1',
+        token: 'client-token-2',
+      },
+    });
+    await clientAuth.check('g/1');
+
+    mockFetchJson({
+      success: true,
+      data: { authenticated: true, username: 'admin' },
+    });
+    await adminAuth.check();
+
+    mockFetchJson({ success: true, data: { success: true } });
+    await adminAuth.changePassword('old-pass', 'new-pass');
+
+    mockFetchJson({ success: true, data: { galleries: [] } });
+    await publicGalleries.getFeatured();
+
+    mockFetchJson({ success: true, data: { images: [] } });
+    await publicGalleries.getFeaturedImages(12);
+
+    mockFetchJson({ success: true, data: { galleries: [] } });
+    await publicGalleries.getByCategory('portraits');
+
+    mockFetchJson({
+      success: true,
+      data: {
+        gallery: {
+          id: 'g1',
+          title: 'Public Gallery',
+          category: 'portraits',
+          slug: 'public-gallery',
+          images: [],
+          createdAt: '2026-01-01',
+        },
+      },
+    });
+    await publicGalleries.getGallery('portraits', 'public-gallery');
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/api/client/auth?galleryId=g%2F1',
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/api/admin/auth', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      '/api/api/admin/auth',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: 'old-pass',
+          newPassword: 'new-pass',
+        }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      4,
+      '/api/api/galleries/featured',
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      5,
+      '/api/api/galleries/featured/images?limit=12',
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      6,
+      '/api/api/galleries/portraits',
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      7,
+      '/api/api/galleries/portraits/public-gallery',
+      expect.any(Object)
+    );
+  });
+
+  it('calls all admin imagen endpoints with expected payloads', async () => {
+    mockFetchJson({ success: true, data: { uploadUrl: 'https://u', key: 'raw/a.cr3' } });
+    await adminImagen.getUploadUrl('a.cr3', 'application/octet-stream');
+
+    mockFetchJson({ success: true, data: { files: [] } });
+    await adminImagen.listUploads();
+
+    mockFetchJson({ success: true, data: { jobIds: ['job-1'] } });
+    await adminImagen.process(['raw/a.cr3']);
+
+    mockFetchJson({ success: true, data: { jobs: [] } });
+    await adminImagen.listJobs();
+
+    mockFetchJson({ success: true, data: { files: [] } });
+    await adminImagen.listEdited();
+
+    mockFetchJson({ success: true, data: { approved: 1 } });
+    await adminImagen.approve(['edited/a.jpg']);
+
+    mockFetchJson({ success: true, data: { deleted: 1 } });
+    await adminImagen.deleteEdited(['edited/a.jpg']);
+
+    mockFetchJson({ success: true, data: { deleted: 1 } });
+    await adminImagen.deleteJobs(['job-1']);
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/api/admin/imagen/upload',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          filename: 'a.cr3',
+          contentType: 'application/octet-stream',
+        }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/api/admin/imagen/upload', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      '/api/api/admin/imagen/process',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ rawKeys: ['raw/a.cr3'] }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/api/admin/imagen/jobs', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(5, '/api/api/admin/imagen/edited', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      6,
+      '/api/api/admin/imagen/approve',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ keys: ['edited/a.jpg'] }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      7,
+      '/api/api/admin/imagen/edited',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ keys: ['edited/a.jpg'] }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      8,
+      '/api/api/admin/imagen/jobs',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ jobIds: ['job-1'] }),
       })
     );
   });

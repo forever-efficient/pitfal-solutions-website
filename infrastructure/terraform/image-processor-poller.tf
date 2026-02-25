@@ -186,12 +186,18 @@ resource "aws_iam_role_policy" "poller_s3" {
       {
         Effect   = "Allow"
         Action   = ["s3:PutObject"]
-        Resource = "${aws_s3_bucket.media.arn}/finished/*"
+        Resource = [
+          "${aws_s3_bucket.media.arn}/finished/*",
+          "${aws_s3_bucket.media.arn}/imagen/edited/*"
+        ]
       },
       {
         Effect   = "Allow"
         Action   = ["s3:DeleteObject"]
-        Resource = "${aws_s3_bucket.media.arn}/staging/*"
+        Resource = [
+          "${aws_s3_bucket.media.arn}/staging/*",
+          "${aws_s3_bucket.media.arn}/imagen/RAW/*"
+        ]
       }
     ]
   })

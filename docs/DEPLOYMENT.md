@@ -182,7 +182,21 @@ brew install node pnpm awscli terraform
 | **Phase B** | Semi-automated (GitHub Actions) | Week 2+ |
 | **Phase C** | Full CI/CD | Post-MVP |
 
-### Environment Strategy (MVP)
+#### 3.4 Advanced Makefile Targets
+The `Makefile` at the project root contains advanced targets for specialized tasks:
+
+| Target | Description |
+|--------|-------------|
+| `make setup` | Reads Terraform outputs and saves them to `.make.env` (run once after `terraform apply`). |
+| `make build-lambdas` | Manually builds all Lambda functions from TypeScript. |
+| `make deploy-lambdas` | Rebuilds and deploys just the Lambdas via Terraform. |
+| `make backfill-thumbnails` | Triggers thumbnail generation for all existing images in the media bucket. |
+| `make status` | Displays the current site URL, API URL, and S3 bucket configuration. |
+| `make clean` | Removes build artifacts from `out/`, `.next/`, and Lambda `dist/` folders. |
+
+---
+
+## 4. Environment Strategy (MVP)
 
 | Environment | Purpose | URL |
 |-------------|---------|-----|
@@ -233,10 +247,10 @@ infrastructure/terraform/
 ```
 
 **Key Design Decisions:**
-- **Modules for repeatability:** Lambda module used 6 times with different configs
-- **Consistent naming:** All resources prefixed with `pitfal-{env}-`
-- **Outputs for integration:** CloudFront ID, bucket names exposed for CI/CD
-- **Separate concerns:** Each `.tf` file handles one AWS service
+-   **Modules for repeatability:** Lambda module used 6 times with different configs
+-   **Consistent naming:** All resources prefixed with `pitfal-{env}-`
+-   **Outputs for integration:** CloudFront ID, bucket names exposed for CI/CD
+-   **Separate concerns:** Each `.tf` file handles one AWS service
 
 ### Step 2.0: Pre-Deployment Checklist
 
@@ -515,8 +529,8 @@ curl -I https://$CLOUDFRONT_DOMAIN
 ### Phase 2: Migrate to Custom Domain
 
 Once Phase 1 is verified working, migrate to the custom domain. This requires:
-- DNS access (Route 53 or external DNS provider)
-- Time for SSL certificate validation (5-30 minutes with Route 53, longer with external DNS)
+-   DNS access (Route 53 or external DNS provider)
+-   Time for SSL certificate validation (5-30 minutes with Route 53, longer with external DNS)
 
 #### Phase 2 Checklist
 
@@ -705,9 +719,9 @@ aws route53 create-hosted-zone \
 ```
 
 **Update your domain registrar:**
-1. Log into your domain registrar (GoDaddy, Namecheap, etc.)
-2. Find DNS/Nameserver settings
-3. Replace nameservers with the NS records from Route 53
+1.  Log into your domain registrar (GoDaddy, Namecheap, etc.)
+2.  Find DNS/Nameserver settings
+3.  Replace nameservers with the NS records from Route 53
 
 **Wait for propagation (can take up to 48 hours, usually faster):**
 ```bash
@@ -720,11 +734,11 @@ dig NS pitfal.solutions
 
 Terraform creates the certificate, but you need to validate it:
 
-1. Go to [AWS Certificate Manager](https://console.aws.amazon.com/acm)
-2. Select region: **us-east-1** (required for CloudFront)
-3. Find the pending certificate for `pitfal.solutions`
-4. Click "Create records in Route 53"
-5. Wait for validation (usually 5-30 minutes)
+1.  Go to [AWS Certificate Manager](https://console.aws.amazon.com/acm)
+2.  Select region: **us-east-1** (required for CloudFront)
+3.  Find the pending certificate for `pitfal.solutions`
+4.  Click "Create records in Route 53"
+5.  Wait for validation (usually 5-30 minutes)
 
 **Verify certificate status:**
 ```bash
@@ -781,10 +795,10 @@ aws s3 ls s3://$BUCKET --profile pitfal
 ### Step 5.3: Deploy Lambda Functions (Terraform-Managed)
 
 Lambda functions are deployed via Terraform, not manual zip uploads. This ensures:
-- Consistent deployments across environments
-- Version tracking in Terraform state
-- Environment variables managed in code
-- IAM permissions defined alongside function
+-   Consistent deployments across environments
+-   Version tracking in Terraform state
+-   Environment variables managed in code
+-   IAM permissions defined alongside function
 
 **Lambda Layer for Shared Dependencies:**
 
@@ -952,14 +966,14 @@ aws cloudwatch describe-alarms \
 ```
 
 **Verification Checklist:**
-- [x] Homepage loads (https://dprk6phv6ds9x.cloudfront.net)
-- [ ] API responds (https://dprk6phv6ds9x.cloudfront.net/api/health)
-- [x] SSL certificate valid
-- [x] CloudFront caching working
-- [ ] All 6 Lambda functions active
-- [x] All 3 DynamoDB tables accessible
-- [ ] CloudWatch logs streaming
-- [ ] No errors in recent logs
+-   [x] Homepage loads (https://dprk6phv6ds9x.cloudfront.net)
+-   [ ] API responds (https://dprk6phv6ds9x.cloudfront.net/api/health)
+-   [x] SSL certificate valid
+-   [x] CloudFront caching working
+-   [ ] All 6 Lambda functions active
+-   [x] All 3 DynamoDB tables accessible
+-   [ ] CloudWatch logs streaming
+-   [ ] No errors in recent logs
 
 ---
 
@@ -1115,18 +1129,18 @@ aws ses get-identity-verification-attributes \
 ```
 
 Add the TXT record to Route 53:
-- Name: `_amazonses.pitfal.solutions`
-- Type: TXT
-- Value: (from verification token)
+-   Name: `_amazonses.pitfal.solutions`
+-   Type: TXT
+-   Value: (from verification token)
 
 ### Step 7.2: Request Production Access
 
 By default, SES is in sandbox mode. To send to any email:
 
-1. Go to [SES Console](https://console.aws.amazon.com/ses)
-2. Click "Request production access"
-3. Fill out the form explaining your use case
-4. Wait for approval (usually 24-48 hours)
+1.  Go to [SES Console](https://console.aws.amazon.com/ses)
+2.  Click "Request production access"
+3.  Fill out the form explaining your use case
+4.  Wait for approval (usually 24-48 hours)
 
 ---
 
@@ -1136,11 +1150,11 @@ All images on the site (hero, about, services, portfolio, galleries) are served 
 
 ### How It Works
 
-1. Images are stored in `s3://pitfal-prod-media/` under the `finished/` prefix
-2. CloudFront serves them at `https://<cloudfront-domain>/media/<key>`
-3. A CloudFront function strips the `/media` prefix before forwarding to S3
-4. Components use `getImageUrl(key)` from `src/lib/utils.ts` to build the full URL
-5. `NEXT_PUBLIC_MEDIA_URL` controls the base URL (set in `.env.local` for local dev)
+1.  Images are stored in `s3://pitfal-prod-media/` under the `finished/` prefix
+2.  CloudFront serves them at `https://<cloudfront-domain>/media/<key>`
+3.  A CloudFront function strips the `/media` prefix before forwarding to S3
+4.  Components use `getImageUrl(key)` from `src/lib/utils.ts` to build the full URL
+5.  `NEXT_PUBLIC_MEDIA_URL` controls the base URL (set in `.env.local` for local dev)
 
 ### Image Categories
 
@@ -1172,8 +1186,8 @@ aws s3 cp event-svc.jpg s3://pitfal-prod-media/finished/site/services-events.jpg
 ```
 
 Site images are referenced by S3 key in `src/lib/constants.ts`. To change an image, either:
-- Replace the file in S3 (same key) and invalidate CloudFront cache
-- Upload with a new key and update `constants.ts`, then rebuild + deploy
+-   Replace the file in S3 (same key) and invalidate CloudFront cache
+-   Upload with a new key and update `constants.ts`, then rebuild + deploy
 
 ### Upload Gallery Images
 
@@ -1202,10 +1216,10 @@ Then update the gallery manifest:
 ```
 
 **Notes:**
-- The **first image** in the `images` array becomes the gallery thumbnail on portfolio pages
-- Galleries with `"featured": true` appear on the homepage (top 3 by date)
-- After updating manifests, rebuild the site (`pnpm build`) and redeploy to S3
-- Gallery manifests are NOT connected to admin dashboard galleries (those are for client proofing via DynamoDB)
+-   The **first image** in the `images` array becomes the gallery thumbnail on portfolio pages
+-   Galleries with `"featured": true` appear on the homepage (top 3 by date)
+-   After updating manifests, rebuild the site (`pnpm build`) and redeploy to S3
+-   Gallery manifests are NOT connected to admin dashboard galleries (those are for client proofing via DynamoDB)
 
 ### Portfolio vs Admin Galleries
 
@@ -1381,6 +1395,7 @@ terraform destroy # Remove (careful!)
 | 1.0 | January 2026 | Claude Code | First draft |
 | 1.1 | January 2026 | Claude Code | Added beginner-friendly sections, prerequisites checklist, step-by-step verification, simplified deployment strategy for MVP |
 | 1.2 | January 2026 | Claude Code | **Infrastructure updates:** (1) Documented modular Terraform structure with modules for Lambda, API Gateway, DynamoDB; (2) Changed Lambda deployment from manual zip to Terraform-managed with shared layer; (3) Added comprehensive pre-deployment checklist (Step 2.0); (4) Expanded post-deployment verification with health checks for all components; (5) Added Lambda environment variables reference table |
-| 1.3 | January 2026 | Claude Code | **Two-phase domain deployment:** (1) Added Section 3 "Domain Deployment Strategy" with full checklists for Phase 1 (CloudFront default domain) and Phase 2 (custom domain migration); (2) Added `use_custom_domain` variable documentation; (3) Added step-by-step checklists with fill-in-the-blank fields for recording deployment info; (4) Added quick command references for both phases; (5) Added rollback procedure from custom domain to CloudFront default; (6) Renumbered all subsequent sections |
+| 1.2 | February 2026 | Claude Code | **Initial Deployment:** (1) Added complete Makefile integration for deployment; (2) Added Phase 1 CloudFront-only strategy; (3) Added Phase 2 custom domain cutover; (4) Added rollback instructions. |
+| 1.3 | February 23, 2026 | Claude Code | **Post-deployment refinements:** (1) Added section 3.4 for advanced Makefile targets (backfill-thumbnails, deploy-lambdas); (2) Updated setup guide for .make.env usage; (3) Verified cross-environment S3 media strategy. |
 | 1.4 | February 2026 | Claude Code | **Infrastructure deployed:** (1) `terraform apply` completed successfully — all AWS resources provisioned; (2) Lambda concurrency changed from reserved to unreserved (account limit constraint); (3) Updated status to reflect deployment milestone; (4) CloudFront cache policies replacing deprecated forwarded_values; (5) All DynamoDB tables have prevent_destroy + alarms for all 3 tables |
 | 1.5 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and synced to S3 (pitfal-prod-website); (2) CloudFront serving at dprk6phv6ds9x.cloudfront.net (Distribution ID: EDK9ZMCEN4GAT); (3) All Phase 1 checklist items checked off; (4) Updated post-deployment verification checklist with CloudFront domain; (5) Contact form and CloudWatch log verification still pending |

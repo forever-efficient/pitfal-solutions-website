@@ -70,7 +70,11 @@
       "Bash(KEY2=\"gallery/$GALLERY_ID/88b4dc80-16af-4493-a6a7-e011171b37b5-1G6A5578-topaz-denoise.jpeg\")",
       "Skill(logs)",
       "Bash(lsof:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:imagenai-public.s3.us-east-1.amazonaws.com)",
+      "WebFetch(domain:support.imagen-ai.com)",
+      "WebFetch(domain:api.imagen-ai.com)",
+      "Bash(aws dynamodb:*)"
     ]
   },
   "enabledMcpjsonServers": [

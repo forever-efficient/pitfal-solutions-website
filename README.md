@@ -67,6 +67,11 @@ The site will be available at http://localhost:3000
 | `pnpm test:coverage` | Run tests with coverage |
 | `pnpm test:e2e` | Run Playwright E2E tests |
 | `pnpm optimize:images` | Batch optimize images |
+| `make deploy` | **Recommended** Full deployment (build + sync + invalidate) |
+| `make setup` | Sync Terraform outputs to local environment |
+| `make status` | Show current deployment configuration |
+| `make build-lambdas` | Build all AWS Lambda functions |
+| `make test-all` | Run all tests (unit + lambda + e2e) |
 
 ## Project Structure
 

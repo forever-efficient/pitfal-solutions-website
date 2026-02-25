@@ -12,6 +12,7 @@ function StatusBadge({ status }: { status: ProcessingJob['status'] }) {
     queued:      { label: 'In queue',   classes: 'bg-yellow-100 text-yellow-800' },
     uploading:   { label: 'Uploading',  classes: 'bg-blue-100 text-blue-700' },
     processing:  { label: 'Editing…',   classes: 'bg-blue-100 text-blue-700' },
+    exporting:   { label: 'Exporting…', classes: 'bg-cyan-100 text-cyan-700' },
     downloading: { label: 'Saving…',    classes: 'bg-blue-100 text-blue-700' },
     complete:    { label: 'Complete',   classes: 'bg-green-100 text-green-700' },
     failed:      { label: 'Failed',     classes: 'bg-red-100 text-red-700' },
@@ -19,7 +20,7 @@ function StatusBadge({ status }: { status: ProcessingJob['status'] }) {
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.classes}`}>
-      {status === 'processing' || status === 'uploading' || status === 'downloading' ? (
+      {status === 'processing' || status === 'uploading' || status === 'exporting' || status === 'downloading' ? (
         <svg className="animate-spin -ml-0.5 mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />

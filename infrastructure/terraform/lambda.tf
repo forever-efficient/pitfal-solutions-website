@@ -381,8 +381,9 @@ resource "aws_lambda_function" "admin" {
       SITE_URL                   = var.use_custom_domain ? "https://${var.domain_name}" : ""
       ENVIRONMENT                = var.environment
       CORS_ALLOWED_ORIGINS       = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
-      ORCHESTRATOR_FUNCTION_NAME = var.enable_raw_pipeline ? "${local.name_prefix}-image-processor-orchestrator" : ""
-      IMAGENAI_PROFILE_ID        = var.imagenai_profile_id
+      ORCHESTRATOR_FUNCTION_NAME  = var.enable_raw_pipeline ? "${local.name_prefix}-image-processor-orchestrator" : ""
+      IMAGENAI_PROFILE_ID_JPG     = var.imagenai_profile_id_jpg
+      IMAGENAI_PROFILE_ID_RAW     = var.imagenai_profile_id_raw
     }
   }
 
