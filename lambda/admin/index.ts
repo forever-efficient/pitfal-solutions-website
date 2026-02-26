@@ -1243,11 +1243,11 @@ async function handlePublicGalleries(
 
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const allKeys = allGalleries
-      .filter(g => g.featured)
+      .filter(g => !g.passwordHash)
       .flatMap(g => (g.images || []).map(img => img.key));
 
     const images = shuffleArray(allKeys).slice(0, limit);
-    log('INFO', 'Featured gallery images fetched', ctx, { total: allKeys.length, returned: images.length, limit });
+    log('INFO', 'Public gallery images fetched', ctx, { total: allKeys.length, returned: images.length, limit });
     return success({ images }, 200, requestOrigin);
   }
 

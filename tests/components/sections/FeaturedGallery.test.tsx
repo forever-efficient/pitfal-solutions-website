@@ -62,14 +62,21 @@ describe('FeaturedGallery', () => {
     render(<FeaturedGallery />);
     expect(screen.getByText('Past Solutions')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Featured Projects' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetFeatured).toHaveBeenCalled();
+    });
   });
 
   it('renders section description', async () => {
     render(<FeaturedGallery />);
     expect(screen.getByText(/A selection of recent work/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetFeatured).toHaveBeenCalled();
+    });
   });
 
   it('shows skeleton loading state initially', () => {
+    mockGetFeatured.mockImplementation(() => new Promise(() => {}));
     render(<FeaturedGallery />);
     const skeletons = document.querySelectorAll('.animate-pulse');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -105,11 +112,14 @@ describe('FeaturedGallery', () => {
     expect(featuredLinks[2]).toHaveAttribute('href', '/portfolio/viewer?category=events&slug=johnson-wedding');
   });
 
-  it('renders View Full Portfolio CTA', () => {
+  it('renders View Full Portfolio CTA', async () => {
     render(<FeaturedGallery />);
     const viewAllLink = screen.getByRole('link', { name: /view full portfolio/i });
     expect(viewAllLink).toBeInTheDocument();
     expect(viewAllLink).toHaveAttribute('href', '/portfolio');
+    await waitFor(() => {
+      expect(mockGetFeatured).toHaveBeenCalled();
+    });
   });
 
   it('shows static fallbacks when API returns empty galleries', async () => {

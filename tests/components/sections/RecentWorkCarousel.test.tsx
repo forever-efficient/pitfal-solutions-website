@@ -23,20 +23,26 @@ describe('RecentWorkCarousel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the section header when showHeader is true', () => {
+  it('renders the section header when showHeader is true', async () => {
     mockGetFeaturedImages.mockImplementation(() =>
       Promise.resolve({ images: [] })
     );
     render(<RecentWorkCarousel showHeader={true} />);
     expect(screen.getByText('Recent Work')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetFeaturedImages).toHaveBeenCalled();
+    });
   });
 
-  it('hides the section header when showHeader is false', () => {
+  it('hides the section header when showHeader is false', async () => {
     mockGetFeaturedImages.mockImplementation(() =>
       Promise.resolve({ images: [] })
     );
     render(<RecentWorkCarousel showHeader={false} />);
     expect(screen.queryByText('Recent Work')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetFeaturedImages).toHaveBeenCalled();
+    });
   });
 
   it('shows skeleton loading state initially', () => {
@@ -96,7 +102,7 @@ describe('RecentWorkCarousel', () => {
     expect(screen.getByText('Unable to load images')).toBeInTheDocument();
   });
 
-  it('renders View Full Portfolio CTA when showCta is true', () => {
+  it('renders View Full Portfolio CTA when showCta is true', async () => {
     mockGetFeaturedImages.mockImplementation(() =>
       Promise.resolve({ images: [] })
     );
@@ -104,6 +110,9 @@ describe('RecentWorkCarousel', () => {
     const ctaLink = screen.getByRole('link', { name: /view full portfolio/i });
     expect(ctaLink).toBeInTheDocument();
     expect(ctaLink).toHaveAttribute('href', '/portfolio');
+    await waitFor(() => {
+      expect(mockGetFeaturedImages).toHaveBeenCalled();
+    });
   });
 
   it('hides View Full Portfolio CTA when showCta is false', async () => {
@@ -117,7 +126,7 @@ describe('RecentWorkCarousel', () => {
     });
   });
 
-  it('applies custom className', () => {
+  it('applies custom className', async () => {
     mockGetFeaturedImages.mockImplementation(() =>
       Promise.resolve({ images: [] })
     );
@@ -126,6 +135,9 @@ describe('RecentWorkCarousel', () => {
     );
     const section = container.querySelector('.custom-class');
     expect(section).toBeInTheDocument();
+    await waitFor(() => {
+      expect(mockGetFeaturedImages).toHaveBeenCalled();
+    });
   });
 
   it('renders image onError handler for fallback', async () => {

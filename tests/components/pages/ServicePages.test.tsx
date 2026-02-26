@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ServicesPage, { metadata as servicesMetadata } from '@/app/services/page';
 import PhotographyPage, { metadata as photographyMetadata } from '@/app/services/photography/page';
@@ -6,6 +6,10 @@ import VideographyPage, { metadata as videographyMetadata } from '@/app/services
 import CommercialDronePage, { metadata as droneMetadata } from '@/app/services/commercial-drone/page';
 import AISoftwarePage, { metadata as aiMetadata } from '@/app/services/ai-software/page';
 import { PAGE_META, SERVICES } from '@/lib/constants';
+
+vi.mock('@/components/sections/RecentWorkCarousel', () => ({
+  RecentWorkCarousel: () => <section data-testid="recent-work-carousel" />,
+}));
 
 describe('ServicesPage', () => {
   it('sets metadata from constants', () => {

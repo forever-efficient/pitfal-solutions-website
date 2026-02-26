@@ -1,11 +1,35 @@
 import '@testing-library/jest-dom';
-import { afterEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import React from 'react';
 
 // Cleanup after each test
 afterEach(() => {
   cleanup();
+});
+
+let consoleErrorSpy: ReturnType<typeof vi.spyOn> | null = null;
+
+beforeAll(() => {
+  const originalConsoleError = console.error;
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+    const hasNavigationNotImplemented = args.some(
+      (arg) =>
+        (typeof arg === 'string' && arg.includes('Not implemented: navigation (except hash changes)')) ||
+        (arg instanceof Error && arg.message.includes('Not implemented: navigation (except hash changes)'))
+    );
+
+    if (hasNavigationNotImplemented) {
+      return;
+    }
+
+    originalConsoleError(...args);
+  });
+});
+
+afterAll(() => {
+  consoleErrorSpy?.mockRestore();
+  consoleErrorSpy = null;
 });
 
 // Mock next/navigation
@@ -41,10 +65,24 @@ vi.mock('next/link', () => ({
   default: ({
     children,
     href,
+    onClick,
     ...props
   }: {
     children: React.ReactNode;
     href: string;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
     [key: string]: unknown;
-  }) => React.createElement('a', { href, ...props }, children),
+  }) =>
+    React.createElement(
+      'a',
+      {
+        href,
+        ...props,
+        onClick: (event: React.MouseEvent<HTMLAnchorElement>) => {
+          event.preventDefault();
+          onClick?.(event);
+        },
+      },
+      children
+    ),
 }));
