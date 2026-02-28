@@ -84,7 +84,7 @@ resource "aws_lambda_function" "thumbnail_generator" {
   function_name    = "${local.name_prefix}-thumbnail-gen"
   role             = aws_iam_role.thumbnail_generator.arn
   handler          = "index.handler"
-  runtime          = "nodejs20.x"
+  runtime          = var.lambda_runtime
   
   # Sharp processing is memory/CPU intensive
   memory_size = 1024
