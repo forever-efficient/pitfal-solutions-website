@@ -28,6 +28,7 @@ vi.mock('../../../lambda/shared/db', () => ({
   deleteItem: vi.fn(),
   scanItems: vi.fn(),
   buildUpdateExpression: vi.fn(),
+  incrementCounter: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock session module — only parseAuthToken is used by client-gallery now

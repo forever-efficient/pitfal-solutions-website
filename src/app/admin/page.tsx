@@ -5,7 +5,8 @@ import { StatCard } from '@/components/admin/StatCard';
 import { ReadyQueue } from '@/components/admin/ReadyQueue';
 import { DashboardUploader } from '@/components/admin/DashboardUploader';
 import { useToast } from '@/components/admin/Toast';
-import { adminGalleries, adminInquiries } from '@/lib/api';
+import { adminGalleries, adminInquiries, adminAnalytics } from '@/lib/api';
+import Link from 'next/link';
 
 export default function AdminDashboardPage() {
   const { showError } = useToast();
@@ -14,6 +15,8 @@ export default function AdminDashboardPage() {
     images: 0,
     inquiries: 0,
     newInquiries: 0,
+    clientViews: 0,
+    clientDownloads: 0,
   });
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -23,8 +26,9 @@ export default function AdminDashboardPage() {
       adminGalleries.list(),
       adminInquiries.list(),
       adminInquiries.list('new'),
+      adminAnalytics.get().catch(() => ({ totalViews: 0, totalDownloads: 0, galleries: [] })),
     ])
-      .then(([galleriesData, inquiriesData, newInquiriesData]) => {
+      .then(([galleriesData, inquiriesData, newInquiriesData, analyticsData]) => {
         const totalImages = galleriesData.galleries.reduce(
           (sum, g) => sum + g.imageCount,
           0
@@ -34,6 +38,8 @@ export default function AdminDashboardPage() {
           images: totalImages,
           inquiries: inquiriesData.inquiries.length,
           newInquiries: newInquiriesData.inquiries.length,
+          clientViews: analyticsData.totalViews,
+          clientDownloads: analyticsData.totalDownloads,
         });
       })
       .catch(() => {
@@ -63,6 +69,28 @@ export default function AdminDashboardPage() {
             label="New Inquiries"
             value={loading ? '...' : stats.newInquiries}
             highlight
+          />
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-neutral-900">Client Analytics</h2>
+          <Link
+            href="/admin/analytics"
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            View detailed analytics &rarr;
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StatCard
+            label="Client Gallery Views"
+            value={loading ? '...' : stats.clientViews}
+          />
+          <StatCard
+            label="Client Downloads"
+            value={loading ? '...' : stats.clientDownloads}
           />
         </div>
       </div>

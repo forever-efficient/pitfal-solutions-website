@@ -205,7 +205,7 @@ resource "aws_iam_role_policy" "client_gallery_dynamodb" {
     Statement = [
       {
         Effect = "Allow"
-        Action = ["dynamodb:GetItem"]
+        Action = ["dynamodb:GetItem", "dynamodb:UpdateItem"]
         Resource = [aws_dynamodb_table.galleries.arn]
       },
       {

@@ -155,6 +155,31 @@ export async function queryAllItems<T>(params: QueryCommandInput, maxItems: numb
  * //   ExpressionAttributeValues: { ':val0': 'completed', ':val1': '2026-01-26T...' }
  * // }
  */
+/**
+ * Atomically increments a numeric counter on a DynamoDB item.
+ * Uses ADD expression which treats missing attributes as 0.
+ * @param tableName - The DynamoDB table name
+ * @param key - The primary key of the item
+ * @param counterName - The attribute name to increment
+ * @param amount - The amount to add (default 1)
+ */
+export async function incrementCounter(
+  tableName: string,
+  key: Record<string, unknown>,
+  counterName: string,
+  amount: number = 1
+): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: tableName,
+      Key: key,
+      UpdateExpression: 'ADD #counter :amount',
+      ExpressionAttributeNames: { '#counter': counterName },
+      ExpressionAttributeValues: { ':amount': amount },
+    })
+  );
+}
+
 export function buildUpdateExpression(
   updates: Record<string, unknown>
 ): {

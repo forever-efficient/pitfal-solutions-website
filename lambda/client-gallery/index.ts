@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
-import { getItem, putItem, queryItems } from '../shared/db';
+import { getItem, putItem, queryItems, incrementCounter } from '../shared/db';
 import {
   success,
   error,
@@ -289,6 +289,9 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
 
   log('INFO', 'Gallery fetched', ctx, { imageCount: images.length, commentCount: comments.length });
 
+  // Fire-and-forget view tracking
+  incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'viewCount').catch(() => {});
+
   return success({
     gallery: {
       id: gallery.id,
@@ -457,6 +460,10 @@ async function handleBulkDownload(
   );
 
   log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length, size });
+
+  // Fire-and-forget download tracking (count per image, not per request)
+  incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'downloadCount', downloads.length).catch(() => {});
+
   return success({ downloads }, 200, requestOrigin);
 }
 
@@ -522,6 +529,9 @@ async function handleDownload(
   );
 
   log('INFO', 'Download URL generated', ctx, { imageKey: body.imageKey, size });
+
+  // Fire-and-forget download tracking
+  incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'downloadCount').catch(() => {});
 
   return success({ downloadUrl }, 200, requestOrigin);
 }

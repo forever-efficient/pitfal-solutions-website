@@ -152,6 +152,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
   ctx.adminUser = adminUser;
 
+  // Analytics route (must check before galleries route)
+  if (resource.includes('/admin/analytics')) {
+    return handleAnalytics(method, ctx, requestOrigin);
+  }
+
   // Gallery notify route (must check before generic galleries route)
   if (resource.includes('/admin/galleries') && resource.includes('/notify')) {
     const galleryId = event.pathParameters?.id;
@@ -382,6 +387,48 @@ async function handleChangePassword(event: APIGatewayProxyEvent, ctx: LogContext
   return success({ success: true }, 200, requestOrigin);
 }
 
+// ============ ANALYTICS HANDLER ============
+
+async function handleAnalytics(
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'GET') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const allGalleries = await scanItems<GalleryRecord & { viewCount?: number; downloadCount?: number }>({
+    TableName: GALLERIES_TABLE,
+  });
+
+  // Filter to client galleries (have passwordHash attribute, even if empty string)
+  const clientGalleries = allGalleries.filter(g => g.passwordHash !== undefined);
+
+  let totalViews = 0;
+  let totalDownloads = 0;
+  const galleries = clientGalleries
+    .map(g => {
+      const views = g.viewCount || 0;
+      const downloads = g.downloadCount || 0;
+      totalViews += views;
+      totalDownloads += downloads;
+      return {
+        id: g.id,
+        title: g.title,
+        category: g.category,
+        slug: g.slug,
+        imageCount: g.images?.length || 0,
+        viewCount: views,
+        downloadCount: downloads,
+      };
+    })
+    .sort((a, b) => b.viewCount - a.viewCount);
+
+  log('INFO', 'Analytics fetched', ctx, { clientGalleries: galleries.length, totalViews, totalDownloads });
+  return success({ totalViews, totalDownloads, galleries }, 200, requestOrigin);
+}
+
 // ============ GALLERY HANDLERS ============
 
 async function handleGalleries(
@@ -408,6 +455,8 @@ async function handleGalleries(
         sectionCount: g.sections?.length || 0,
         heroImage: g.heroImage || null,
         featured: g.featured || false,
+        viewCount: (g as Record<string, unknown>).viewCount as number || 0,
+        downloadCount: (g as Record<string, unknown>).downloadCount as number || 0,
         createdAt: g.createdAt,
         updatedAt: g.updatedAt,
       })),

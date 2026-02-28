@@ -277,6 +277,8 @@ export const adminGalleries = {
         sectionCount: number;
         heroImage: string | null;
         featured: boolean;
+        viewCount: number;
+        downloadCount: number;
         createdAt: string;
         updatedAt: string;
       }>;
@@ -545,8 +547,28 @@ export const publicGalleries = {
 };
 
 // =============================================================================
-// Admin Processing Jobs
+// Admin Analytics
 // =============================================================================
+
+export interface AnalyticsGallery {
+  id: string;
+  title: string;
+  category: string;
+  slug: string;
+  imageCount: number;
+  viewCount: number;
+  downloadCount: number;
+}
+
+export interface AnalyticsData {
+  totalViews: number;
+  totalDownloads: number;
+  galleries: AnalyticsGallery[];
+}
+
+export const adminAnalytics = {
+  get: () => request<AnalyticsData>('/api/admin/analytics'),
+};
 
 // =============================================================================
 // Admin Imagen (AI Editor)
