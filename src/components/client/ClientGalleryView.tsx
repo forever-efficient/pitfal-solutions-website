@@ -45,6 +45,7 @@ export function ClientGalleryView({
     heroZoom?: number;
     heroGradientOpacity?: number;
     heroHeight?: 'sm' | 'md' | 'lg';
+    kanbanCounts?: { todo: number; inProgress: number; done: number };
   } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -207,6 +208,26 @@ export function ClientGalleryView({
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {gallery.kanbanCounts && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-medium text-neutral-500">Work Status:</span>
+                {gallery.kanbanCounts.todo > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-blue-50 text-blue-600">
+                    {gallery.kanbanCounts.todo} To Do
+                  </span>
+                )}
+                {gallery.kanbanCounts.inProgress > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-amber-50 text-amber-600">
+                    {gallery.kanbanCounts.inProgress} In Progress
+                  </span>
+                )}
+                {gallery.kanbanCounts.done > 0 && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-sm font-medium bg-emerald-50 text-emerald-600">
+                    {gallery.kanbanCounts.done} Done
+                  </span>
+                )}
+              </div>
+            )}
             <span className="text-sm text-neutral-500">
               {gallery.images.length} photos
             </span>

@@ -74,7 +74,8 @@
       "WebFetch(domain:imagenai-public.s3.us-east-1.amazonaws.com)",
       "WebFetch(domain:support.imagen-ai.com)",
       "WebFetch(domain:api.imagen-ai.com)",
-      "Bash(aws dynamodb:*)"
+      "Bash(aws dynamodb:*)",
+      "Bash(source:*)"
     ]
   },
   "enabledMcpjsonServers": [

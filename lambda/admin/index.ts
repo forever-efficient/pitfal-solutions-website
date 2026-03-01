@@ -119,6 +119,7 @@ interface GalleryRecord {
   clientSort?: ClientSort;
   passwordHash?: string;
   featured?: boolean;
+  kanbanCards?: Array<{ id: string; title: string; status: string; order: number; createdAt: string }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -553,7 +554,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight'];
+    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -1328,11 +1329,18 @@ async function handlePublicGalleries(
       g => g.category === category && g.slug === slug
     );
     if (!gallery) return notFound('Gallery not found', requestOrigin);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { kanbanCards, ...publicGallery } = gallery;
     return success({
       gallery: {
-        ...gallery,
+        ...publicGallery,
         passwordHash: undefined,
         passwordEnabled: !!gallery.passwordHash,
+        kanbanCounts: kanbanCards?.length ? {
+          todo: kanbanCards.filter(c => c.status === 'todo').length,
+          inProgress: kanbanCards.filter(c => c.status === 'in_progress').length,
+          done: kanbanCards.filter(c => c.status === 'done').length,
+        } : undefined,
       },
     }, 200, requestOrigin);
   }

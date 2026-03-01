@@ -46,6 +46,14 @@ export interface ClientSort {
   order?: ClientSortOrder;
 }
 
+export interface KanbanCard {
+  id: string;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done';
+  order: number;
+  createdAt: string;
+}
+
 export interface BulkDownloadResult {
   downloads: Array<{
     key: string;
@@ -176,6 +184,7 @@ export const clientGallery = {
         heroZoom?: number;
         heroGradientOpacity?: number;
         heroHeight?: 'sm' | 'md' | 'lg';
+        kanbanCounts?: { todo: number; inProgress: number; done: number };
       };
       comments: Array<{
         id: string;
@@ -348,6 +357,7 @@ export const adminGalleries = {
       heroZoom?: number | null;
       heroGradientOpacity?: number | null;
       heroHeight?: 'sm' | 'md' | 'lg' | null;
+      kanbanCards?: KanbanCard[];
     }
   ) =>
     request<{ updated: boolean }>(`/api/admin/galleries/${id}`, {
@@ -542,6 +552,7 @@ export const publicGalleries = {
         images: Array<{ key: string; alt?: string }>;
         heroImage?: string;
         createdAt: string;
+        kanbanCounts?: { todo: number; inProgress: number; done: number };
       };
     }>(`/api/galleries/${category}/${slug}`),
 };

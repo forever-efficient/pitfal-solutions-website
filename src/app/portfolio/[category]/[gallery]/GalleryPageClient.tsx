@@ -18,6 +18,7 @@ interface GalleryData {
   images: Array<{ key: string; alt?: string }>;
   heroImage?: string;
   createdAt: string;
+  kanbanCounts?: { todo: number; inProgress: number; done: number };
 }
 
 export function GalleryPageClient({ category, slug }: { category: string; slug: string }) {
@@ -102,6 +103,26 @@ export function GalleryPageClient({ category, slug }: { category: string; slug: 
               {gallery.title}
             </h1>
             <p className="text-lg text-neutral-600 mb-4">{gallery.description}</p>
+            {gallery.kanbanCounts && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <span className="text-sm font-medium text-neutral-500">Work Status:</span>
+                {gallery.kanbanCounts.todo > 0 && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+                    {gallery.kanbanCounts.todo} To Do
+                  </span>
+                )}
+                {gallery.kanbanCounts.inProgress > 0 && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600">
+                    {gallery.kanbanCounts.inProgress} In Progress
+                  </span>
+                )}
+                {gallery.kanbanCounts.done > 0 && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-600">
+                    {gallery.kanbanCounts.done} Done
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-4 text-sm text-neutral-500">
               <span>{formatDate(gallery.createdAt)}</span>
               <span aria-hidden="true">|</span>

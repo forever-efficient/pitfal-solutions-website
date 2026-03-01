@@ -8,6 +8,7 @@ import { GalleryEditor } from '@/components/admin/GalleryEditor';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
 import { HeroPositionEditor } from '@/components/admin/HeroPositionEditor';
+import { KanbanBoard } from '@/components/admin/KanbanBoard';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -103,6 +104,12 @@ function GalleryEditContent() {
       </div>
 
       <GalleryEditor gallery={gallery} galleryId={id} />
+
+      <KanbanBoard
+        galleryId={id}
+        initialCards={gallery.kanbanCards || []}
+        onUpdate={() => loadGallery()}
+      />
 
       {gallery.heroImage && (
         <HeroPositionEditor

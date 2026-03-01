@@ -119,6 +119,7 @@ interface GalleryRecord {
   heroZoom?: number;
   heroGradientOpacity?: number;
   heroHeight?: 'sm' | 'md' | 'lg';
+  kanbanCards?: Array<{ id: string; title: string; status: string; order: number; createdAt: string }>;
 }
 
 interface Comment {
@@ -292,6 +293,7 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
   // Fire-and-forget view tracking
   incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'viewCount').catch(() => {});
 
+  const kanbanCards = gallery.kanbanCards as Array<{ status: string }> | undefined;
   return success({
     gallery: {
       id: gallery.id,
@@ -305,6 +307,11 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
       heroZoom: gallery.heroZoom,
       heroGradientOpacity: gallery.heroGradientOpacity,
       heroHeight: gallery.heroHeight,
+      kanbanCounts: kanbanCards?.length ? {
+        todo: kanbanCards.filter(c => c.status === 'todo').length,
+        inProgress: kanbanCards.filter(c => c.status === 'in_progress').length,
+        done: kanbanCards.filter(c => c.status === 'done').length,
+      } : undefined,
     },
     comments: comments.map((c) => ({
       id: c.commentId,
