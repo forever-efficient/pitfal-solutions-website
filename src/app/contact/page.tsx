@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactForm } from '@/components/forms/ContactForm';
-import { InstagramIcon, FacebookIcon, LinkedInIcon } from '@/components/icons';
+import { InstagramIcon, FacebookIcon, LinkedInIcon, TwitterIcon, YouTubeIcon, GoogleMapsIcon } from '@/components/icons';
 import { BUSINESS, PAGE_META } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -98,6 +98,33 @@ export default function ContactPage() {
                     aria-label="LinkedIn"
                   >
                     <LinkedInIcon size={24} title="LinkedIn" />
+                  </a>
+                  <a
+                    href={BUSINESS.social.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-500 hover:text-primary-600 transition-colors"
+                    aria-label="Twitter"
+                  >
+                    <TwitterIcon size={24} title="Twitter" />
+                  </a>
+                  <a
+                    href={BUSINESS.social.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-500 hover:text-primary-600 transition-colors"
+                    aria-label="YouTube"
+                  >
+                    <YouTubeIcon size={24} title="YouTube" />
+                  </a>
+                  <a
+                    href={BUSINESS.social.googleMaps}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-500 hover:text-primary-600 transition-colors"
+                    aria-label="Google Maps"
+                  >
+                    <GoogleMapsIcon size={24} title="Google Maps" />
                   </a>
                 </div>
               </div>

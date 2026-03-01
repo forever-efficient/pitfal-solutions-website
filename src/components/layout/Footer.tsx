@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
-import { InstagramIcon, FacebookIcon, LinkedInIcon } from '@/components/icons';
+import { InstagramIcon, FacebookIcon, LinkedInIcon, TwitterIcon, YouTubeIcon, GoogleMapsIcon } from '@/components/icons';
 import { BUSINESS, COPY, SERVICES } from '@/lib/constants';
 
 const footerLinks = {
@@ -36,6 +36,21 @@ const socialLinks = [
     label: 'LinkedIn',
     href: BUSINESS.social.linkedin,
     icon: <LinkedInIcon size={20} />,
+  },
+  {
+    label: 'Twitter',
+    href: BUSINESS.social.twitter,
+    icon: <TwitterIcon size={20} />,
+  },
+  {
+    label: 'YouTube',
+    href: BUSINESS.social.youtube,
+    icon: <YouTubeIcon size={20} />,
+  },
+  {
+    label: 'Google Maps',
+    href: BUSINESS.social.googleMaps,
+    icon: <GoogleMapsIcon size={20} />,
   },
 ];
 

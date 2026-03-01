@@ -46,6 +46,9 @@ describe('Footer', () => {
     expect(screen.getByLabelText('Instagram')).toBeInTheDocument();
     expect(screen.getByLabelText('Facebook')).toBeInTheDocument();
     expect(screen.getByLabelText('LinkedIn')).toBeInTheDocument();
+    expect(screen.getByLabelText('Twitter')).toBeInTheDocument();
+    expect(screen.getByLabelText('YouTube')).toBeInTheDocument();
+    expect(screen.getByLabelText('Google Maps')).toBeInTheDocument();
   });
 
   it('renders social links with correct attributes', () => {

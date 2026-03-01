@@ -25,6 +25,9 @@ export const BUSINESS = {
     instagram: 'https://www.instagram.com/pitfal.solutions/',
     facebook: 'https://www.facebook.com/pitfal.solutions',
     linkedin: 'https://www.linkedin.com/in/thomas-archuleta/',
+    twitter: 'https://x.com/pitfalsolutions',
+    youtube: 'https://www.youtube.com/@pitfal.solutions',
+    googleMaps: 'https://maps.app.goo.gl/Dt8zWCfByCu86axm6',
   },
 } as const;
 

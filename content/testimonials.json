@@ -4,31 +4,31 @@
   "testimonials": [
     {
       "id": "1",
-      "name": "Sarah Johnson",
-      "role": "Marketing Director",
-      "company": "TechStart Inc.",
-      "content": "Working with Pitfal Solutions transformed our brand imagery. The attention to detail and creative vision exceeded our expectations. Our marketing materials have never looked better.",
-      "image": "/images/testimonials/sarah.jpg",
+      "name": "Katie Lawson",
+      "role": "Portrait Client",
+      "company": "",
+      "content": "Thomas was kind, thoughtful, and put my family at ease. He is a consummate professional and our pictures were more than we could have hoped for! He was able to take senior picture and family pictures seamlessly during the same session. I simply can't say enough great things about his photographic services and his professionalism! He's a gem and will make your session engaging and fun!",
+      "image": "",
       "rating": 5,
       "featured": true
     },
     {
       "id": "2",
-      "name": "Michael Chen",
-      "role": "CEO",
-      "company": "Chen Enterprises",
-      "content": "The team captured our corporate event beautifully. Every key moment was documented with professionalism. We've already booked them for our next annual conference.",
-      "image": "/images/testimonials/michael.jpg",
+      "name": "Justin Germain",
+      "role": "Videography Client",
+      "company": "",
+      "content": "I was put into contact with Thomas by my cousin. Any family recommendation you know is going to be good. He put together a highly professional trailer for my book that far exceeded expectations, and he did it for an amazing price. When it's time to do a trailer for the second book, I'll know who to call. Pitfal Solutions is lights out!",
+      "image": "",
       "rating": 5,
       "featured": true
     },
     {
       "id": "3",
-      "name": "Emily Rodriguez",
-      "role": "Bride",
+      "name": "B.J. Jacobs",
+      "role": "Event Client",
       "company": "",
-      "content": "Our wedding photos are absolutely stunning. They captured not just the moments, but the emotions of our special day. We couldn't be happier with the results.",
-      "image": "/images/testimonials/emily.jpg",
+      "content": "I hired Thomas to take photos for a baby shower. The day of the shower we woke up to a major snow storm that dumped more than a foot of snow in the Denver metro area. Thomas still arrived early, helped us shovel snow as the venue did not provide snow removal services and then proceeded to take the most amazing photographs at a very reasonable rate. A few weeks before the shower I met with Thomas and told him I wanted pictures of my son and his wife with every guest and he did exactly that. He also took great candid pictures that everyone loved. Thomas edited and delivered our pictures within a few weeks. He is professional and an amazing photographer. If you need a great photographer who charges very reasonable rates you better hurry and schedule time with Thomas. I've been singing his praises since November 2024 and my friends and family are filling up his calendar.",
+      "image": "",
       "rating": 5,
       "featured": true
     }

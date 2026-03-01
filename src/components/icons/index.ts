@@ -34,6 +34,9 @@ export { LocationIcon } from './LocationIcon';
 export { InstagramIcon } from './InstagramIcon';
 export { FacebookIcon } from './FacebookIcon';
 export { LinkedInIcon } from './LinkedInIcon';
+export { TwitterIcon } from './TwitterIcon';
+export { YouTubeIcon } from './YouTubeIcon';
+export { GoogleMapsIcon } from './GoogleMapsIcon';
 
 // Service icons
 export { BuildingIcon } from './BuildingIcon';
