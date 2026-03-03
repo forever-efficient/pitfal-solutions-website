@@ -21,8 +21,8 @@ S3_BUCKET      ?= pitfal-prod-website
 CLOUDFRONT_ID  ?= EDK9ZMCEN4GAT
 
 # Production public URLs (baked into Next.js static export at build time)
-NEXT_PUBLIC_SITE_URL  ?= https://dprk6phv6ds9x.cloudfront.net
-NEXT_PUBLIC_MEDIA_URL ?= https://dprk6phv6ds9x.cloudfront.net/media
+NEXT_PUBLIC_SITE_URL  ?= https://www.pitfal.solutions
+NEXT_PUBLIC_MEDIA_URL ?= https://www.pitfal.solutions/media
 NEXT_PUBLIC_API_URL   ?= https://ei1btpxkmb.execute-api.us-west-2.amazonaws.com/prod
 
 # Load .make.env if it exists (populated by `make setup`, git-ignored)
@@ -91,16 +91,27 @@ help: ## List all available targets
 
 setup: ## Read Terraform outputs → write .make.env (run once after terraform apply)
 	@echo "Reading Terraform outputs..."
-	@echo "S3_BUCKET=$$(terraform -chdir=infrastructure/terraform output -raw website_bucket_name)" > .make.env
-	@echo "CLOUDFRONT_ID=$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_distribution_id)" >> .make.env
-	@echo "NEXT_PUBLIC_SITE_URL=https://$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_domain_name)" >> .make.env
-	@echo "NEXT_PUBLIC_MEDIA_URL=https://$$(terraform -chdir=infrastructure/terraform output -raw cloudfront_domain_name)/media" >> .make.env
-	@echo "NEXT_PUBLIC_API_URL=$$(terraform -chdir=infrastructure/terraform output -raw api_gateway_url)" >> .make.env
-	@echo ""
-	@echo "Saved to .make.env:"
-	@cat .make.env
-	@echo ""
-	@echo "Run 'make deploy' to build and deploy with these values."
+	@TF="terraform -chdir=infrastructure/terraform"; \
+	BUCKET=$$($${TF} output -raw website_bucket_name); \
+	CF_ID=$$($${TF} output -raw cloudfront_distribution_id); \
+	CF_DOMAIN=$$($${TF} output -raw cloudfront_domain_name); \
+	API_URL=$$($${TF} output -raw api_gateway_url); \
+	USE_CUSTOM=$$($$TF output -json domain_configuration | python3 -c "import sys,json; print(json.load(sys.stdin).get('use_custom_domain','false'))" 2>/dev/null || echo "false"); \
+	if [ "$${USE_CUSTOM}" = "true" ] || [ "$${USE_CUSTOM}" = "True" ]; then \
+		SITE_URL=$$($${TF} output -raw website_url); \
+	else \
+		SITE_URL="https://$${CF_DOMAIN}"; \
+	fi; \
+	echo "S3_BUCKET=$${BUCKET}" > .make.env; \
+	echo "CLOUDFRONT_ID=$${CF_ID}" >> .make.env; \
+	echo "NEXT_PUBLIC_SITE_URL=$${SITE_URL}" >> .make.env; \
+	echo "NEXT_PUBLIC_MEDIA_URL=$${SITE_URL}/media" >> .make.env; \
+	echo "NEXT_PUBLIC_API_URL=$${API_URL}" >> .make.env; \
+	echo ""; \
+	echo "Saved to .make.env:"; \
+	cat .make.env; \
+	echo ""; \
+	echo "Run 'make deploy' to build and deploy with these values."
 
 # --- Pre-flight check --------------------------------------------------------
 
@@ -167,9 +178,14 @@ invalidate: ## Create CloudFront invalidation for all paths
 
 deploy: check build sync invalidate ## Full 1-command deploy: check → build → sync → invalidate
 	@echo ""
-	@echo "Deployed successfully!"
-	@echo "  URL: $(NEXT_PUBLIC_SITE_URL)"
+	@echo "============================================"
+	@echo "  Deployed successfully!"
+	@echo "============================================"
+	@echo "  Site:  $(NEXT_PUBLIC_SITE_URL)"
+	@echo "  Media: $(NEXT_PUBLIC_MEDIA_URL)"
+	@echo "  API:   $(NEXT_PUBLIC_API_URL)"
 	@echo "  Cache invalidation in progress (2-5 min)"
+	@echo "============================================"
 
 # --- Lambda ------------------------------------------------------------------
 

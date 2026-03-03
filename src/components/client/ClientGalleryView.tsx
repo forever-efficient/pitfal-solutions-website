@@ -204,7 +204,7 @@ export function ClientGalleryView({
               />
             </Link>
             <h1 className="font-display text-xl font-bold text-neutral-900">
-              {initialTitle || gallery.title}
+              {gallery.title || initialTitle}
             </h1>
           </div>
           <div className="flex items-center gap-4">

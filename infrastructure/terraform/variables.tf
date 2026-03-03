@@ -39,7 +39,7 @@ variable "subject_alternative_names" {
 variable "use_custom_domain" {
   description = "Whether to use a custom domain with ACM certificate (false = CloudFront default domain)"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # Route53 - set to empty string if managing DNS externally
