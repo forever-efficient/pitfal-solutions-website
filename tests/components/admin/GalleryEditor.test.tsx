@@ -19,6 +19,7 @@ const defaultGallery = {
   slug: 'summer-portraits',
   featured: true,
   passwordEnabled: true,
+  allowDownloads: true,
 };
 
 function renderEditor(
@@ -32,8 +33,6 @@ function renderEditor(
   );
 }
 
-// Labels don't have htmlFor, so we use role-based queries.
-// The form has: Title, Slug, Description (textarea), 1 select (Category), 2 checkboxes (password, featured).
 function getTitleInput() {
   return screen.getAllByRole('textbox')[0]; // Title
 }
@@ -49,10 +48,13 @@ function getDescriptionTextarea() {
   return all[all.length - 1];
 }
 function getPasswordCheckbox() {
-  return screen.getAllByRole('checkbox')[0]; // "Require a password" checkbox
+  return screen.getByLabelText('Require a password to view this gallery');
+}
+function getAllowDownloadsCheckbox() {
+  return screen.getByLabelText('Allow Downloads');
 }
 function getFeaturedCheckbox() {
-  return screen.getAllByRole('checkbox')[1]; // "Featured gallery" checkbox
+  return screen.getByLabelText('Featured gallery');
 }
 
 describe('GalleryEditor', () => {
@@ -71,6 +73,7 @@ describe('GalleryEditor', () => {
       'A collection of summer portraits'
     );
     expect(getPasswordCheckbox()).toBeChecked();
+    expect(getAllowDownloadsCheckbox()).toBeChecked();
     expect(getFeaturedCheckbox()).toBeChecked();
   });
 
@@ -82,6 +85,8 @@ describe('GalleryEditor', () => {
     expect(getCategorySelect()).toHaveValue('brands');
     expect(getDescriptionTextarea()).toHaveValue('');
     expect(getPasswordCheckbox()).not.toBeChecked();
+    expect(getAllowDownloadsCheckbox()).toBeEnabled();
+    expect(getAllowDownloadsCheckbox()).not.toBeChecked();
     expect(getFeaturedCheckbox()).not.toBeChecked();
   });
 
@@ -150,6 +155,8 @@ describe('GalleryEditor', () => {
     await user.click(getPasswordCheckbox());
     expect(getPasswordCheckbox()).not.toBeChecked();
     expect(screen.queryByPlaceholderText('Enter new password to change it')).not.toBeInTheDocument();
+    expect(getAllowDownloadsCheckbox()).toBeEnabled();
+    expect(getAllowDownloadsCheckbox()).toBeChecked();
   });
 
   it('shows password input after checking password checkbox on unpro­tected gallery', async () => {
@@ -160,6 +167,18 @@ describe('GalleryEditor', () => {
     await user.click(getPasswordCheckbox());
     expect(getPasswordCheckbox()).toBeChecked();
     expect(screen.getByPlaceholderText('Enter a password')).toBeInTheDocument();
+    expect(getAllowDownloadsCheckbox()).not.toBeChecked();
+  });
+
+  it('toggles allow downloads checkbox', async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    const checkbox = getAllowDownloadsCheckbox();
+    expect(checkbox).toBeChecked();
+
+    await user.click(checkbox);
+    expect(checkbox).not.toBeChecked();
   });
 
   it('toggles featured checkbox', async () => {
@@ -186,6 +205,7 @@ describe('GalleryEditor', () => {
         category: 'portraits',
         slug: 'summer-portraits',
         featured: true,
+        allowDownloads: true,
       });
     });
   });
@@ -205,6 +225,7 @@ describe('GalleryEditor', () => {
         slug: 'summer-portraits',
         featured: true,
         password: 'newpass123',
+        allowDownloads: true,
       });
     });
   });
@@ -224,6 +245,7 @@ describe('GalleryEditor', () => {
         slug: 'summer-portraits',
         featured: true,
         password: '',
+        allowDownloads: true,
       });
     });
   });

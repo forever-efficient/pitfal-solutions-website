@@ -18,6 +18,7 @@ export default function NewGalleryPage() {
     });
     const [passwordEnabled, setPasswordEnabled] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
+    const [allowDownloads, setAllowDownloads] = useState(false);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -27,6 +28,7 @@ export default function NewGalleryPage() {
             const payload = {
                 ...form,
                 ...(passwordEnabled && passwordInput ? { password: passwordInput } : {}),
+                allowDownloads,
             };
             const { gallery } = await adminGalleries.create(payload);
             router.push(`/admin/galleries/edit?id=${gallery.id}`);
@@ -127,10 +129,19 @@ export default function NewGalleryPage() {
                             type="text"
                             value={passwordInput}
                             onChange={(e) => setPasswordInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
+                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500 mb-3"
                             placeholder="Enter a password"
                         />
                     )}
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={allowDownloads}
+                            onChange={(e) => setAllowDownloads(e.target.checked)}
+                            className="rounded"
+                        />
+                        Allow Downloads
+                    </label>
                 </div>
 
                 <button

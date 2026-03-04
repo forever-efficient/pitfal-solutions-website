@@ -184,6 +184,7 @@ export const clientGallery = {
         heroZoom?: number;
         heroGradientOpacity?: number;
         heroHeight?: 'sm' | 'md' | 'lg';
+        allowDownloads?: boolean;
         kanbanCounts?: { todo: number; inProgress: number; done: number };
       };
       comments: Array<{
@@ -307,6 +308,7 @@ export const adminGalleries = {
         clientSort?: ClientSort;
         featured?: boolean;
         passwordEnabled?: boolean;
+        allowDownloads?: boolean;
         heroFocalPoint?: { x: number; y: number };
         heroZoom?: number;
         heroGradientOpacity?: number;
@@ -322,6 +324,7 @@ export const adminGalleries = {
     category: string;
     slug: string;
     password?: string;
+    allowDownloads?: boolean;
     featured?: boolean;
     heroImage?: string;
     sections?: GallerySection[];
@@ -353,6 +356,7 @@ export const adminGalleries = {
       sections?: GallerySection[];
       clientSort?: ClientSort | null;
       password?: string;
+      allowDownloads?: boolean;
       heroFocalPoint?: { x: number; y: number } | null;
       heroZoom?: number | null;
       heroGradientOpacity?: number | null;

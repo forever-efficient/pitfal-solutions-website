@@ -114,6 +114,7 @@ const sampleGallery = {
   ],
   category: 'weddings',
   passwordHash: '$2a$10$hash',
+  allowDownloads: true,
 };
 
 describe('Client Gallery Lambda Handler', () => {
@@ -220,6 +221,7 @@ describe('Client Gallery Lambda Handler', () => {
       expect(body.data.gallery.sections[0].title).toBe('Ceremony');
       expect(body.data.gallery.sections[1].title).toBe('Reception');
       expect(body.data.gallery.category).toBe('weddings');
+      expect(body.data.gallery.allowDownloads).toBe(true);
       expect(body.data.comments).toHaveLength(1);
       expect(body.data.comments[0].id).toBe('c1');
       expect(body.data.comments[0].author).toBe('Jane');
@@ -485,6 +487,23 @@ describe('Client Gallery Lambda Handler', () => {
       expect(body.data.downloadUrl).toContain('signed=true');
     });
 
+    it('allows download for client gallery without password when allowDownloads is true', async () => {
+      mockGetItem.mockImplementation(async () => ({
+        ...sampleGallery,
+        passwordHash: undefined,
+        allowDownloads: true,
+      }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/client/{galleryId}/download',
+        body: JSON.stringify({ imageKey: 'finished/gallery-1/img1.jpg' }),
+      });
+
+      const result = await handler(event, mockContext, () => {});
+      expect(result!.statusCode).toBe(200);
+    });
+
     it('calls generatePresignedDownloadUrl with correct params', async () => {
       mockGetItem.mockImplementation(async () => sampleGallery);
 
@@ -550,6 +569,19 @@ describe('Client Gallery Lambda Handler', () => {
 
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 403 when downloads are disabled for gallery', async () => {
+      mockGetItem.mockImplementation(async () => ({ ...sampleGallery, allowDownloads: false }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/client/{galleryId}/download',
+        body: JSON.stringify({ imageKey: 'finished/gallery-1/img1.jpg' }),
+      });
+
+      const result = await handler(event, mockContext, () => {});
+      expect(result!.statusCode).toBe(403);
     });
   });
 
@@ -695,6 +727,19 @@ describe('Client Gallery Lambda Handler', () => {
 
       const result = await handler(event, mockContext, () => {});
       expect(result!.statusCode).toBe(400);
+    });
+
+    it('returns 403 when downloads are disabled for gallery', async () => {
+      mockGetItem.mockImplementation(async () => ({ ...sampleGallery, allowDownloads: false }));
+
+      const event = createEvent({
+        httpMethod: 'POST',
+        resource: '/api/client/{galleryId}/bulk-download',
+        body: JSON.stringify({}),
+      });
+
+      const result = await handler(event, mockContext, () => {});
+      expect(result!.statusCode).toBe(403);
     });
 
     it('requires authentication', async () => {

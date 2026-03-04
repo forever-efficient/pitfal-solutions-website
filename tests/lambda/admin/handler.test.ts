@@ -906,6 +906,26 @@ describe('Admin Lambda Handler', () => {
 
       expect(mockHash).toHaveBeenCalledWith('newpass', 10);
     });
+
+    it('updates allowDownloads field', async () => {
+      setupAuthenticatedAdmin();
+      mockBuildUpdateExpression.mockImplementation(() => ({
+        UpdateExpression: 'SET #a = :a',
+        ExpressionAttributeNames: { '#a': 'allowDownloads' },
+        ExpressionAttributeValues: { ':a': true },
+      }));
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/galleries/{id}',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({ allowDownloads: true }),
+      });
+
+      const result = await handler(event, mockContext, () => {});
+      expect(result!.statusCode).toBe(200);
+      expect(mockUpdateItem).toHaveBeenCalledOnce();
+    });
   });
 
   // ============ GALLERIES: DELETE ============
@@ -1635,6 +1655,94 @@ describe('Admin Lambda Handler', () => {
       expect(body.data.galleries[0].href).toBe('/portfolio/portraits/featured-test');
     });
 
+    it('GET /api/galleries/featured - includes password-free galleries even if legacy isClientGallery=true', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1',
+          title: 'Legacy Flag Gallery',
+          category: 'portraits',
+          slug: 'legacy-flag',
+          images: [{ key: 'gallery/g1/photo.jpg' }],
+          featured: true,
+          isClientGallery: true,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'g2',
+          title: 'Private Gallery',
+          category: 'portraits',
+          slug: 'private',
+          images: [{ key: 'gallery/g2/photo.jpg' }],
+          featured: true,
+          passwordHash: '$2a$10$hash',
+          createdAt: '2026-01-02T00:00:00Z',
+          updatedAt: '2026-01-02T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured',
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.galleries).toHaveLength(1);
+      expect(body.data.galleries[0].id).toBe('g1');
+    });
+
+    it('GET /api/galleries/featured/images - excludes only password-protected galleries', async () => {
+      mockScanItems.mockImplementation(async () => [
+        {
+          id: 'g1',
+          title: 'Legacy Flag Gallery',
+          category: 'portraits',
+          slug: 'legacy-flag',
+          images: [{ key: 'gallery/g1/a.jpg' }, { key: 'gallery/g1/b.jpg' }],
+          isClientGallery: true,
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'g2',
+          title: 'Private Gallery',
+          category: 'portraits',
+          slug: 'private',
+          images: [{ key: 'gallery/g2/private.jpg' }],
+          passwordHash: '$2a$10$hash',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+        {
+          id: 'g3',
+          title: 'Public Gallery',
+          category: 'brands',
+          slug: 'public',
+          images: [{ key: 'gallery/g3/c.jpg' }],
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'GET',
+        resource: '/api/galleries/featured/images',
+        queryStringParameters: { limit: '20' },
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      const body = JSON.parse(result!.body);
+      expect(body.data.images).toEqual(expect.arrayContaining([
+        'gallery/g1/a.jpg',
+        'gallery/g1/b.jpg',
+        'gallery/g3/c.jpg',
+      ]));
+      expect(body.data.images).not.toContain('gallery/g2/private.jpg');
+    });
+
     it('GET /api/galleries/featured - uses heroImage as coverImage when available', async () => {
       mockScanItems.mockImplementation(async () => [
         {
@@ -1670,7 +1778,7 @@ describe('Admin Lambda Handler', () => {
       const result = await handler(event, mockContext, () => {});
 
       const body = JSON.parse(result!.body);
-      expect(body.data.galleries[0].href).toBe('/portfolio/events/client-test');
+      expect(body.data.galleries).toHaveLength(0);
     });
 
     it('GET /api/galleries/{category} - returns portfolio galleries by category (excludes password-protected)', async () => {
@@ -1707,7 +1815,6 @@ describe('Admin Lambda Handler', () => {
       mockScanItems.mockImplementation(async () => [
         {
           id: 'g1', title: 'Brand Gallery', category: 'brands',           slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: false,
-          passwordHash: '$2a$10$hash',
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
       ]);

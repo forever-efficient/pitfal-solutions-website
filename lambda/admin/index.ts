@@ -118,6 +118,7 @@ interface GalleryRecord {
   sections?: GallerySection[];
   clientSort?: ClientSort;
   passwordHash?: string;
+  allowDownloads?: boolean;
   featured?: boolean;
   kanbanCards?: Array<{ id: string; title: string; status: string; order: number; createdAt: string }>;
   createdAt: string;
@@ -403,8 +404,7 @@ async function handleAnalytics(
     TableName: GALLERIES_TABLE,
   });
 
-  // Filter to client galleries (have passwordHash attribute, even if empty string)
-  const clientGalleries = allGalleries.filter(g => g.passwordHash !== undefined);
+  const clientGalleries = allGalleries.filter(g => !!g.passwordHash || !!g.allowDownloads);
 
   let totalViews = 0;
   let totalDownloads = 0;
@@ -471,6 +471,7 @@ async function handleGalleries(
       category?: string;
       slug?: string;
       password?: string;
+      allowDownloads?: boolean;
       featured?: boolean;
       heroImage?: string;
       sections?: GallerySection[];
@@ -506,6 +507,7 @@ async function handleGalleries(
       updatedAt: timestamp,
     };
     if (passwordHash) gallery.passwordHash = passwordHash;
+    gallery.allowDownloads = !!body.allowDownloads;
     if (body.heroImage) gallery.heroImage = body.heroImage;
     if (body.sections) gallery.sections = body.sections;
 
@@ -536,7 +538,12 @@ async function handleGalleryById(
     if (!gallery) return notFound('Gallery not found', requestOrigin);
 
     return success({
-      gallery: { ...gallery, passwordHash: undefined, passwordEnabled: !!gallery.passwordHash },
+      gallery: {
+        ...gallery,
+        passwordHash: undefined,
+        passwordEnabled: !!gallery.passwordHash,
+        allowDownloads: !!gallery.allowDownloads,
+      },
     }, 200, requestOrigin);
   }
 
@@ -554,7 +561,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards'];
+    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -1305,7 +1312,7 @@ async function handlePublicGalleries(
   if (resource.includes('/galleries/featured')) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const featured = allGalleries
-      .filter(g => g.featured)
+      .filter(g => g.featured && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map(g => ({
         id: g.id,
@@ -1326,7 +1333,7 @@ async function handlePublicGalleries(
   if (category && slug) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const gallery = allGalleries.find(
-      g => g.category === category && g.slug === slug
+      g => g.category === category && g.slug === slug && !g.passwordHash
     );
     if (!gallery) return notFound('Gallery not found', requestOrigin);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

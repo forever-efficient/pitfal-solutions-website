@@ -45,6 +45,7 @@ export function ClientGalleryView({
     heroZoom?: number;
     heroGradientOpacity?: number;
     heroHeight?: 'sm' | 'md' | 'lg';
+    allowDownloads?: boolean;
     kanbanCounts?: { todo: number; inProgress: number; done: number };
   } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -186,6 +187,7 @@ export function ClientGalleryView({
 
   const hasSections = gallery.sections && gallery.sections.length > 0;
   const imageIndexMap = new Map(gallery.images.map((img, i) => [img.key, i]));
+  const allowDownloads = !!gallery.allowDownloads;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -231,7 +233,7 @@ export function ClientGalleryView({
             <span className="text-sm text-neutral-500">
               {gallery.images.length} photos
             </span>
-            {requiresPassword && gallery.images.length > 0 && !gallery.heroImage && (
+            {allowDownloads && gallery.images.length > 0 && !gallery.heroImage && (
               <BulkDownloadButton
                 label="Download All"
                 isDownloading={bulkDownload.isDownloading}
@@ -321,7 +323,7 @@ export function ClientGalleryView({
                   {gallery.description}
                 </p>
               )}
-              {requiresPassword && gallery.images.length > 0 && (
+              {allowDownloads && gallery.images.length > 0 && (
                 <BulkDownloadButton
                   label="Download All"
                   isDownloading={bulkDownload.isDownloading}
@@ -387,7 +389,7 @@ export function ClientGalleryView({
                       </div>
                     </button>
                     <div className="flex items-center gap-2">
-                      {requiresPassword && (
+                      {allowDownloads && (
                         <BulkDownloadButton
                           label="Download Section"
                           isDownloading={bulkDownload.isDownloading}
@@ -410,7 +412,7 @@ export function ClientGalleryView({
                       onImageClick={setLightboxIndex}
                       comments={comments}
                       galleryId={galleryId}
-                      requiresPassword={requiresPassword}
+                      allowDownloads={allowDownloads}
                     />
                   </div>
                 </div>
@@ -449,7 +451,7 @@ export function ClientGalleryView({
                         </span>
                       </div>
                     </button>
-                    {requiresPassword && (
+                    {allowDownloads && (
                       <BulkDownloadButton
                         label="Download Section"
                         isDownloading={bulkDownload.isDownloading}
@@ -473,7 +475,7 @@ export function ClientGalleryView({
                       onImageClick={setLightboxIndex}
                       comments={comments}
                       galleryId={galleryId}
-                      requiresPassword={requiresPassword}
+                      allowDownloads={allowDownloads}
                     />
                   </div>
                 </div>
@@ -488,7 +490,7 @@ export function ClientGalleryView({
             onImageClick={setLightboxIndex}
             comments={comments}
             galleryId={galleryId}
-            requiresPassword={requiresPassword}
+            allowDownloads={allowDownloads}
           />
         )}
       </div>
@@ -601,7 +603,7 @@ export function ClientGalleryView({
               <h3 className="font-medium text-neutral-900">
                 {currentImage.alt || `Photo ${lightboxIndex + 1}`}
               </h3>
-              {requiresPassword && (
+              {allowDownloads && (
                 <DownloadButton
                   galleryId={galleryId}
                   imageKey={currentImage.key}
@@ -789,10 +791,10 @@ interface ImageGridProps {
   onImageClick: (index: number) => void;
   comments: Comment[];
   galleryId: string;
-  requiresPassword: boolean;
+  allowDownloads: boolean;
 }
 
-function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, requiresPassword }: ImageGridProps) {
+function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, allowDownloads }: ImageGridProps) {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
       {images.map((image) => {
@@ -818,7 +820,7 @@ function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, r
               </div>
             </button>
             {/* Download icon overlay - bottom right */}
-            {requiresPassword && (
+            {allowDownloads && (
               <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <DownloadButton
                   galleryId={galleryId}
@@ -839,4 +841,3 @@ function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, r
     </div>
   );
 }
-

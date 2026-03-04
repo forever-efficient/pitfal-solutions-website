@@ -5,6 +5,7 @@ import {
   success,
   error,
   unauthorized,
+  forbidden,
   methodNotAllowed,
   badRequest,
   notFound,
@@ -114,6 +115,8 @@ interface GalleryRecord {
   heroImage?: string;
   sections?: GallerySection[];
   clientSort?: ClientSort;
+  passwordHash?: string;
+  allowDownloads?: boolean;
   category: string;
   heroFocalPoint?: { x: number; y: number };
   heroZoom?: number;
@@ -307,6 +310,7 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
       heroZoom: gallery.heroZoom,
       heroGradientOpacity: gallery.heroGradientOpacity,
       heroHeight: gallery.heroHeight,
+      allowDownloads: !!gallery.allowDownloads,
       kanbanCounts: kanbanCards?.length ? {
         todo: kanbanCards.filter(c => c.status === 'todo').length,
         inProgress: kanbanCards.filter(c => c.status === 'in_progress').length,
@@ -411,6 +415,7 @@ async function handleBulkDownload(
   });
 
   if (!gallery) return notFound('Gallery not found', requestOrigin);
+  if (!gallery.allowDownloads) return forbidden('Downloads are disabled for this gallery', requestOrigin);
 
   const galleryImageKeys = new Set(gallery.images?.map(img => img.key) || []);
   let requestedKeys: string[];
@@ -500,6 +505,7 @@ async function handleDownload(
   if (!gallery) {
     return notFound('Gallery not found', requestOrigin);
   }
+  if (!gallery.allowDownloads) return forbidden('Downloads are disabled for this gallery', requestOrigin);
 
   const imageExists = gallery.images?.some(img => img.key === body.imageKey);
   if (!imageExists) {
@@ -542,6 +548,3 @@ async function handleDownload(
 
   return success({ downloadUrl }, 200, requestOrigin);
 }
-
-
-

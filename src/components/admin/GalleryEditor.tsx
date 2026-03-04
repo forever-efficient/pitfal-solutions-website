@@ -13,6 +13,7 @@ interface GalleryEditorProps {
     slug?: string;
     featured?: boolean;
     passwordEnabled?: boolean;
+    allowDownloads?: boolean;
   };
   galleryId: string;
 }
@@ -28,6 +29,7 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
   });
   const [passwordEnabled, setPasswordEnabled] = useState(!!gallery.passwordEnabled);
   const [passwordInput, setPasswordInput] = useState('');
+  const [allowDownloads, setAllowDownloads] = useState(!!gallery.allowDownloads);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -37,11 +39,12 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
     setSaved(false);
     try {
       const payload: Parameters<typeof adminGalleries.update>[1] = { ...form };
-      if (passwordEnabled) {
-        if (passwordInput) payload.password = passwordInput;
-      } else {
+      if (passwordEnabled && passwordInput) {
+        payload.password = passwordInput;
+      } else if (!passwordEnabled) {
         payload.password = '';
       }
+      payload.allowDownloads = allowDownloads;
       await adminGalleries.update(galleryId, payload);
       setSaved(true);
       showSuccess('Gallery saved');
@@ -119,10 +122,19 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
             type="text"
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm mb-3"
             placeholder={gallery.passwordEnabled ? 'Enter new password to change it' : 'Enter a password'}
           />
         )}
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={allowDownloads}
+            onChange={(e) => setAllowDownloads(e.target.checked)}
+            className="rounded"
+          />
+          Allow Downloads
+        </label>
       </div>
       <div>
         <label className="block text-sm font-medium text-neutral-700 mb-1">

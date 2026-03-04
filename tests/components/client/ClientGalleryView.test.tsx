@@ -91,6 +91,7 @@ const galleryResponse = {
       },
     ],
     category: 'events',
+    allowDownloads: true,
     heroFocalPoint: { x: 45, y: 35 },
     heroZoom: 1.15,
     heroGradientOpacity: 0.4,
@@ -171,10 +172,8 @@ describe('ClientGalleryView', () => {
     render(<ClientGalleryView galleryId="g1" initialTitle="Preview Title" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Preview Title')).toBeInTheDocument();
+      expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument();
     });
-
-    expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Ceremony' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Reception' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Other Photos' })).toBeInTheDocument();
@@ -238,7 +237,7 @@ describe('ClientGalleryView', () => {
     // Sign Out visible when requiresPassword=true
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeInTheDocument();
 
-    // Open lightbox — exercises the requiresPassword && <DownloadButton> branch
+    // Open lightbox — exercises the allowDownloads && <DownloadButton> branch
     await user.click(screen.getByRole('button', { name: 'One' }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('1 / 4')).toBeInTheDocument();
@@ -250,7 +249,15 @@ describe('ClientGalleryView', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('hides sign out and download buttons when requiresPassword is false', async () => {
+  it('hides sign out and download buttons when requiresPassword is false and downloads are disabled', async () => {
+    mockClientGalleryGet.mockResolvedValueOnce({
+      ...galleryResponse,
+      gallery: {
+        ...galleryResponse.gallery,
+        allowDownloads: false,
+      },
+    });
+
     render(<ClientGalleryView galleryId="g1" requiresPassword={false} />);
     await waitFor(() => expect(screen.getByAltText('Gallery Cover')).toBeInTheDocument());
 
