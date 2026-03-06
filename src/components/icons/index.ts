@@ -42,6 +42,7 @@ export { GoogleMapsIcon } from './GoogleMapsIcon';
 export { BuildingIcon } from './BuildingIcon';
 export { UserIcon } from './UserIcon';
 export { CalendarIcon } from './CalendarIcon';
+export { StampIcon } from './StampIcon';
 
 // Value icons
 export { HeartIcon } from './HeartIcon';

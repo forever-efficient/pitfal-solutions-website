@@ -31,6 +31,7 @@ const sessionTypes = [
   { value: 'videography', label: SERVICES.videography.title },
   { value: 'drone', label: SERVICES.drone.title },
   { value: 'ai', label: SERVICES.ai.title },
+  { value: 'notary', label: SERVICES.notary.title },
   { value: 'other', label: 'Other / General Inquiry' },
 ];
 

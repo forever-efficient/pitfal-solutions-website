@@ -1,8 +1,8 @@
 # System Architecture - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.6 (Evolved Stack)
-- **Last Updated:** February 23, 2026
+- **Version:** 1.7 (Notary Service Added)
+- **Last Updated:** March 5, 2026
 - **Status:** Implementation Complete (Phase 1) - Infrastructure deployed to AWS
 
 ---
@@ -85,7 +85,12 @@ src/
 │   │       └── [slug]/
 │   │           └── page.tsx     # Individual gallery
 │   ├── services/
-│   │   └── page.tsx             # Services/packages
+│   │   ├── page.tsx             # Services overview (5 services)
+│   │   ├── photography/         # Photography landing page
+│   │   ├── videography/         # Videography landing page
+│   │   ├── commercial-drone/    # Commercial Drone landing page
+│   │   ├── ai-software/         # AI & Software landing page
+│   │   └── notary/              # Colorado Notary landing page
 │   ├── about/
 │   │   └── page.tsx             # About page
 │   ├── blog/
@@ -1245,3 +1250,4 @@ CloudWatch Log Groups:
 | 1.4 | January 2026 | Claude Code | **Major refinements:** (1) Added 3 DynamoDB GSIs (byCategory, byFeatured, byCreatedDate) for efficient queries; (2) Changed client auth from localStorage to HttpOnly cookies with 7-day sliding sessions; (3) Updated rate limiting to use API Gateway throttling; (4) Replaced plaiceholder library with CSS-only blur approach; (5) Added cascade delete implementation details (6.4); (6) Marked /admin/inquiries as read-only for MVP; (7) Noted testimonials/FAQ as static content |
 | 1.5 | February 2026 | Claude Code | **Infrastructure hardening:** (1) Added WAF, ACM certificate management; (2) Added DMARC/SPF/DKIM for SES; (3) Added S3 lifecycle rules and logging buckets; (4) Added detailed IAM policies and deployment phases. |
 | 1.6 | February 23, 2026 | Claude Code | **Evolved Pipeline & REST API:** (1) Updated section 2.4 to reflect multi-lambda image processing (orchestrator/poller); (2) Added /portfolio/viewer route details; (3) Documented bulk download implementation; (4) Synchronized tech stack and S3 structure. |
+| 1.7 | March 5, 2026 | Claude Code | **Colorado Notary service:** Updated application structure to show all 5 service landing pages under `services/`. |

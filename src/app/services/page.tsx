@@ -12,6 +12,7 @@ import {
   CalendarIcon,
   ArrowDownIcon,
   CheckIcon,
+  StampIcon,
 } from '@/components/icons';
 import { SERVICES, PAGE_META } from '@/lib/constants';
 
@@ -36,6 +37,10 @@ const serviceCards = [
   {
     service: SERVICES.ai,
     icon: <BuildingIcon size={36} strokeWidth={1.5} />,
+  },
+  {
+    service: SERVICES.notary,
+    icon: <StampIcon size={36} strokeWidth={1.5} />,
   },
 ];
 

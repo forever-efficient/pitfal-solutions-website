@@ -5,6 +5,7 @@ import PhotographyPage, { metadata as photographyMetadata } from '@/app/services
 import VideographyPage, { metadata as videographyMetadata } from '@/app/services/videography/page';
 import CommercialDronePage, { metadata as droneMetadata } from '@/app/services/commercial-drone/page';
 import AISoftwarePage, { metadata as aiMetadata } from '@/app/services/ai-software/page';
+import NotaryPage, { metadata as notaryMetadata } from '@/app/services/notary/page';
 import { PAGE_META, SERVICES } from '@/lib/constants';
 
 vi.mock('@/components/sections/RecentWorkCarousel', () => ({
@@ -85,6 +86,20 @@ describe('Service detail pages', () => {
     expect(screen.getAllByRole('link', { name: 'Start a Conversation' }).some((link) => link.getAttribute('href') === '/contact')).toBe(true);
 
     for (const feature of SERVICES.ai.features) {
+      expect(screen.getByText(feature)).toBeInTheDocument();
+    }
+  });
+
+  it('renders notary page content and metadata', () => {
+    render(<NotaryPage />);
+
+    expect(notaryMetadata.title).toBe(PAGE_META.servicesNotary.title);
+    expect(notaryMetadata.description).toBe(PAGE_META.servicesNotary.description);
+
+    expect(screen.getByRole('heading', { level: 1, name: SERVICES.notary.title })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Schedule a Signing' }).some((link) => link.getAttribute('href') === '/contact')).toBe(true);
+
+    for (const feature of SERVICES.notary.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();
     }
   });

@@ -9,6 +9,7 @@ const footerLinks = {
     { label: SERVICES.videography.title, href: SERVICES.videography.href },
     { label: SERVICES.drone.title, href: SERVICES.drone.href },
     { label: SERVICES.ai.title, href: SERVICES.ai.href },
+    { label: SERVICES.notary.title, href: SERVICES.notary.href },
   ],
   company: [
     { label: 'About', href: '/about' },

@@ -12,6 +12,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 - Brand Photography/Videography
 - Portrait Services
 - Event/Commercial Content
+- Colorado Notary (Mobile Notary)
 
 ### Goals
 - Custom full-featured photographer/videographer website

@@ -4,8 +4,8 @@
 | Field | Value |
 |-------|-------|
 | **Product Name** | Pitfal Solutions Website |
-| **Version** | 1.7 (Phase 1 Deployed & Enhanced) |
-| **Last Updated** | February 23, 2026 |
+| **Version** | 1.8 (Colorado Notary Service Added) |
+| **Last Updated** | March 5, 2026 |
 | **Status** | Phase 1 Deployed — CloudFront + Custom Domain Live |
 | **Owner** | Thomas Archuleta |
 | **Domain** | https://www.pitfal.solutions |
@@ -63,7 +63,7 @@ The MVP (Minimum Viable Product) focuses on core portfolio, client proofing, and
 |-----------|---------|
 | **Business Name** | Pitfal Solutions |
 | **Location** | Denver, CO (serving Denver metro area) |
-| **Services** | Photography & Videography |
+| **Services** | Photography, Videography, Commercial Drone, AI & Software, Colorado Notary |
 | **Contact** | info@pitfal.solutions |
 | **Hours** | 7am - 10pm daily |
 
@@ -74,6 +74,9 @@ The MVP (Minimum Viable Product) focuses on core portfolio, client proofing, and
 | **Brand Photography/Videography** | Commercial content for businesses | Small businesses, startups |
 | **Portrait Services** | Headshots, lifestyle, family | Individuals, professionals |
 | **Event Coverage** | Weddings, corporate events | Event planners, couples |
+| **Commercial Drone** | FAA-compliant aerial photography & videography | Real estate, construction, events |
+| **AI & Software** | AI consulting, custom integrations, web development | Businesses seeking tech solutions |
+| **Colorado Notary** | Mobile notary services, RULONA-compliant | Individuals, businesses, real estate |
 
 ### 2.3 Market Position
 
@@ -82,6 +85,7 @@ Pitfal Solutions differentiates through:
 - Modern, tech-forward booking experience
 - Competitive pricing for Denver metro market
 - Quick turnaround on digital deliverables
+- Diversified service offerings (creative, technical, and professional services)
 
 ---
 
@@ -975,6 +979,7 @@ The following integrations are planned for Phase 2:
 | 1.5 | February 2026 | Claude Code | **Warning fixes complete:** (1) Fixed 37/38 warnings across all 5 domains (1 deferred: W-FE-4 build-time year); (2) Removed unused deps (framer-motion, react-hook-form, @hookform/resolvers, swr, zod); (3) Removed placeholder phone number from site; (4) Removed dead Blog links; (5) Added MobileMenu focus trap + Escape key + reduced-motion support; (6) Hardened Terraform: S3 lifecycle rules, logs encryption, DMARC, prevent_destroy, cache policies; (7) Improved backend: Promise.allSettled, pagination limits, filename sanitization; (8) Strengthened tests: 500 unit tests, removed tautological/soft assertions; (9) Updated tech stack (removed SWR, React Hook Form, Zod rows) |
 | 1.6 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and deployed to S3 + CloudFront (dprk6phv6ds9x.cloudfront.net); (2) All Phase 1 checklist items verified; (3) Updated all documentation to reflect deployment status; (4) Consolidated next steps: gallery integration → client proofing → admin → blog → SES → real images → custom domain |
 | 1.7 | February 23, 2026 | Claude Code | **Post-deployment updates:** (1) Integrated /portfolio/viewer route for unified gallery loading; (2) Implemented bulk download for client galleries; (3) Completed admin dashboard features (gallery management, inquiry viewing); (4) Updated documentation to reflect multi-lambda pipeline and restructure. |
+| 1.8 | March 5, 2026 | Claude Code | **Colorado Notary service:** (1) Added notary as 5th service (RULONA-compliant mobile notary); (2) Updated service offerings table; (3) Dedicated landing page at `/services/notary` with process steps and specific pricing ($15/doc); (4) Homepage grid changed from 4-column to 2+3 layout; (5) Nav, footer, contact form all updated. |
 
 ---
 

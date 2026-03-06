@@ -17,7 +17,7 @@ export const BUSINESS = {
     full: 'Denver, Colorado',
     short: 'Denver, CO',
   },
-  servicesOffering: 'Photography, Videography, Commercial Drone, and AI Services',
+  servicesOffering: 'Photography, Videography, Commercial Drone, AI, and Notary Services',
   contact: {
     email: 'info@pitfal.solutions',
   },
@@ -100,6 +100,22 @@ export const SERVICES = {
     image: 'site/services-ai.jpg',
     href: '/services/ai-software',
   },
+  notary: {
+    id: 'notary',
+    title: 'Colorado Notary',
+    shortDescription: 'Mobile notary services across Colorado',
+    description:
+      'Convenient in-person notary services — traveling to you for loan signings, real estate closings, legal documents, and more. Colorado-commissioned and RULONA-compliant.',
+    features: [
+      'Mobile notary services',
+      'Loan document signings',
+      'Real estate closings',
+      'Legal documents & affidavits',
+      'Estate planning documents',
+    ],
+    image: 'site/services-notary.jpg',
+    href: '/services/notary',
+  },
 } as const;
 
 export type ServiceId = keyof typeof SERVICES;
@@ -110,6 +126,7 @@ export const SERVICE_OPTIONS = [
   { value: 'videography', label: SERVICES.videography.title },
   { value: 'drone', label: SERVICES.drone.title },
   { value: 'ai', label: SERVICES.ai.title },
+  { value: 'notary', label: SERVICES.notary.title },
   { value: 'other', label: 'Other / Not Sure' },
 ] as const;
 
@@ -132,6 +149,9 @@ export const SEO = {
     'event photographer',
     'corporate photography',
     'professional headshots',
+    'notary',
+    'Colorado notary',
+    'mobile notary Denver',
   ],
   openGraph: {
     type: 'website',
@@ -169,6 +189,10 @@ export const PAGE_META = {
   servicesAI: {
     title: 'AI & Software',
     description: `AI consulting, custom AI integrations, and website development from ${BUSINESS.name} in ${BUSINESS.location.full}.`,
+  },
+  servicesNotary: {
+    title: 'Colorado Notary',
+    description: `Mobile notary services in ${BUSINESS.location.full} — loan signings, real estate closings, legal documents, and estate planning. Colorado-commissioned, RULONA-compliant.`,
   },
   portfolio: {
     title: 'Portfolio',
@@ -316,6 +340,7 @@ export const NAV_LINKS = {
     { label: SERVICES.videography.title, href: SERVICES.videography.href },
     { label: SERVICES.drone.title, href: SERVICES.drone.href },
     { label: SERVICES.ai.title, href: SERVICES.ai.href },
+    { label: SERVICES.notary.title, href: SERVICES.notary.href },
   ],
   company: [
     { label: 'About', href: '/about' },

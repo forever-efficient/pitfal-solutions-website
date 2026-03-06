@@ -29,6 +29,7 @@ import {
   HeartIcon,
   ShieldCheckIcon,
   UsersIcon,
+  StampIcon,
 } from '@/components/icons';
 
 const icons = [
@@ -59,6 +60,7 @@ const icons = [
   { name: 'HeartIcon', Component: HeartIcon },
   { name: 'ShieldCheckIcon', Component: ShieldCheckIcon },
   { name: 'UsersIcon', Component: UsersIcon },
+  { name: 'StampIcon', Component: StampIcon },
 ];
 
 describe('Icon Components', () => {
