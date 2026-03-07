@@ -10,6 +10,7 @@ import { getImageUrl } from '@/lib/utils';
 export const metadata: Metadata = {
   title: PAGE_META.about.title,
   description: PAGE_META.about.description,
+  alternates: { canonical: '/about/' },
 };
 
 export default function AboutPage() {

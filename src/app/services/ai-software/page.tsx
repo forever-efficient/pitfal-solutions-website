@@ -11,6 +11,7 @@ import { getImageUrl } from '@/lib/utils';
 export const metadata: Metadata = {
   title: PAGE_META.servicesAI.title,
   description: PAGE_META.servicesAI.description,
+  alternates: { canonical: '/services/ai-software/' },
 };
 
 const service = SERVICES.ai;

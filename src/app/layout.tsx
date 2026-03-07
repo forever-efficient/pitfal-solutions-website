@@ -49,6 +49,9 @@ export const metadata: Metadata = {
     description: SEO.shortDescription,
     images: ['/og-image.jpg'],
   },
+  alternates: {
+    canonical: './',
+  },
   robots: {
     index: true,
     follow: true,

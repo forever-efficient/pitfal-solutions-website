@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import { GalleryPageClient } from './GalleryPageClient';
+
+export function generateMetadata({ params }: { params: { category: string; gallery: string } }): Metadata {
+  return {
+    alternates: { canonical: `/portfolio/${params.category}/${params.gallery}/` },
+  };
+}
 
 // At build time, fetch gallery slugs from the API to pre-render known pages.
 // Newly created galleries are accessible via SPA routing (CloudFront SPA fallback).

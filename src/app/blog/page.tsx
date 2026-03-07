@@ -7,6 +7,7 @@ import { Container, Section } from '@/components/ui/Container';
 export const metadata: Metadata = {
   title: PAGE_META.blog.title,
   description: PAGE_META.blog.description,
+  alternates: { canonical: '/blog/' },
 };
 
 export default function BlogPage() {

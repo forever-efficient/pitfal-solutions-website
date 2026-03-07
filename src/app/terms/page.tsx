@@ -4,6 +4,7 @@ import { PAGE_META, BUSINESS } from '@/lib/constants';
 export const metadata: Metadata = {
   title: PAGE_META.terms.title,
   description: PAGE_META.terms.description,
+  alternates: { canonical: '/terms/' },
 };
 
 export default function TermsPage() {

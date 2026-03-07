@@ -11,6 +11,7 @@ import { getImageUrl } from '@/lib/utils';
 export const metadata: Metadata = {
   title: PAGE_META.servicesDrone.title,
   description: PAGE_META.servicesDrone.description,
+  alternates: { canonical: '/services/commercial-drone/' },
 };
 
 const service = SERVICES.drone;

@@ -138,11 +138,46 @@ resource "aws_cloudfront_function" "url_rewrite" {
   code    = <<-EOF
     function handler(event) {
       var request = event.request;
+      var host = request.headers.host.value;
+
+      // Redirect non-www to www (301 permanent)
+      if (host === 'pitfal.solutions') {
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: {
+            location: { value: 'https://www.pitfal.solutions' + request.uri }
+          }
+        };
+      }
+
       var uri = request.uri;
 
-      // If URI has a file extension, serve as-is
+      // If URI has a file extension, serve static assets as-is
+      // but block non-static extensions (e.g. .php, .asp, .env) that are bot probes
       if (uri.includes('.')) {
+        var allowed = /\.(html|css|js|json|xml|txt|ico|svg|png|jpg|jpeg|gif|webp|avif|woff2?|ttf|eot|map|webmanifest)$/i;
+        if (!allowed.test(uri)) {
+          return {
+            statusCode: 404,
+            statusDescription: 'Not Found',
+            headers: { 'content-type': { value: 'text/plain' } },
+            body: { encoding: 'text', data: 'Not Found' }
+          };
+        }
         return request;
+      }
+
+      // Block bogus clean URLs by validating the first path segment
+      // Only known routes pass through; random bot paths get a real 404
+      var validPaths = /^\/(about|admin|blog|client|contact|faq|portfolio|privacy|services|terms|_next|favicon|404)?(\/|$)/;
+      if (!validPaths.test(uri)) {
+        return {
+          statusCode: 404,
+          statusDescription: 'Not Found',
+          headers: { 'content-type': { value: 'text/plain' } },
+          body: { encoding: 'text', data: 'Not Found' }
+        };
       }
 
       // If URI ends with /, append index.html

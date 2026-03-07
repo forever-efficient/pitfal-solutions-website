@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'FAQ',
   description:
     'Frequently asked questions about Pitfal Solutions photography and videography services. Learn about the process, pricing, and what to expect.',
+  alternates: { canonical: '/faq/' },
 };
 
 export default function FAQPage() {

@@ -11,6 +11,7 @@ import { getImageUrl } from '@/lib/utils';
 export const metadata: Metadata = {
   title: PAGE_META.servicesPhotography.title,
   description: PAGE_META.servicesPhotography.description,
+  alternates: { canonical: '/services/photography/' },
 };
 
 const service = SERVICES.photography;

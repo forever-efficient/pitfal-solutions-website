@@ -4,6 +4,7 @@ import { PAGE_META, BUSINESS } from '@/lib/constants';
 export const metadata: Metadata = {
   title: PAGE_META.privacy.title,
   description: PAGE_META.privacy.description,
+  alternates: { canonical: '/privacy/' },
 };
 
 export default function PrivacyPage() {

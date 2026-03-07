@@ -7,6 +7,7 @@ import { BUSINESS, PAGE_META } from '@/lib/constants';
 export const metadata: Metadata = {
   title: PAGE_META.contact.title,
   description: PAGE_META.contact.description,
+  alternates: { canonical: '/contact/' },
 };
 
 export default function ContactPage() {

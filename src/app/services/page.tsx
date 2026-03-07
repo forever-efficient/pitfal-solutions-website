@@ -19,6 +19,7 @@ import { SERVICES, PAGE_META } from '@/lib/constants';
 export const metadata: Metadata = {
   title: PAGE_META.services.title,
   description: PAGE_META.services.description,
+  alternates: { canonical: '/services/' },
 };
 
 const serviceCards = [
