@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ImagenEditor } from '@/components/admin/ImagenEditor';
 import { ToastProvider } from '@/components/admin/Toast';
@@ -221,10 +221,11 @@ describe('ImagenEditor', () => {
     renderEditor();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument();
+      expect(screen.getByText('Edited Images (2)')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Select All' }));
+    const editedSection = screen.getByText('Edited Images (2)').closest('div.bg-white')!;
+    await user.click(within(editedSection as HTMLElement).getByRole('button', { name: 'Select All' }));
     await user.click(screen.getByRole('button', { name: 'Move to Ready Queue (2)' }));
 
     await waitFor(() => {
@@ -238,10 +239,11 @@ describe('ImagenEditor', () => {
     renderEditor();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Select All' })).toBeInTheDocument();
+      expect(screen.getByText('Edited Images (2)')).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole('button', { name: 'Select All' }));
+    const editedSection = screen.getByText('Edited Images (2)').closest('div.bg-white')!;
+    await user.click(within(editedSection as HTMLElement).getByRole('button', { name: 'Select All' }));
     await user.click(screen.getByRole('button', { name: 'Delete Selected (2)' }));
 
     await waitFor(() => {

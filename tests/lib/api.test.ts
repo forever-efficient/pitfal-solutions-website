@@ -36,6 +36,31 @@ describe('lib/api', () => {
     sessionStorage.clear();
   });
 
+  it('uses empty base URL for non-localhost (deployed) environments', async () => {
+    const originalLocation = window.location;
+    Object.defineProperty(window, 'location', {
+      value: { ...originalLocation, hostname: 'www.pitfal.solutions' },
+      writable: true,
+      configurable: true,
+    });
+
+    try {
+      mockFetchJson({ success: true, data: { images: [] } });
+      await publicGalleries.getFeaturedImages(5);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/galleries/featured/images?limit=5',
+        expect.any(Object)
+      );
+    } finally {
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        writable: true,
+        configurable: true,
+      });
+    }
+  });
+
   it('stores and uses client auth token for client endpoints', async () => {
     mockFetchJson({
       success: true,
@@ -375,6 +400,15 @@ describe('lib/api', () => {
     mockFetchJson({ success: true, data: { deleted: true } });
     await adminImages.delete('k', 'g1');
 
+    mockFetchJson({ success: true, data: { images: [] } });
+    await adminImages.listReady();
+
+    mockFetchJson({ success: true, data: { assigned: 2, failed: 0, failedKeys: [] } });
+    await adminImages.assign(['key1', 'key2'], 'g1');
+
+    mockFetchJson({ success: true, data: { deleted: 2 } });
+    await adminImages.deleteFromReady(['key1', 'key2']);
+
     mockFetchJson({ success: true, data: { inquiries: [] } });
     await adminInquiries.list();
 
@@ -439,14 +473,31 @@ describe('lib/api', () => {
         }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/api/admin/inquiries', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/api/admin/images/ready', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       5,
+      '/api/api/admin/images/assign',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ keys: ['key1', 'key2'], galleryId: 'g1' }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      6,
+      '/api/api/admin/images/ready',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ keys: ['key1', 'key2'] }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(7, '/api/api/admin/inquiries', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      8,
       '/api/api/admin/inquiries?status=new',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
-      6,
+      9,
       '/api/api/admin/inquiries/i1',
       expect.objectContaining({
         method: 'PUT',
@@ -454,12 +505,12 @@ describe('lib/api', () => {
       })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
-      7,
+      10,
       '/api/api/admin/inquiries/i1',
       expect.objectContaining({ method: 'DELETE' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
-      8,
+      11,
       '/api/api/admin/galleries/g1/notify',
       expect.objectContaining({
         method: 'POST',
@@ -471,21 +522,21 @@ describe('lib/api', () => {
       })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
-      9,
+      12,
       '/api/api/admin/processing-jobs?galleryId=g1',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
-      10,
+      13,
       '/api/api/admin/processing-jobs',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ galleryId: 'g1', rawKeys: ['raw1'] }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(11, '/api/api/admin/settings', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(14, '/api/api/admin/settings', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
-      12,
+      15,
       '/api/api/admin/settings',
       expect.objectContaining({
         method: 'PUT',
@@ -600,6 +651,9 @@ describe('lib/api', () => {
     await adminImagen.deleteEdited(['edited/a.jpg']);
 
     mockFetchJson({ success: true, data: { deleted: 1 } });
+    await adminImagen.deleteUploads(['raw/a.cr3']);
+
+    mockFetchJson({ success: true, data: { deleted: 1 } });
     await adminImagen.deleteJobs(['job-1']);
 
     expect(global.fetch).toHaveBeenNthCalledWith(
@@ -642,6 +696,14 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       8,
+      '/api/api/admin/imagen/upload',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ keys: ['raw/a.cr3'] }),
+      })
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      9,
       '/api/api/admin/imagen/jobs',
       expect.objectContaining({
         method: 'DELETE',
