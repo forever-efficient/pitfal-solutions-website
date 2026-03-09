@@ -172,6 +172,9 @@ export const handler = async (event: OrchestratorEvent): Promise<void> => {
       throw new Error(`Failed to start ImagenAI editing: ${editResponse.status} ${errText}`);
     }
 
+    const editData = await editResponse.json() as Record<string, unknown>;
+    console.log(JSON.stringify({ level: 'INFO', message: 'Edit started', jobId, profileId, editResponse: editData }));
+
     // 5. Update job record with project UUID and processing status
     await updateJobStatus(jobId, {
       status: 'processing',

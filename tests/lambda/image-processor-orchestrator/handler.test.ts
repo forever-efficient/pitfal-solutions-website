@@ -71,7 +71,7 @@ describe('Image Processor Orchestrator Lambda', () => {
     mockFetch.mockResolvedValueOnce({ ok: true });
     mockFetch.mockResolvedValueOnce({ ok: true });
     // 5. Edit (start processing with profile_key)
-    mockFetch.mockResolvedValueOnce({ ok: true });
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'ok' }) });
 
     await handler({
       jobId: 'job-1',

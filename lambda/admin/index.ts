@@ -1426,6 +1426,25 @@ async function handleImagenUpload(
     return success({ uploadUrl, key }, 200, requestOrigin);
   }
 
+  if (method === 'DELETE') {
+    const body = JSON.parse(event.body || '{}');
+    const { keys } = body;
+
+    if (!Array.isArray(keys) || keys.length === 0) {
+      return badRequest('keys array is required', requestOrigin);
+    }
+
+    for (const key of keys) {
+      if (!key.startsWith('imagen/RAW/')) {
+        return badRequest(`Invalid key: ${key}. All keys must start with imagen/RAW/`, requestOrigin);
+      }
+    }
+
+    await deleteS3Objects(MEDIA_BUCKET!, keys);
+    log('INFO', 'Deleted imagen uploads', ctx, { count: keys.length });
+    return success({ deleted: keys.length }, 200, requestOrigin);
+  }
+
   return methodNotAllowed('Method not allowed', requestOrigin);
 }
 

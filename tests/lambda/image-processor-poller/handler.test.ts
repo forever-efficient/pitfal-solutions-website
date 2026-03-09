@@ -160,7 +160,7 @@ describe('Image Processor Poller Lambda', () => {
 
     expect(updates).toHaveLength(1);
     expect(updates[0].ExpressionAttributeValues[':status']).toBe('failed');
-    expect(updates[0].ExpressionAttributeValues[':error']).toBe('ImagenAI export failed');
+    expect(updates[0].ExpressionAttributeValues[':error']).toBe('ImagenAI export failed: No error details provided');
   });
 
   it('marks job as failed when completed-job processing throws', async () => {

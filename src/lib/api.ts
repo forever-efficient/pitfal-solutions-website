@@ -638,6 +638,12 @@ export const adminImagen = {
       body: JSON.stringify({ keys }),
     }),
 
+  deleteUploads: (keys: string[]) =>
+    request<{ deleted: number }>('/api/admin/imagen/upload', {
+      method: 'DELETE',
+      body: JSON.stringify({ keys }),
+    }),
+
   deleteEdited: (keys: string[]) =>
     request<{ deleted: number }>('/api/admin/imagen/edited', {
       method: 'DELETE',

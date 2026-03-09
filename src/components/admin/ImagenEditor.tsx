@@ -39,6 +39,10 @@ export function ImagenEditor() {
   const [jobs, setJobs] = useState<ImagenJob[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Upload selection state
+  const [selectedUploadKeys, setSelectedUploadKeys] = useState<Set<string>>(new Set());
+  const [deletingUploads, setDeletingUploads] = useState(false);
+
   // Edited state
   const [edited, setEdited] = useState<ImagenFile[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -190,6 +194,44 @@ export function ImagenEditor() {
       setProcessingAll(false);
     }
   }, [uploads, showSuccess, showError, loadJobs, loadUploads]);
+
+  // =========================================================================
+  // Upload selection actions
+  // =========================================================================
+
+  const toggleUploadSelect = (key: string) => {
+    setSelectedUploadKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleUploadSelectAll = () => {
+    if (selectedUploadKeys.size === uploads.length) {
+      setSelectedUploadKeys(new Set());
+    } else {
+      setSelectedUploadKeys(new Set(uploads.map((f) => f.key)));
+    }
+  };
+
+  const handleDeleteUploads = useCallback(async () => {
+    if (selectedUploadKeys.size === 0) return;
+    setDeletingUploads(true);
+    try {
+      const { deleted } = await adminImagen.deleteUploads(
+        Array.from(selectedUploadKeys)
+      );
+      showSuccess(`${deleted} file(s) deleted`);
+      setSelectedUploadKeys(new Set());
+      loadUploads();
+    } catch {
+      showError('Failed to delete files');
+    } finally {
+      setDeletingUploads(false);
+    }
+  }, [selectedUploadKeys, showSuccess, showError, loadUploads]);
 
   // =========================================================================
   // Edited gallery actions
@@ -374,41 +416,94 @@ export function ImagenEditor() {
               <h3 className="text-sm font-medium text-neutral-700">
                 Uploaded Files ({uploads.length})
               </h3>
-              <button
-                onClick={handleProcessAll}
-                disabled={processingAll}
-                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {processingAll ? 'Starting...' : 'Process All with AI'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleUploadSelectAll}
+                  className="text-sm text-neutral-600 hover:text-neutral-900"
+                >
+                  {selectedUploadKeys.size === uploads.length
+                    ? 'Deselect All'
+                    : 'Select All'}
+                </button>
+                <button
+                  onClick={handleDeleteUploads}
+                  disabled={selectedUploadKeys.size === 0 || deletingUploads}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {deletingUploads
+                    ? 'Deleting...'
+                    : `Delete Selected (${selectedUploadKeys.size})`}
+                </button>
+                <button
+                  onClick={handleProcessAll}
+                  disabled={processingAll}
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {processingAll ? 'Starting...' : 'Process All with AI'}
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {uploads.map((file) => (
-                <div
-                  key={file.key}
-                  className="border border-neutral-200 rounded-lg p-2 text-center"
-                >
-                  {/\.(jpg|jpeg|png)$/i.test(file.filename) ? (
-                    <img
-                      src={file.url}
-                      alt={file.filename}
-                      className="w-full h-24 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-full h-24 bg-neutral-100 rounded flex items-center justify-center">
-                      <span className="text-xs text-neutral-500 uppercase font-medium">
-                        {file.filename.split('.').pop()}
-                      </span>
+              {uploads.map((file) => {
+                const isSelected = selectedUploadKeys.has(file.key);
+                return (
+                  <div
+                    key={file.key}
+                    onClick={() => toggleUploadSelect(file.key)}
+                    className={`relative border rounded-lg p-2 text-center cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'border-red-400 ring-2 ring-red-200'
+                        : 'border-neutral-200 hover:border-neutral-300'
+                    }`}
+                  >
+                    {/* Checkbox overlay */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                          isSelected
+                            ? 'bg-red-600 border-red-600'
+                            : 'bg-white/80 border-neutral-300'
+                        }`}
+                      >
+                        {isSelected && (
+                          <svg
+                            className="w-3 h-3 text-white"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </div>
                     </div>
-                  )}
-                  <p className="text-xs text-neutral-600 mt-1 truncate">
-                    {file.filename}
-                  </p>
-                  <p className="text-xs text-neutral-400">
-                    {formatBytes(file.size)}
-                  </p>
-                </div>
-              ))}
+                    {/\.(jpg|jpeg|png)$/i.test(file.filename) ? (
+                      <img
+                        src={file.url}
+                        alt={file.filename}
+                        className="w-full h-24 object-cover rounded"
+                      />
+                    ) : (
+                      <div className="w-full h-24 bg-neutral-100 rounded flex items-center justify-center">
+                        <span className="text-xs text-neutral-500 uppercase font-medium">
+                          {file.filename.split('.').pop()}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-xs text-neutral-600 mt-1 truncate">
+                      {file.filename}
+                    </p>
+                    <p className="text-xs text-neutral-400">
+                      {formatBytes(file.size)}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

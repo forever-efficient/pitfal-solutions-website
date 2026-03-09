@@ -220,9 +220,11 @@ export const handler = async (): Promise<void> => {
           await updateJobStatus(job.jobId, { status: 'exporting' });
 
         } else if (editStatus === 'failed') {
+          const errorDetail = nestedStatus.error || nestedStatus.error_message || nestedStatus.reason || rawStatusData.error || 'No error details provided';
+          console.error(JSON.stringify({ level: 'ERROR', message: 'ImagenAI editing failed', jobId: job.jobId, errorDetail, fullResponse: rawStatusData }));
           await updateJobStatus(job.jobId, {
             status: 'failed',
-            error: 'ImagenAI editing failed',
+            error: `ImagenAI editing failed: ${typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail)}`,
           });
         }
         // else still in progress — wait for next poll
@@ -248,9 +250,11 @@ export const handler = async (): Promise<void> => {
           // Export done — download rendered JPEGs
           await downloadAndStoreResults(job);
         } else if (exportStatus === 'failed') {
+          const errorDetail = nestedStatus.error || nestedStatus.error_message || nestedStatus.reason || rawStatusData.error || 'No error details provided';
+          console.error(JSON.stringify({ level: 'ERROR', message: 'ImagenAI export failed', jobId: job.jobId, errorDetail, fullResponse: rawStatusData }));
           await updateJobStatus(job.jobId, {
             status: 'failed',
-            error: 'ImagenAI export failed',
+            error: `ImagenAI export failed: ${typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail)}`,
           });
         }
         // else still exporting — wait for next poll
