@@ -1,0 +1,20 @@
+{
+  "name": "pitfal-documents-lambda",
+  "version": "1.0.0",
+  "description": "Document signing API proxy and DocuSeal toggle for Pitfal Solutions",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild index.ts --bundle --platform=node --target=node22 --outfile=dist/index.js --external:@aws-sdk/*"
+  },
+  "dependencies": {
+    "@aws-sdk/client-lightsail": "^3.0.0",
+    "@aws-sdk/client-route-53": "^3.0.0",
+    "@aws-sdk/client-ssm": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.12",
+    "typescript": "^5.0.0"
+  }
+}

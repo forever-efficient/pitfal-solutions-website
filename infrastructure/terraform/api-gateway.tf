@@ -2292,6 +2292,160 @@ resource "aws_api_gateway_integration_response" "admin_imagen_process_options" {
   }
 }
 
+# ─────────────────────────────────────────────
+# Documents API Routes (DocuSeal proxy + toggle)
+# ─────────────────────────────────────────────
+
+# /api/documents
+resource "aws_api_gateway_resource" "documents" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.api.id
+  path_part   = "documents"
+}
+
+# ANY /api/documents → documents Lambda
+resource "aws_api_gateway_method" "documents_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.documents.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "documents_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.documents.id
+  http_method             = aws_api_gateway_method.documents_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.documents.invoke_arn
+}
+
+# OPTIONS /api/documents (CORS)
+resource "aws_api_gateway_method" "documents_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.documents.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "documents_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents.id
+  http_method = aws_api_gateway_method.documents_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "documents_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents.id
+  http_method = aws_api_gateway_method.documents_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "documents_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents.id
+  http_method = aws_api_gateway_method.documents_options.http_method
+  status_code = aws_api_gateway_method_response.documents_options.status_code
+
+  depends_on = [aws_api_gateway_integration.documents_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/documents/{proxy+} (catch-all sub-routes)
+resource "aws_api_gateway_resource" "documents_proxy" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.documents.id
+  path_part   = "{proxy+}"
+}
+
+# ANY /api/documents/{proxy+} → documents Lambda
+resource "aws_api_gateway_method" "documents_proxy_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.documents_proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "documents_proxy_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.documents_proxy.id
+  http_method             = aws_api_gateway_method.documents_proxy_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.documents.invoke_arn
+}
+
+# OPTIONS /api/documents/{proxy+} (CORS)
+resource "aws_api_gateway_method" "documents_proxy_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.documents_proxy.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "documents_proxy_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents_proxy.id
+  http_method = aws_api_gateway_method.documents_proxy_options.http_method
+  type        = "MOCK"
+
+  request_templates = {
+    "application/json" = "{\"statusCode\": 200}"
+  }
+}
+
+resource "aws_api_gateway_method_response" "documents_proxy_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents_proxy.id
+  http_method = aws_api_gateway_method.documents_proxy_options.http_method
+  status_code = "200"
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
+resource "aws_api_gateway_integration_response" "documents_proxy_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.documents_proxy.id
+  http_method = aws_api_gateway_method.documents_proxy_options.http_method
+  status_code = aws_api_gateway_method_response.documents_proxy_options.status_code
+
+  depends_on = [aws_api_gateway_integration.documents_proxy_options]
+
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # API Gateway deployment
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -2418,6 +2572,13 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.admin_analytics.id,
       aws_api_gateway_method.admin_analytics_any.id,
       aws_api_gateway_integration.admin_analytics_any.id,
+      # Documents routes
+      aws_api_gateway_resource.documents.id,
+      aws_api_gateway_method.documents_any.id,
+      aws_api_gateway_integration.documents_any.id,
+      aws_api_gateway_resource.documents_proxy.id,
+      aws_api_gateway_method.documents_proxy_any.id,
+      aws_api_gateway_integration.documents_proxy_any.id,
     ]))
   }
 

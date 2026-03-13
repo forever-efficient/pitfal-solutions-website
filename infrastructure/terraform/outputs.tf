@@ -145,3 +145,24 @@ output "domain_configuration" {
     custom_domain     = var.use_custom_domain ? var.domain_name : null
   }
 }
+
+# DocuSeal
+output "docuseal_signing_url" {
+  description = "URL for document signing portal"
+  value       = var.use_custom_domain ? "https://sign.${var.domain_name}" : null
+}
+
+output "docuseal_status" {
+  description = "Whether DocuSeal Lightsail instance is enabled"
+  value       = var.enable_docuseal ? "enabled" : "disabled"
+}
+
+output "docuseal_instance_ip" {
+  description = "Public IP of the DocuSeal Lightsail instance"
+  value       = var.enable_docuseal ? aws_lightsail_instance.docuseal[0].public_ip_address : null
+}
+
+output "docuseal_documents_bucket" {
+  description = "S3 bucket for signed documents"
+  value       = aws_s3_bucket.documents.id
+}

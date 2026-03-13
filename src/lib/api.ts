@@ -676,3 +676,27 @@ export const adminProcessing = {
       body: JSON.stringify(data),
     }),
 };
+
+// =============================================================================
+// Admin Documents (DocuSeal)
+// =============================================================================
+
+export type DocuSealStatus = 'running' | 'starting' | 'stopping' | 'off' | 'error';
+
+export interface DocuSealStatusResponse {
+  status: DocuSealStatus;
+  publicIp?: string;
+  operationId?: string;
+  error?: string;
+}
+
+export const adminDocuments = {
+  getStatus: () =>
+    request<DocuSealStatusResponse>('/api/documents/status'),
+
+  toggle: (action: 'enable' | 'disable') =>
+    request<{ status: DocuSealStatus }>('/api/documents/toggle', {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }),
+};

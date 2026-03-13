@@ -32,7 +32,7 @@ variable "domain_name" {
 variable "subject_alternative_names" {
   description = "Additional domain names for SSL certificate"
   type        = list(string)
-  default     = ["www.pitfal.solutions"]
+  default     = ["www.pitfal.solutions", "sign.pitfal.solutions"]
 }
 
 # Custom domain configuration
@@ -230,4 +230,20 @@ variable "enable_raw_pipeline" {
   description = "Enable the RAW image processing pipeline (orchestrator + poller Lambdas). Requires imagenai_api_key."
   type        = bool
   default     = false
+}
+
+# ─────────────────────────────────────────────
+# DocuSeal Document Signing settings
+# ─────────────────────────────────────────────
+
+variable "enable_docuseal" {
+  description = "Enable DocuSeal document signing infrastructure (Lightsail instance). CloudFront + S3 bucket are always created."
+  type        = bool
+  default     = true
+}
+
+variable "docuseal_version" {
+  description = "DocuSeal Docker image tag. Pin to prevent breaking changes on container restart."
+  type        = string
+  default     = "1.8.2"
 }

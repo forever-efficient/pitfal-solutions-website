@@ -406,3 +406,76 @@ resource "aws_lambda_permission" "admin_api_gateway" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
 }
+
+# ─────────────────────────────────────────────
+# Documents Lambda (DocuSeal API proxy + toggle)
+# ─────────────────────────────────────────────
+
+resource "null_resource" "documents_build" {
+  triggers = {
+    source_hash  = filesha256("${path.module}/../../lambda/documents/index.ts")
+    package_hash = filesha256("${path.module}/../../lambda/documents/package.json")
+    shared_hash  = null_resource.shared_build.id
+  }
+
+  provisioner "local-exec" {
+    command     = "cd ${path.module}/../../lambda/documents && npm ci --ignore-scripts && npm run build"
+    interpreter = ["bash", "-c"]
+  }
+}
+
+data "archive_file" "documents" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../lambda/documents/dist"
+  output_path = "${path.module}/builds/documents.zip"
+  depends_on  = [null_resource.documents_build]
+}
+
+resource "aws_lambda_function" "documents" {
+  function_name    = "${local.name_prefix}-documents"
+  filename         = data.archive_file.documents.output_path
+  source_code_hash = data.archive_file.documents.output_base64sha256
+  handler          = "index.handler"
+  runtime          = var.lambda_runtime
+  role             = aws_iam_role.documents_lambda.arn
+  memory_size      = var.lambda_memory_size
+  timeout          = 60  # Toggle operations may take a moment
+
+  reserved_concurrent_executions = var.lambda_reserved_concurrency
+
+  dead_letter_config {
+    target_arn = aws_sqs_queue.lambda_dlq.arn
+  }
+
+  environment {
+    variables = {
+      ADMIN_TABLE              = aws_dynamodb_table.admin.name
+      DOCUSEAL_INTERNAL_URL    = "http://docuseal-origin.${var.domain_name}:3000"
+      DOCUSEAL_API_KEY_SSM_PATH = "/pitfal/docuseal-api-key"
+      ROUTE53_ZONE_ID          = var.route53_zone_id
+      DOCUSEAL_ORIGIN_DNS_NAME = "docuseal-origin.${var.domain_name}"
+      DOCUMENTS_BUCKET         = aws_s3_bucket.documents.id
+      ENVIRONMENT              = var.environment
+      CORS_ALLOWED_ORIGINS     = var.use_custom_domain ? "https://${var.domain_name},https://www.${var.domain_name}" : "*"
+    }
+  }
+
+  layers = [aws_lambda_layer_version.shared.arn]
+
+  tags = {
+    Name = "${local.name_prefix}-documents"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "documents" {
+  name              = "/aws/lambda/${aws_lambda_function.documents.function_name}"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_permission" "documents_api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.documents.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
+}

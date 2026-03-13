@@ -374,3 +374,108 @@ resource "aws_iam_role_policy" "admin_lambda_invoke" {
     }]
   })
 }
+
+# ─────────────────────────────────────────────
+# Documents Lambda Role
+# ─────────────────────────────────────────────
+
+resource "aws_iam_role" "documents_lambda" {
+  name = "${local.name_prefix}-documents-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "documents_logs" {
+  role       = aws_iam_role.documents_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "documents_dynamodb" {
+  name = "${local.name_prefix}-documents-dynamodb"
+  role = aws_iam_role.documents_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["dynamodb:GetItem"]
+      Resource = [aws_dynamodb_table.admin.arn]
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "documents_lightsail" {
+  name = "${local.name_prefix}-documents-lightsail"
+  role = aws_iam_role.documents_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "lightsail:CreateInstances",
+        "lightsail:CreateInstancesFromSnapshot",
+        "lightsail:DeleteInstance",
+        "lightsail:CreateInstanceSnapshot",
+        "lightsail:DeleteInstanceSnapshot",
+        "lightsail:GetInstance",
+        "lightsail:GetInstanceSnapshot",
+        "lightsail:GetInstanceSnapshots",
+        "lightsail:OpenInstancePublicPorts",
+        "lightsail:GetOperation"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "documents_route53" {
+  name = "${local.name_prefix}-documents-route53"
+  role = aws_iam_role.documents_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["route53:ChangeResourceRecordSets"]
+      Resource = "arn:aws:route53:::hostedzone/${var.route53_zone_id}"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "documents_ssm" {
+  name = "${local.name_prefix}-documents-ssm"
+  role = aws_iam_role.documents_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["ssm:GetParameter", "ssm:PutParameter"]
+      Resource = [
+        "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/pitfal/docuseal-*"
+      ]
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "documents_dlq" {
+  name = "${local.name_prefix}-documents-dlq"
+  role = aws_iam_role.documents_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sqs:SendMessage"]
+      Resource = aws_sqs_queue.lambda_dlq.arn
+    }]
+  })
+}
