@@ -168,6 +168,32 @@ resource "aws_cloudfront_function" "url_rewrite" {
         return request;
       }
 
+      // Legacy Squarespace URL handling
+      var redirects = {
+        '/portraits/candid-photos': '/portfolio/portraits/',
+        '/portraits/family-photos': '/portfolio/portraits/',
+        '/portraits/group-photos': '/portfolio/portraits/',
+        '/portraits/couples-photos': '/portfolio/portraits/',
+        '/portraits/individual-photos': '/portfolio/portraits/',
+        '/events': '/portfolio/events/',
+        '/pricing': '/services/',
+        '/brands/restaurants': '/portfolio/brands/',
+        '/advertising': '/services/',
+        '/photography-videography': '/services/',
+      };
+      var gone = ['/cart'];
+      var lookupUri = uri.endsWith('/') && uri.length > 1 ? uri.slice(0, -1) : uri;
+
+      if (gone.indexOf(lookupUri) !== -1) {
+        return { statusCode: 410, statusDescription: 'Gone',
+          headers: { 'content-type': { value: 'text/plain' } },
+          body: { encoding: 'text', data: 'This page has been permanently removed.' } };
+      }
+      if (redirects[lookupUri]) {
+        return { statusCode: 301, statusDescription: 'Moved Permanently',
+          headers: { location: { value: 'https://www.pitfal.solutions' + redirects[lookupUri] } } };
+      }
+
       // Block bogus clean URLs by validating the first path segment
       // Only known routes pass through; random bot paths get a real 404
       var validPaths = /^\/(about|admin|blog|client|contact|faq|portfolio|privacy|services|terms|_next|favicon|404)?(\/|$)/;
