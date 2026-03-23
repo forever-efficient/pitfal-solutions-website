@@ -79,7 +79,10 @@
       "Bash(sort -t: -k2 -n)",
       "WebFetch(domain:www.docuseal.com)",
       "WebFetch(domain:repost.aws)",
-      "Bash(aws lightsail:*)"
+      "Bash(aws lightsail:*)",
+      "Bash(find /Users/thomasarchuleta/Desktop/pitfal-solutions/website/src/components/client -type f -name *Download*)",
+      "Bash(find /Users/thomasarchuleta/Desktop/pitfal-solutions/website/src/lib -type f -name *api*)",
+      "Bash(find /Users/thomasarchuleta/Desktop/pitfal-solutions/website/lambda -type f -name *download* -o -name *client*)"
     ]
   },
   "enabledMcpjsonServers": [

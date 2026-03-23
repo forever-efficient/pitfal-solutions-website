@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { clientGallery } from '@/lib/api';
+import { canShareFiles } from '@/lib/platform';
 
 interface DownloadButtonProps {
   galleryId: string;
@@ -18,14 +19,32 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default' }: Dow
     setLoading(size);
     try {
       const data = await clientGallery.getDownloadUrl(galleryId, imageKey, size);
-      // Use an anchor element with download attribute to force download
-      const a = document.createElement('a');
-      a.href = data.downloadUrl;
-      a.download = ''; // Browser will use Content-Disposition filename
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+
+      if (canShareFiles()) {
+        // Mobile: fetch the image and use Web Share API for native save-to-photos
+        const response = await fetch(data.downloadUrl);
+        if (!response.ok) throw new Error('Failed to fetch image');
+        const blob = await response.blob();
+        const filename = imageKey.split('/').pop() || 'photo.jpg';
+        const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+
+        try {
+          await navigator.share({ files: [file] });
+        } catch (err) {
+          // User cancelled share sheet — not an error
+          if (err instanceof Error && err.name === 'AbortError') return;
+          throw err;
+        }
+      } else {
+        // Desktop: anchor element with download attribute
+        const a = document.createElement('a');
+        a.href = data.downloadUrl;
+        a.download = '';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     } catch {
       // Silently fail - download URL generation failed
     } finally {

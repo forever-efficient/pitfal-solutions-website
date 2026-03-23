@@ -111,7 +111,7 @@ const galleryResponse = {
 function setBulkState(
   state: Partial<{
     isDownloading: boolean;
-    progress: { current: number; total: number } | null;
+    progress: { current: number; total: number; phase?: string } | null;
     error: string | null;
   }> = {}
 ) {
@@ -213,7 +213,8 @@ describe('ClientGalleryView', () => {
         'finished/g1/three.jpg',
         'finished/g1/four.jpg',
       ],
-      'full'
+      'full',
+      'Client Wedding'
     );
 
     const sectionButtons = screen.getAllByRole('button', {
@@ -224,7 +225,8 @@ describe('ClientGalleryView', () => {
 
     expect(mockStartBulkDownload).toHaveBeenCalledWith(
       ['finished/g1/one.jpg', 'finished/g1/two.jpg'],
-      'web'
+      'web',
+      'Ceremony'
     );
   });
 
@@ -268,7 +270,7 @@ describe('ClientGalleryView', () => {
   it('renders header bulk download variant and dismisses hook error', async () => {
     setBulkState({
       isDownloading: true,
-      progress: { current: 1, total: 2 },
+      progress: { current: 1, total: 2, phase: 'fetching' },
       error: 'Bulk failed',
     });
     mockClientGalleryGet.mockResolvedValueOnce({
@@ -286,11 +288,57 @@ describe('ClientGalleryView', () => {
     await waitFor(() => {
       expect(
         screen.getByRole('button', { name: 'Download All' })
-      ).toHaveTextContent('Downloading 1 of 2');
+      ).toHaveTextContent('Fetching 1 of 2');
     });
 
     expect(screen.getByText('Bulk failed')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Dismiss error' }));
     expect(mockClearBulkError).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows sharing progress text for single batch', async () => {
+    setBulkState({
+      isDownloading: true,
+      progress: { current: 0, total: 5, phase: 'sharing', batchCurrent: 1, batchTotal: 1 },
+    });
+    mockClientGalleryGet.mockResolvedValueOnce({
+      ...galleryResponse,
+      gallery: {
+        ...galleryResponse.gallery,
+        heroImage: null,
+        sections: [],
+      },
+    });
+
+    render(<ClientGalleryView galleryId="g1" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Download All' })
+      ).toHaveTextContent('Saving to device…');
+    });
+  });
+
+  it('shows sharing progress text for multi-batch', async () => {
+    setBulkState({
+      isDownloading: true,
+      progress: { current: 20, total: 45, phase: 'sharing', batchCurrent: 2, batchTotal: 3 },
+    });
+    mockClientGalleryGet.mockResolvedValueOnce({
+      ...galleryResponse,
+      gallery: {
+        ...galleryResponse.gallery,
+        heroImage: null,
+        sections: [],
+      },
+    });
+
+    render(<ClientGalleryView galleryId="g1" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Download All' })
+      ).toHaveTextContent('Sharing batch 2 of 3…');
+    });
   });
 });
