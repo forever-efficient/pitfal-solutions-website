@@ -1,7 +1,31 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ServicesOverview } from '@/components/sections/ServicesOverview';
-import { SERVICES } from '@/lib/constants';
+
+// Mock the API to prevent real network calls
+vi.mock('@/lib/api', () => ({
+  publicGalleries: {
+    getFeaturedImages: vi.fn().mockResolvedValue({ images: [] }),
+  },
+}));
+
+// Mock IntersectionObserver
+beforeEach(() => {
+  const mockObserver = vi.fn().mockImplementation((callback: IntersectionObserverCallback) => {
+    // Immediately trigger visibility for all observed elements
+    return {
+      observe: (el: Element) => {
+        callback(
+          [{ isIntersecting: true, target: el } as IntersectionObserverEntry],
+          {} as IntersectionObserver
+        );
+      },
+      unobserve: vi.fn(),
+      disconnect: vi.fn(),
+    };
+  });
+  vi.stubGlobal('IntersectionObserver', mockObserver);
+});
 
 describe('ServicesOverview', () => {
   it('renders the section header', () => {
@@ -10,7 +34,14 @@ describe('ServicesOverview', () => {
     expect(screen.getByRole('heading', { name: 'Services Provided' })).toBeInTheDocument();
   });
 
-  it('renders all service cards', () => {
+  it('does not render the old subtitle', () => {
+    render(<ServicesOverview />);
+    expect(
+      screen.queryByText(/every project receives complete creative and technical attention/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders all service titles', () => {
     render(<ServicesOverview />);
     expect(screen.getByText('Photography')).toBeInTheDocument();
     expect(screen.getByText('Videography')).toBeInTheDocument();
@@ -28,28 +59,24 @@ describe('ServicesOverview', () => {
     expect(screen.getByText(/Convenient in-person notary services/i)).toBeInTheDocument();
   });
 
-  it('renders service links', () => {
+  it('renders service links with correct hrefs', () => {
     render(<ServicesOverview />);
-    const photoLink = screen.getByRole('link', { name: /photography/i });
-    expect(photoLink).toHaveAttribute('href', '/services/photography');
-
-    const videoLink = screen.getByRole('link', { name: /videography/i });
-    expect(videoLink).toHaveAttribute('href', '/services/videography');
-
-    const droneLink = screen.getByRole('link', { name: /commercial drone/i });
-    expect(droneLink).toHaveAttribute('href', '/services/commercial-drone');
-
-    const aiLink = screen.getByRole('link', { name: /ai & software/i });
-    expect(aiLink).toHaveAttribute('href', '/services/ai-software');
-
-    const notaryLink = screen.getByRole('link', { name: /colorado notary/i });
-    expect(notaryLink).toHaveAttribute('href', '/services/notary');
+    const links = screen.getAllByRole('link');
+    const hrefs = links.map((l) => l.getAttribute('href'));
+    expect(hrefs).toContain('/services/photography');
+    expect(hrefs).toContain('/services/videography');
+    expect(hrefs).toContain('/services/commercial-drone');
+    expect(hrefs).toContain('/services/ai-software');
+    expect(hrefs).toContain('/services/notary');
   });
 
-  it('renders Learn more text for each service', () => {
+  it('renders Explore CTA for each service', () => {
     render(<ServicesOverview />);
-    const learnMoreTexts = screen.getAllByText('Learn more');
-    expect(learnMoreTexts).toHaveLength(Object.keys(SERVICES).length);
+    expect(screen.getByText(/Explore photography/i)).toBeInTheDocument();
+    expect(screen.getByText(/Explore videography/i)).toBeInTheDocument();
+    expect(screen.getByText(/Explore commercial drone/i)).toBeInTheDocument();
+    expect(screen.getByText(/Explore ai & software/i)).toBeInTheDocument();
+    expect(screen.getByText(/Explore colorado notary/i)).toBeInTheDocument();
   });
 
   it('renders View all services link', () => {
@@ -59,18 +86,12 @@ describe('ServicesOverview', () => {
     expect(viewAllLink).toHaveAttribute('href', '/services');
   });
 
-  it('renders service image containers', () => {
+  it('renders feature lists for services', () => {
     render(<ServicesOverview />);
-    const serviceCards = document.querySelectorAll('.h-\\[325px\\]');
-    expect(serviceCards).toHaveLength(Object.keys(SERVICES).length);
-  });
-
-  it('renders section description', () => {
-    render(<ServicesOverview />);
-    expect(
-      screen.getByText(
-        /From photography and videography to aerial imaging, AI solutions, and professional notary services — every project receives complete creative and technical attention./i
-      )
-    ).toBeInTheDocument();
+    // Check a few features from different services
+    expect(screen.getByText('Brand & product photography')).toBeInTheDocument();
+    expect(screen.getByText('Brand films')).toBeInTheDocument();
+    expect(screen.getByText('Aerial photography')).toBeInTheDocument();
+    expect(screen.getByText('AI consulting & strategy')).toBeInTheDocument();
   });
 });

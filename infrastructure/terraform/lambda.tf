@@ -384,6 +384,7 @@ resource "aws_lambda_function" "admin" {
       ORCHESTRATOR_FUNCTION_NAME  = var.enable_raw_pipeline ? "${local.name_prefix}-image-processor-orchestrator" : ""
       IMAGENAI_PROFILE_ID_JPG     = var.imagenai_profile_id_jpg
       IMAGENAI_PROFILE_ID_RAW     = var.imagenai_profile_id_raw
+      MEDIACONVERT_ROLE_ARN       = aws_iam_role.mediaconvert.arn
     }
   }
 

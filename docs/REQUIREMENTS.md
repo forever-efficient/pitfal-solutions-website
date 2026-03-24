@@ -1,8 +1,8 @@
 # Functional Requirements - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.6 (Infrastructure Deployed)
-- **Last Updated:** February 2026
+- **Version:** 1.7 (Video System Added)
+- **Last Updated:** March 2026
 - **Status:** MVP Scope Finalized - Infrastructure deployed to AWS
 
 ---
@@ -40,10 +40,15 @@
 - Blur placeholder during load (LQIP)
 
 **REQ-GAL-004:** System shall support video content: `[MVP]`
-- YouTube/Vimeo embed support for public videos
-- Self-hosted video (S3) for client deliverables
-- Thumbnail preview before playback
-- Autoplay on hover (muted, optional)
+- YouTube embed/link for full video playback (admin provides YouTube URL per video)
+- Self-hosted video (S3) for client deliverables with presigned URL downloads
+- Auto-generated preview clips via AWS MediaConvert (short muted MP4 loops, 3-15 seconds)
+- Admin sets preview clip start time + duration per video
+- Homepage VideoCarousel auto-plays preview clips from non-password-protected galleries
+- Videos uploaded to S3 via CLI (`staging/videos/`), discovered by admin dashboard
+- Video assignment to galleries with metadata (title, YouTube URL, preview clip)
+- Storage tiering: gallery videos transition to STANDARD_IA after 90 days
+- `muted` + `playsInline` attributes for universal browser autoplay support
 
 ### 1.2 Gallery Organization
 
@@ -71,6 +76,10 @@
 - Reorder images within galleries
 - Delete images
 - Create/edit/delete galleries
+- Discover staged videos from `staging/videos/` in admin Videos page
+- Generate preview clips (set start time + duration, trigger MediaConvert)
+- Assign videos with preview clips + YouTube URL to galleries
+- Delete staged videos from admin dashboard
 
 **REQ-GAL-021:** System shall automatically generate: `[MVP]`
 - Multiple image sizes on upload
@@ -89,6 +98,8 @@
 
 **REQ-GAL-023:** When deleting a gallery, system shall cascade delete: `[MVP]`
 - All images in the gallery (from S3 and DynamoDB)
+- All videos in the gallery (from S3 `gallery/{id}/videos/`)
+- All video preview clips associated with gallery videos (from `video-previews/`)
 - All client selections associated with the gallery
 - All client sessions for the gallery
 - All processed variants and thumbnails
@@ -98,6 +109,11 @@
 - All thumbnails from S3
 - Blur placeholder from S3
 - All comments on that image
+
+**REQ-GAL-026:** When deleting a video, system shall cascade delete: `[MVP]`
+- The video file from S3 (`gallery/{id}/videos/` or `staging/videos/`)
+- The associated preview clip from S3 (`video-previews/`)
+- The video entry from the gallery's `videos` array in DynamoDB
 
 **REQ-GAL-025:** Image processing error handling: `[MVP]`
 - When processing fails (corrupt file, unsupported format, timeout):

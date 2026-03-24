@@ -165,3 +165,26 @@ export function isValidPhone(phone: string): boolean {
   const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
   return phoneRegex.test(phone.replace(/\s/g, ''));
 }
+
+/**
+ * RAW camera file extensions
+ */
+export const RAW_EXTENSIONS = new Set([
+  'cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2', 'pef', 'srw',
+]);
+
+/**
+ * Check if a file key/name is a RAW camera file by extension
+ */
+export function isRawFile(key: string): boolean {
+  const ext = key.split('.').pop()?.toLowerCase() || '';
+  return RAW_EXTENSIONS.has(ext);
+}
+
+/**
+ * Get the uppercase format label for a RAW file (e.g., "CR2", "NEF")
+ */
+export function getRawFormatLabel(key: string): string {
+  const ext = key.split('.').pop()?.toLowerCase() || '';
+  return ext.toUpperCase();
+}

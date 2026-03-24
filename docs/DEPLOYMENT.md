@@ -1,9 +1,9 @@
 # Deployment Guide - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.5 (Phase 1 Deployed)
-- **Last Updated:** February 2026
-- **Status:** Phase 1 deployed and verified — site live at dprk6phv6ds9x.cloudfront.net
+- **Version:** 1.6 (Video System Added)
+- **Last Updated:** March 2026
+- **Status:** Phase 1 deployed and verified — site live at www.pitfal.solutions
 
 ---
 
@@ -1233,6 +1233,68 @@ Then update the gallery manifest:
 
 ---
 
+## 8.5 Video Management
+
+Videos are managed through a CLI upload + admin dashboard workflow. Unlike images, videos are NOT uploaded through the admin UI — they go directly to S3 via the AWS CLI.
+
+### Video Upload & Discovery
+
+```bash
+# Upload a video to staging
+aws s3 cp video.mp4 s3://pitfal-prod-media/staging/videos/ --profile pitfal
+
+# Upload multiple videos
+aws s3 cp ./videos/ s3://pitfal-prod-media/staging/videos/ --recursive --profile pitfal
+```
+
+Videos in `staging/videos/` are automatically discovered by the admin Videos page (`/admin/videos`).
+
+### Video Workflow
+
+1. **Upload** — Upload video to `s3://pitfal-prod-media/staging/videos/` via CLI
+2. **Discover** — Open admin dashboard → Videos page → staged videos appear
+3. **Preview** — Select a video, set start time + duration (3-15 sec), click "Generate Preview"
+4. **Wait** — MediaConvert generates a short muted MP4 preview clip (~30-60 seconds)
+5. **Metadata** — Add title and YouTube URL for full playback
+6. **Assign** — Select a gallery and click "Assign to Gallery"
+7. **Verify** — Video appears in gallery, preview shows in homepage carousel (if public gallery)
+
+### S3 Video Prefixes
+
+| Prefix | Purpose | Lifecycle |
+|--------|---------|-----------|
+| `staging/videos/` | CLI-uploaded videos awaiting assignment | Auto-deleted after 30 days |
+| `video-previews/` | MediaConvert-generated preview clips | Permanent (small files) |
+| `gallery/{id}/videos/` | Assigned gallery videos | → STANDARD_IA after 90 days |
+
+### Supported Video Formats
+
+MP4, MOV, AVI, MKV, WebM — MediaConvert handles all natively.
+
+### Infrastructure Requirements
+
+Video management requires these Terraform resources (all in `infrastructure/terraform/`):
+
+| File | Resources |
+|------|-----------|
+| `mediaconvert.tf` | IAM execution role for MediaConvert (S3 read/write) |
+| `iam.tf` | Admin Lambda permissions for `mediaconvert:CreateJob`, `GetJob`, `DescribeEndpoints` |
+| `api-gateway.tf` | 5 admin routes (`/admin/videos/*`) + 1 public route (`/galleries/video-previews`) |
+| `lambda.tf` | `MEDIACONVERT_ROLE_ARN` environment variable for admin Lambda |
+| `s3.tf` | `staging/videos/` lifecycle rule (30-day expiration) |
+
+### Troubleshooting Videos
+
+| Issue | Solution |
+|-------|----------|
+| **Video not appearing in admin** | Check S3 prefix is exactly `staging/videos/` (not nested deeper) |
+| **Preview generation fails** | Check MediaConvert IAM role has S3 read/write permissions |
+| **Preview never completes** | Poll status with jobId; check CloudWatch logs for MediaConvert errors |
+| **Videos not in carousel** | Gallery must be non-password-protected and video must have a previewKey |
+| **Autoplay not working** | Ensure `muted` + `playsInline` attributes on `<video>` elements |
+
+---
+
 ## 9. Troubleshooting
 
 ### Common Issues and Solutions
@@ -1399,3 +1461,4 @@ terraform destroy # Remove (careful!)
 | 1.3 | February 23, 2026 | Claude Code | **Post-deployment refinements:** (1) Added section 3.4 for advanced Makefile targets (backfill-thumbnails, deploy-lambdas); (2) Updated setup guide for .make.env usage; (3) Verified cross-environment S3 media strategy. |
 | 1.4 | February 2026 | Claude Code | **Infrastructure deployed:** (1) `terraform apply` completed successfully — all AWS resources provisioned; (2) Lambda concurrency changed from reserved to unreserved (account limit constraint); (3) Updated status to reflect deployment milestone; (4) CloudFront cache policies replacing deprecated forwarded_values; (5) All DynamoDB tables have prevent_destroy + alarms for all 3 tables |
 | 1.5 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and synced to S3 (pitfal-prod-website); (2) CloudFront serving at dprk6phv6ds9x.cloudfront.net (Distribution ID: EDK9ZMCEN4GAT); (3) All Phase 1 checklist items checked off; (4) Updated post-deployment verification checklist with CloudFront domain; (5) Contact form and CloudWatch log verification still pending |
+| 1.6 | March 2026 | Claude Code | **Video system:** (1) Added Section 8.5 Video Management with CLI upload + admin workflow; (2) Documented MediaConvert infrastructure requirements; (3) Added video troubleshooting guide; (4) Updated status to reflect custom domain (www.pitfal.solutions). |

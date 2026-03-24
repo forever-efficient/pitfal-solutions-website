@@ -18,6 +18,12 @@ import { shuffleArray } from '../shared/array';
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
 const ADMIN_TABLE = process.env.ADMIN_TABLE;
 const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
+
+const RAW_EXTENSIONS_SET = new Set(['cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2', 'pef', 'srw']);
+function isRawKey(key: string): boolean {
+  const ext = key.split('.').pop()?.toLowerCase() || '';
+  return RAW_EXTENSIONS_SET.has(ext);
+}
 const GALLERY_TOKEN_SECRET = process.env.GALLERY_TOKEN_SECRET;
 const COOKIE_NAME = 'pitfal_client_session';
 
@@ -123,6 +129,15 @@ interface GalleryRecord {
   heroGradientOpacity?: number;
   heroHeight?: 'sm' | 'md' | 'lg';
   kanbanCards?: Array<{ id: string; title: string; status: string; order: number; createdAt: string }>;
+  videos?: Array<{
+    key: string;
+    alt?: string;
+    previewKey?: string;
+    previewStart?: number;
+    previewDuration?: number;
+    title?: string;
+    youtubeUrl?: string;
+  }>;
 }
 
 interface Comment {
@@ -316,6 +331,13 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
         inProgress: kanbanCards.filter(c => c.status === 'in_progress').length,
         done: kanbanCards.filter(c => c.status === 'done').length,
       } : undefined,
+      videos: gallery.videos?.map(v => ({
+        key: v.key,
+        alt: v.alt,
+        previewKey: v.previewKey,
+        title: v.title,
+        youtubeUrl: v.youtubeUrl,
+      })),
     },
     comments: comments.map((c) => ({
       id: c.commentId,
@@ -447,7 +469,7 @@ async function handleBulkDownload(
       const originalFilename = key.split('/').pop() || 'photo';
       let downloadFilename = originalFilename;
 
-      if (size === 'web') {
+      if (size === 'web' && !isRawKey(key)) {
         const webKey = getProcessedKey(key, 1920);
         const cached = await objectExists(MEDIA_BUCKET!, webKey);
 
@@ -516,7 +538,7 @@ async function handleDownload(
   let downloadKey = body.imageKey;
   const originalFilename = body.imageKey.split('/').pop() || 'photo';
 
-  if (size === 'web') {
+  if (size === 'web' && !isRawKey(body.imageKey)) {
     const webKey = getProcessedKey(body.imageKey, 1920);
     const cached = await objectExists(MEDIA_BUCKET!, webKey);
 
@@ -528,9 +550,10 @@ async function handleDownload(
     }
   }
 
-  const filenamePrefix = size === 'web' ? 'web_' : '';
+  const useWebFilename = size === 'web' && !isRawKey(body.imageKey);
+  const filenamePrefix = useWebFilename ? 'web_' : '';
   const webFilename = originalFilename.replace(/\.[^/.]+$/, '.webp');
-  const downloadFilename = size === 'web'
+  const downloadFilename = useWebFilename
     ? filenamePrefix + webFilename
     : originalFilename;
 

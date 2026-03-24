@@ -245,6 +245,24 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
     }
   }
 
+  # Auto-cleanup staged videos not assigned within 30 days
+  rule {
+    id     = "staging-videos-cleanup"
+    status = "Enabled"
+
+    filter {
+      prefix = "staging/videos/"
+    }
+
+    expiration {
+      days = 30
+    }
+  }
+
+  # Note: gallery videos are covered by the existing "transition-gallery-to-ia" rule
+  # which transitions all gallery/* content to STANDARD_IA after 90 days.
+  # Can upgrade to GLACIER_IR in the future if video volume justifies it.
+
   # Auto-cleanup ImagenAI RAW uploads (safety net: 7 days)
   rule {
     id     = "imagen-raw-cleanup"

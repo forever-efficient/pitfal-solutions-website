@@ -40,7 +40,7 @@ describe('DashboardUploader', () => {
   it('renders upload section with heading', () => {
     renderUploader();
     expect(screen.getByText('Upload Images')).toBeInTheDocument();
-    expect(screen.getByText(/Drag & drop JPG or PNG files/)).toBeInTheDocument();
+    expect(screen.getByText(/Drag & drop JPG, PNG, or RAW camera files/)).toBeInTheDocument();
   });
 
   it('renders file input with correct attributes', () => {
@@ -48,7 +48,7 @@ describe('DashboardUploader', () => {
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
     expect(input).toHaveAttribute('type', 'file');
     expect(input).toHaveAttribute('multiple');
-    expect(input).toHaveAttribute('accept', '.jpg,.jpeg,.png,image/jpeg,image/png');
+    expect(input).toHaveAttribute('accept', '.jpg,.jpeg,.png,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw,image/jpeg,image/png');
   });
 
   it('shows drag-over state when dragging files', () => {

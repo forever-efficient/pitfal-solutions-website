@@ -4,11 +4,13 @@ import { FeaturedGallery } from '@/components/sections/FeaturedGallery';
 
 const mockGetFeatured = vi.hoisted(() => vi.fn());
 const mockGetByCategory = vi.hoisted(() => vi.fn());
+const mockGetVideoPreviews = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/api', () => ({
   publicGalleries: {
     getFeatured: mockGetFeatured,
     getByCategory: mockGetByCategory,
+    getVideoPreviews: mockGetVideoPreviews,
   },
 }));
 
@@ -56,20 +58,15 @@ describe('FeaturedGallery', () => {
     mockGetByCategory.mockImplementation(() =>
       Promise.resolve({ galleries: [] })
     );
+    mockGetVideoPreviews.mockImplementation(() =>
+      Promise.resolve({ previews: [] })
+    );
   });
 
   it('renders the section header', async () => {
     render(<FeaturedGallery />);
-    expect(screen.getByText('Past Solutions')).toBeInTheDocument();
+    expect(screen.getByText('Previously Delivered Solutions')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Featured Projects' })).toBeInTheDocument();
-    await waitFor(() => {
-      expect(mockGetFeatured).toHaveBeenCalled();
-    });
-  });
-
-  it('renders section description', async () => {
-    render(<FeaturedGallery />);
-    expect(screen.getByText(/A selection of recent work/i)).toBeInTheDocument();
     await waitFor(() => {
       expect(mockGetFeatured).toHaveBeenCalled();
     });

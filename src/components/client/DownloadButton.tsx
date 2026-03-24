@@ -9,9 +9,11 @@ interface DownloadButtonProps {
   imageKey: string;
   /** Render as compact icon-only button for grid overlay */
   variant?: 'default' | 'icon';
+  /** When true, skip size menu and download full size directly (for RAW files) */
+  rawOnly?: boolean;
 }
 
-export function DownloadButton({ galleryId, imageKey, variant = 'default' }: DownloadButtonProps) {
+export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOnly }: DownloadButtonProps) {
   const [loading, setLoading] = useState<'full' | 'web' | null>(null);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -26,7 +28,7 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default' }: Dow
         if (!response.ok) throw new Error('Failed to fetch image');
         const blob = await response.blob();
         const filename = imageKey.split('/').pop() || 'photo.jpg';
-        const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+        const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
 
         try {
           await navigator.share({ files: [file] });
@@ -59,14 +61,23 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default' }: Dow
         <button
           onClick={(e) => {
             e.stopPropagation();
-            setShowMenu(!showMenu);
+            if (rawOnly) {
+              handleDownload('full');
+            } else {
+              setShowMenu(!showMenu);
+            }
           }}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white/80 hover:text-white transition-all backdrop-blur-sm"
+          disabled={loading !== null}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white/80 hover:text-white transition-all backdrop-blur-sm disabled:opacity-50"
           aria-label="Download image"
         >
-          <DownloadIcon className="w-4 h-4" />
+          {loading ? (
+            <span className="inline-block w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          ) : (
+            <DownloadIcon className="w-4 h-4" />
+          )}
         </button>
-        {showMenu && (
+        {showMenu && !rawOnly && (
           <div
             className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-neutral-200 overflow-hidden min-w-[160px] z-50"
             onClick={(e) => e.stopPropagation()}

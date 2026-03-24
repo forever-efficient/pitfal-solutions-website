@@ -72,26 +72,39 @@ describe('platform', () => {
       expect(canShareFiles()).toBe(false);
     });
 
-    it('returns true when canShare returns true for files', () => {
+    it('returns true when mobile and canShare returns true for files', () => {
       mockNavigator({
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)',
         share: vi.fn(),
         canShare: vi.fn().mockReturnValue(true),
       });
       expect(canShareFiles()).toBe(true);
     });
 
-    it('returns false when canShare returns false for files', () => {
+    it('returns false when mobile but canShare returns false for files', () => {
       mockNavigator({
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)',
         share: vi.fn(),
         canShare: vi.fn().mockReturnValue(false),
       });
       expect(canShareFiles()).toBe(false);
     });
 
-    it('returns false when canShare throws', () => {
+    it('returns false when mobile but canShare throws', () => {
       mockNavigator({
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)',
         share: vi.fn(),
         canShare: vi.fn().mockImplementation(() => { throw new Error('Not allowed'); }),
+      });
+      expect(canShareFiles()).toBe(false);
+    });
+
+    it('returns false on desktop even when share APIs are available', () => {
+      mockNavigator({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120',
+        maxTouchPoints: 0,
+        share: vi.fn(),
+        canShare: vi.fn().mockReturnValue(true),
       });
       expect(canShareFiles()).toBe(false);
     });

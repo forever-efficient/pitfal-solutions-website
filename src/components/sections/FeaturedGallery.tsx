@@ -100,15 +100,11 @@ export function FeaturedGallery() {
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16">
           <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
-            Past Solutions
+            Previously Delivered Solutions
           </p>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 mb-4 font-display">
             Featured Projects
           </h2>
-          <p className="text-lg text-neutral-600">
-            A selection of recent work showcasing the quality and creativity
-            brought to every project.
-          </p>
         </div>
 
         {/* Gallery grid */}
@@ -166,6 +162,7 @@ export function FeaturedGallery() {
               {serviceCards.map((item) => {
                 const categoryInfo = PORTFOLIO_CATEGORIES[item.category as keyof typeof PORTFOLIO_CATEGORIES];
                 const fallbackImage = categoryInfo?.image || 'site/portfolio-videography.jpg';
+
                 return (
                   <Link
                     key={item.id}

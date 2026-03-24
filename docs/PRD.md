@@ -4,8 +4,8 @@
 | Field | Value |
 |-------|-------|
 | **Product Name** | Pitfal Solutions Website |
-| **Version** | 1.8 (Colorado Notary Service Added) |
-| **Last Updated** | March 5, 2026 |
+| **Version** | 1.9 (Video Management System Added) |
+| **Last Updated** | March 23, 2026 |
 | **Status** | Phase 1 Deployed — CloudFront + Custom Domain Live |
 | **Owner** | Thomas Archuleta |
 | **Domain** | https://www.pitfal.solutions |
@@ -199,7 +199,7 @@ Pitfal Solutions differentiates through:
 | REQ-GAL-001 | Multiple layout formats (grid, masonry, slideshow, stacked) | P0 | MVP |
 | REQ-GAL-002 | Full-screen lightbox with zoom, navigation, metadata | P0 | MVP |
 | REQ-GAL-003 | Responsive image loading (WebP, srcset, lazy load, LQIP) | P0 | MVP |
-| REQ-GAL-004 | Video support (YouTube/Vimeo embeds, S3 self-hosted) | P1 | MVP |
+| REQ-GAL-004 | Video support (YouTube embeds, S3 self-hosted, MediaConvert previews, VideoCarousel) | P1 | MVP |
 | REQ-GAL-010 | Category organization (admin-configurable, not hardcoded) | P0 | MVP |
 | REQ-GAL-011 | Filtering and sorting (category, date, tags, search) | P1 | MVP |
 | REQ-GAL-012 | Featured/hero images for homepage | P0 | MVP |
@@ -313,20 +313,20 @@ Pitfal Solutions differentiates through:
          │          │ - admin          │
          │          └─────────────────┘
          │                   │
-         │          ┌────────┴────────┐
-         │          ▼                 ▼
-         │    DynamoDB           S3 Media
-         │    (3 tables)         (images/video)
-         │                           │
-         │                    ┌──────┴──────┐
-         │                    │  staging/    │──── S3 Event ────┐
-         │                    │  finished/   │                  │
-         │                    └─────────────┘                  ▼
-         │                           ▲          ┌──────────────────────┐
-         │                           │          │ Image Processor      │
-         │                           └──────────│ (Docker Lambda/ECR)  │
-         └─────── serves /media/finished/* ─────│ LibRaw + Sharp       │
-                                                └──────────────────────┘
+         │          ┌────────┼────────┐
+         │          ▼        ▼        ▼
+         │    DynamoDB   S3 Media  MediaConvert
+         │    (3 tables) (img/vid) (preview clips)
+         │                   │
+         │            ┌──────┴──────┐
+         │            │  staging/    │──── S3 Event ────┐
+         │            │  gallery/    │                  │
+         │            └─────────────┘                  ▼
+         │                   ▲          ┌──────────────────────┐
+         │                   │          │ Image Processor      │
+         │                   └──────────│ (Docker Lambda/ECR)  │
+         └────── serves /media/* ───────│ LibRaw + Sharp       │
+                                        └──────────────────────┘
 ```
 
 ### 7.2 Image Auto-Editing Pipeline
@@ -354,7 +354,38 @@ Image Processor Lambda (Docker, 2GB RAM, 5min timeout)
 Finished images served via CloudFront at /media/finished/*
 ```
 
-### 7.3 Design Principles
+### 7.3 Video Preview Pipeline
+
+```
+Admin uploads video via CLI to s3://media/staging/videos/
+    │
+    ▼
+Admin opens Videos page → discovers staged videos
+    │
+    ▼
+Admin sets preview start time + duration (3-15s)
+    │
+    ▼
+Admin Lambda → MediaConvert CreateJob
+    ├── Input: staging/videos/{file} (clip from startTime to startTime+duration)
+    ├── H.264 codec, 720p max, no audio track, QVBR quality 7
+    └── Output: video-previews/{videoId}-preview.mp4
+    │
+    ▼
+Admin polls preview-status → MediaConvert GetJob
+    │
+    ▼
+Preview ready → Admin assigns video + preview to gallery
+    ├── Copies video: staging/videos/ → gallery/{id}/videos/
+    ├── Updates DynamoDB: gallery.videos[] array
+    └── Deletes staging copy
+    │
+    ▼
+Homepage VideoCarousel displays preview clips from public galleries
+Full playback via YouTube embed/link (admin-provided URL)
+```
+
+### 7.4 Design Principles
 
 1. **Serverless-First:** Minimize operational overhead and costs
 2. **Static Generation:** Pre-render pages for optimal performance
@@ -381,20 +412,24 @@ pitfal-prod-website/           # Static site (Next.js export)
 └── ...
 
 pitfal-prod-media/             # Images, videos, RAW pipeline
-├── staging/                   # RAW uploads land here (auto-processed)
-│   └── {filename}.CR2/.CR3
-├── finished/                  # Auto-edited outputs + originals
-│   ├── {filename}.jpg         # Edited JPEG
-│   └── originals/             # Original RAW preserved
-│       └── {filename}.CR2
-├── portfolio/                 # Published portfolio images
-│   └── {category}/{gallery}/{imageId}/{size}w.webp
-├── clients/                   # Client proofing galleries
-│   └── {galleryId}/{imageId}.{ext}
-├── videos/                    # Video content
-│   └── {galleryId}/{videoId}.mp4
-└── downloads/                 # Temporary ZIP downloads
-    └── {token}/{filename}.zip
+├── site/                      # Site-wide images (hero, about, etc.)
+│   └── hero-bg.jpg
+├── staging/                   # Uploads awaiting processing/review
+│   ├── RAW/                   # RAW uploads (auto-processed, 7-day cleanup)
+│   ├── JPEG/                  # JPEG uploads (auto-processed, 7-day cleanup)
+│   ├── ready/                 # Processed images awaiting assignment (30-day cleanup)
+│   └── videos/                # CLI-uploaded videos awaiting assignment (30-day cleanup)
+├── gallery/                   # Assigned gallery content
+│   └── {galleryId}/
+│       ├── {filename}.jpg     # Gallery images
+│       └── videos/            # Gallery videos (→ STANDARD_IA after 90 days)
+│           └── {filename}.mp4
+├── video-previews/            # MediaConvert preview clips (permanent, small files)
+│   └── {videoId}-preview.mp4
+├── imagen/                    # AI editor uploads + results
+│   ├── RAW/                   # AI RAW uploads (7-day cleanup)
+│   └── edited/                # AI edited results (30-day cleanup)
+└── thumbnails/                # Auto-generated thumbnails
 
 pitfal-prod-logs/ (optional)   # CloudFront access logs
 ```
@@ -411,6 +446,7 @@ pitfal-prod-logs/ (optional)   # CloudFront access logs
 | **State** | React Context | Client state management |
 | **Animation** | CSS keyframes + Tailwind | Page transitions, gallery effects |
 | **Image Pipeline** | Docker Lambda (LibRaw + Sharp) | CR2/CR3 RAW → edited JPEG |
+| **Video Pipeline** | AWS MediaConvert | Preview clip extraction (muted MP4 loops) |
 | **Backend** | AWS Lambda (Node.js) | Serverless compute |
 | **API** | API Gateway (REST) | API management |
 | **Database** | DynamoDB | Serverless NoSQL |
@@ -434,6 +470,7 @@ pitfal-prod-logs/ (optional)   # CloudFront access logs
 | Lambda + API Gateway | ~$0-2/month | Free tier covers most usage |
 | Image Processor Lambda | ~$0.10/month | Docker Lambda, ~100 images/mo |
 | ECR Repository | ~$0.10/month | Container image storage |
+| MediaConvert | ~$0.01-0.10/month | $0.024/min, ~10-sec preview clips |
 | DynamoDB | ~$0-1/month | On-demand, free tier |
 | SES (email) | ~$0/month | 62K emails free |
 | Route 53 | ~$0.50/month | Hosted zone |
@@ -962,6 +999,7 @@ The following integrations are planned for Phase 2:
 | **CDN** | Content Delivery Network - edge caching |
 | **MVP** | Minimum Viable Product - essential features for launch |
 | **ECR** | Elastic Container Registry - Docker image storage |
+| **MediaConvert** | AWS Elemental MediaConvert - video transcoding service for preview clips |
 | **DLQ** | Dead Letter Queue - captures failed async invocations |
 | **CR2/CR3** | Canon RAW image formats |
 | **LibRaw** | Open-source RAW image processing library |
@@ -980,6 +1018,7 @@ The following integrations are planned for Phase 2:
 | 1.6 | February 2026 | Claude Code | **Phase 1 deployed:** (1) Frontend built and deployed to S3 + CloudFront (dprk6phv6ds9x.cloudfront.net); (2) All Phase 1 checklist items verified; (3) Updated all documentation to reflect deployment status; (4) Consolidated next steps: gallery integration → client proofing → admin → blog → SES → real images → custom domain |
 | 1.7 | February 23, 2026 | Claude Code | **Post-deployment updates:** (1) Integrated /portfolio/viewer route for unified gallery loading; (2) Implemented bulk download for client galleries; (3) Completed admin dashboard features (gallery management, inquiry viewing); (4) Updated documentation to reflect multi-lambda pipeline and restructure. |
 | 1.8 | March 5, 2026 | Claude Code | **Colorado Notary service:** (1) Added notary as 5th service (RULONA-compliant mobile notary); (2) Updated service offerings table; (3) Dedicated landing page at `/services/notary` with process steps and specific pricing ($15/doc); (4) Homepage grid changed from 4-column to 2+3 layout; (5) Nav, footer, contact form all updated. |
+| 1.9 | March 23, 2026 | Claude Code | **Video management system:** (1) AWS MediaConvert integration for preview clip generation; (2) Admin video discovery + preview + assignment workflow; (3) Homepage VideoCarousel replaces static videography card; (4) YouTube embed for full playback; (5) S3 lifecycle rules for video staging cleanup + storage tiering; (6) 5 new API routes + public video-previews endpoint; (7) See `docs/VIDEO-PLAN.md` for full design. |
 
 ---
 

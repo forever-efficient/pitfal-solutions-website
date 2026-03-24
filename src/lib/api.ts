@@ -14,17 +14,10 @@ function resolveApiBaseUrl(): string {
     return API_URL;
   }
 
-  const isLocalDevHost =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
-
-  // In deployed environments, route through same-origin /api so CloudFront
-  // handles origin routing and auth consistently across custom/placeholder domains.
-  if (!isLocalDevHost) {
-    return '';
-  }
-
-  return API_URL;
+  // Always route through same-origin /api path.
+  // - Production: CloudFront handles /api → API Gateway routing
+  // - Dev (localhost): Next.js rewrites proxy /api → API Gateway (avoids CORS)
+  return '';
 }
 
 // =============================================================================
@@ -313,6 +306,13 @@ export const adminGalleries = {
         heroZoom?: number;
         heroGradientOpacity?: number;
         heroHeight?: 'sm' | 'md' | 'lg';
+        videos?: Array<{
+          key: string;
+          alt?: string;
+          previewKey?: string;
+          title?: string;
+          youtubeUrl?: string;
+        }>;
         createdAt: string;
         updatedAt: string;
       };
@@ -362,6 +362,13 @@ export const adminGalleries = {
       heroGradientOpacity?: number | null;
       heroHeight?: 'sm' | 'md' | 'lg' | null;
       kanbanCards?: KanbanCard[];
+      videos?: Array<{
+        key: string;
+        alt?: string;
+        previewKey?: string;
+        title?: string;
+        youtubeUrl?: string;
+      }>;
     }
   ) =>
     request<{ updated: boolean }>(`/api/admin/galleries/${id}`, {
@@ -431,6 +438,68 @@ export const adminImages = {
     request<{ deleted: number }>('/api/admin/images/ready', {
       method: 'DELETE',
       body: JSON.stringify({ keys }),
+    }),
+};
+
+// =============================================================================
+// Admin Videos
+// =============================================================================
+
+export interface VideoFile {
+  key: string;
+  filename: string;
+  uploadedAt: string;
+  size: number;
+  url: string;
+}
+
+export interface VideoPreviewInfo {
+  previewKey: string;
+  title?: string;
+  youtubeUrl?: string;
+  galleryId: string;
+  category: string;
+  gallerySlug: string;
+}
+
+export const adminVideos = {
+  listReady: () =>
+    request<{ videos: VideoFile[] }>('/api/admin/videos/ready'),
+
+  deleteFromReady: (keys: string[]) =>
+    request<{ deleted: number }>('/api/admin/videos/ready', {
+      method: 'DELETE',
+      body: JSON.stringify({ keys }),
+    }),
+
+  generatePreview: (videoKey: string, startTime: number, duration: number) =>
+    request<{ videoId: string; jobId: string }>('/api/admin/videos/preview', {
+      method: 'POST',
+      body: JSON.stringify({ videoKey, startTime, duration }),
+    }),
+
+  getPreviewStatus: (jobId: string) =>
+    request<{ status: string; previewKey?: string; error?: string }>(
+      `/api/admin/videos/preview-status?jobId=${encodeURIComponent(jobId)}`
+    ),
+
+  assign: (data: {
+    videoKey: string;
+    previewKey?: string;
+    galleryId: string;
+    youtubeUrl?: string;
+    title?: string;
+    alt?: string;
+  }) =>
+    request<{ assigned: boolean }>('/api/admin/videos/assign', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  unassign: (videoKey: string, galleryId: string) =>
+    request<{ unassigned: boolean }>('/api/admin/videos/assign', {
+      method: 'DELETE',
+      body: JSON.stringify({ videoKey, galleryId }),
     }),
 };
 
@@ -559,6 +628,9 @@ export const publicGalleries = {
         kanbanCounts?: { todo: number; inProgress: number; done: number };
       };
     }>(`/api/galleries/${category}/${slug}`),
+
+  getVideoPreviews: () =>
+    request<{ previews: VideoPreviewInfo[] }>('/api/galleries/video-previews'),
 };
 
 // =============================================================================

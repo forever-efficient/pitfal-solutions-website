@@ -1083,6 +1083,273 @@ resource "aws_api_gateway_integration_response" "admin_images_assign_options" {
   }
 }
 
+# ─────────────────────────────────────────────
+# Admin Video Routes
+# ─────────────────────────────────────────────
+
+# /api/admin/videos
+resource "aws_api_gateway_resource" "admin_videos" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin.id
+  path_part   = "videos"
+}
+
+# /api/admin/videos/ready
+resource "aws_api_gateway_resource" "admin_videos_ready" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_videos.id
+  path_part   = "ready"
+}
+
+resource "aws_api_gateway_method" "admin_videos_ready_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_ready.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_ready_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_videos_ready.id
+  http_method             = aws_api_gateway_method.admin_videos_ready_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+resource "aws_api_gateway_method" "admin_videos_ready_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_ready.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_ready.id
+  http_method = aws_api_gateway_method.admin_videos_ready_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_videos_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_ready.id
+  http_method = aws_api_gateway_method.admin_videos_ready_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_videos_ready_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_ready.id
+  http_method = aws_api_gateway_method.admin_videos_ready_options.http_method
+  status_code = aws_api_gateway_method_response.admin_videos_ready_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_videos_ready_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/videos/preview
+resource "aws_api_gateway_resource" "admin_videos_preview" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_videos.id
+  path_part   = "preview"
+}
+
+resource "aws_api_gateway_method" "admin_videos_preview_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_preview.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_preview_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_videos_preview.id
+  http_method             = aws_api_gateway_method.admin_videos_preview_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+resource "aws_api_gateway_method" "admin_videos_preview_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_preview.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_preview_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview.id
+  http_method = aws_api_gateway_method.admin_videos_preview_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_videos_preview_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview.id
+  http_method = aws_api_gateway_method.admin_videos_preview_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_videos_preview_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview.id
+  http_method = aws_api_gateway_method.admin_videos_preview_options.http_method
+  status_code = aws_api_gateway_method_response.admin_videos_preview_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_videos_preview_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/videos/preview-status
+resource "aws_api_gateway_resource" "admin_videos_preview_status" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_videos.id
+  path_part   = "preview-status"
+}
+
+resource "aws_api_gateway_method" "admin_videos_preview_status_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_preview_status_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method             = aws_api_gateway_method.admin_videos_preview_status_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+resource "aws_api_gateway_method" "admin_videos_preview_status_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_preview_status_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method = aws_api_gateway_method.admin_videos_preview_status_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_videos_preview_status_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method = aws_api_gateway_method.admin_videos_preview_status_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_videos_preview_status_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_preview_status.id
+  http_method = aws_api_gateway_method.admin_videos_preview_status_options.http_method
+  status_code = aws_api_gateway_method_response.admin_videos_preview_status_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_videos_preview_status_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# /api/admin/videos/assign
+resource "aws_api_gateway_resource" "admin_videos_assign" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.admin_videos.id
+  path_part   = "assign"
+}
+
+resource "aws_api_gateway_method" "admin_videos_assign_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_assign.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_assign_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.admin_videos_assign.id
+  http_method             = aws_api_gateway_method.admin_videos_assign_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+resource "aws_api_gateway_method" "admin_videos_assign_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.admin_videos_assign.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "admin_videos_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_assign.id
+  http_method = aws_api_gateway_method.admin_videos_assign_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "admin_videos_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_assign.id
+  http_method = aws_api_gateway_method.admin_videos_assign_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "admin_videos_assign_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.admin_videos_assign.id
+  http_method = aws_api_gateway_method.admin_videos_assign_options.http_method
+  status_code = aws_api_gateway_method_response.admin_videos_assign_options.status_code
+  depends_on  = [aws_api_gateway_integration.admin_videos_assign_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,POST,PUT,DELETE,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
 # /api/admin/inquiries
 resource "aws_api_gateway_resource" "admin_inquiries" {
   rest_api_id = aws_api_gateway_rest_api.main.id
@@ -1812,6 +2079,74 @@ resource "aws_api_gateway_integration_response" "galleries_featured_images_optio
   http_method = aws_api_gateway_method.galleries_featured_images_options.http_method
   status_code = aws_api_gateway_method_response.galleries_featured_images_options.status_code
   depends_on  = [aws_api_gateway_integration.galleries_featured_images_options]
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
+    "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
+    "method.response.header.Access-Control-Allow-Origin"  = "'${local.api_gateway_cors_origin}'"
+  }
+}
+
+# ─────────────────────────────────────────────
+# Public Video Previews Route
+# ─────────────────────────────────────────────
+
+# /api/galleries/video-previews
+resource "aws_api_gateway_resource" "galleries_video_previews" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  parent_id   = aws_api_gateway_resource.galleries.id
+  path_part   = "video-previews"
+}
+
+resource "aws_api_gateway_method" "galleries_video_previews_any" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_video_previews.id
+  http_method   = "ANY"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_video_previews_any" {
+  rest_api_id             = aws_api_gateway_rest_api.main.id
+  resource_id             = aws_api_gateway_resource.galleries_video_previews.id
+  http_method             = aws_api_gateway_method.galleries_video_previews_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.admin.invoke_arn
+}
+
+resource "aws_api_gateway_method" "galleries_video_previews_options" {
+  rest_api_id   = aws_api_gateway_rest_api.main.id
+  resource_id   = aws_api_gateway_resource.galleries_video_previews.id
+  http_method   = "OPTIONS"
+  authorization = "NONE"
+}
+
+resource "aws_api_gateway_integration" "galleries_video_previews_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_video_previews.id
+  http_method = aws_api_gateway_method.galleries_video_previews_options.http_method
+  type        = "MOCK"
+  request_templates = { "application/json" = "{\"statusCode\": 200}" }
+}
+
+resource "aws_api_gateway_method_response" "galleries_video_previews_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_video_previews.id
+  http_method = aws_api_gateway_method.galleries_video_previews_options.http_method
+  status_code = "200"
+  response_parameters = {
+    "method.response.header.Access-Control-Allow-Headers" = true
+    "method.response.header.Access-Control-Allow-Methods" = true
+    "method.response.header.Access-Control-Allow-Origin"  = true
+  }
+  response_models = { "application/json" = "Empty" }
+}
+
+resource "aws_api_gateway_integration_response" "galleries_video_previews_options" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  resource_id = aws_api_gateway_resource.galleries_video_previews.id
+  http_method = aws_api_gateway_method.galleries_video_previews_options.http_method
+  status_code = aws_api_gateway_method_response.galleries_video_previews_options.status_code
+  depends_on  = [aws_api_gateway_integration.galleries_video_previews_options]
   response_parameters = {
     "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,Authorization,X-Requested-With'"
     "method.response.header.Access-Control-Allow-Methods" = "'GET,OPTIONS'"
@@ -2572,6 +2907,24 @@ resource "aws_api_gateway_deployment" "main" {
       aws_api_gateway_resource.admin_analytics.id,
       aws_api_gateway_method.admin_analytics_any.id,
       aws_api_gateway_integration.admin_analytics_any.id,
+      # Admin video routes
+      aws_api_gateway_resource.admin_videos.id,
+      aws_api_gateway_resource.admin_videos_ready.id,
+      aws_api_gateway_method.admin_videos_ready_any.id,
+      aws_api_gateway_integration.admin_videos_ready_any.id,
+      aws_api_gateway_resource.admin_videos_preview.id,
+      aws_api_gateway_method.admin_videos_preview_any.id,
+      aws_api_gateway_integration.admin_videos_preview_any.id,
+      aws_api_gateway_resource.admin_videos_preview_status.id,
+      aws_api_gateway_method.admin_videos_preview_status_any.id,
+      aws_api_gateway_integration.admin_videos_preview_status_any.id,
+      aws_api_gateway_resource.admin_videos_assign.id,
+      aws_api_gateway_method.admin_videos_assign_any.id,
+      aws_api_gateway_integration.admin_videos_assign_any.id,
+      # Public video previews route
+      aws_api_gateway_resource.galleries_video_previews.id,
+      aws_api_gateway_method.galleries_video_previews_any.id,
+      aws_api_gateway_integration.galleries_video_previews_any.id,
       # Documents routes
       aws_api_gateway_resource.documents.id,
       aws_api_gateway_method.documents_any.id,

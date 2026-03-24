@@ -1,8 +1,8 @@
 # System Architecture - Pitfal Solutions Website
 
 ## Document Info
-- **Version:** 1.7 (Notary Service Added)
-- **Last Updated:** March 5, 2026
+- **Version:** 1.8 (Video System Added)
+- **Last Updated:** March 23, 2026
 - **Status:** Implementation Complete (Phase 1) - Infrastructure deployed to AWS
 
 ---
@@ -29,10 +29,10 @@
                     │ - admin         │
                     └─────────────────┘
                              │
-                    ┌────────┴────────┐
-                    ▼                 ▼
-              DynamoDB           S3 Media
-              (3 tables)         (images/video)
+                    ┌────────┼────────┐
+                    ▼        ▼        ▼
+              DynamoDB   S3 Media  MediaConvert
+              (3 tables) (img/vid) (preview clips)
                     │
                     ▼
                    SES
@@ -328,7 +328,7 @@ export function BlurImage({ src, thumbnailSrc, alt }: BlurImageProps) {
 | `api-contact` | API Gateway | Handle contact form submissions |
 | `api-client-auth` | API Gateway | Authenticate client gallery access |
 | `api-client-gallery` | API Gateway | Client gallery operations (comments, downloads) |
-| `api-admin` | API Gateway | Admin operations (gallery CRUD, categories) |
+| `api-admin` | API Gateway | Admin operations (gallery CRUD, video management, MediaConvert, inquiries, analytics) |
 | `process-image` | S3 Event | Generate image variants on upload |
 | `send-email` | SNS | Send transactional emails via SES |
 
@@ -376,14 +376,37 @@ API Gateway (REST)
             ├── PUT    → Update category
             └── DELETE → Delete category
 
-    # MVP: Read-only inquiry viewing
-    └── /inquiries
-        └── GET  → List inquiries (view-only, no management actions)
+    ├── /videos
+    │   ├── /ready
+    │   │   ├── GET    → List staged videos (staging/videos/)
+    │   │   └── DELETE → Batch delete staged videos
+    │   ├── /preview
+    │   │   └── POST   → Trigger MediaConvert preview generation
+    │   ├── /preview-status
+    │   │   └── GET    → Poll MediaConvert job status (jobId query param)
+    │   └── /assign
+    │       └── POST   → Move video + preview to gallery, update DynamoDB
+    │
+    ├── /inquiries
+    │   ├── GET    → List inquiries (filterable by status)
+    │   └── /:id
+    │       ├── PUT    → Update inquiry status
+    │       └── DELETE → Delete inquiry
+    │
+    └── /analytics
+        └── GET    → Gallery view/download analytics
 
-    # Phase 2 endpoints (not in MVP):
-    # PUT /inquiries/:id - Update inquiry status
-    # DELETE /inquiries/:id - Archive/delete inquiry
-    # /settings - Site settings management
+├── /galleries (public, no auth)
+│   ├── /featured
+│   │   ├── GET    → Get featured galleries for homepage
+│   │   └── /images
+│   │       └── GET    → Get random images from featured galleries
+│   ├── /video-previews
+│   │   └── GET    → Get video preview clips from public galleries (for homepage carousel)
+│   ├── /:category
+│   │   └── GET    → List galleries by category
+│   └── /:category/:slug
+│       └── GET    → Get single gallery by category + slug
 
 # Note: Testimonials and FAQ are static content stored in /content/*.json
 # No API endpoints needed - content is bundled at build time
@@ -645,7 +668,12 @@ pitfal-media/
 │           ├── sm.webp (150x150)
 │           ├── md.webp (300x300)
 │           └── lg.webp (600x600)
-├── videos/
+├── staging/
+│   └── videos/                  # CLI-uploaded videos (30-day auto-cleanup)
+│       └── {filename}.mp4
+├── video-previews/              # MediaConvert-generated preview clips (permanent)
+│   └── {videoId}-preview.mp4
+├── videos/                      # Legacy (deprecated — use gallery/{id}/videos/)
 │   └── {galleryId}/
 │       └── {videoId}.mp4
 ├── blur/
@@ -676,6 +704,7 @@ infrastructure/terraform/
 ├── route53.tf          # DNS records
 ├── acm.tf              # SSL certificates
 ├── iam.tf              # IAM roles and policies
+├── mediaconvert.tf     # MediaConvert queue + IAM role (video previews)
 └── modules/
     └── lambda-function/
         ├── main.tf
@@ -1074,8 +1103,17 @@ Lambda Execution Role (pitfal-lambda-role):
 │   └── SendEmail, SendTemplatedEmail
 ├── CloudWatch:
 │   └── CreateLogGroup, CreateLogStream, PutLogEvents
-└── SSM (Parameter Store):
-    └── GetParameter (for secrets)
+├── SSM (Parameter Store):
+│   └── GetParameter (for secrets)
+└── MediaConvert (admin Lambda only):
+    ├── CreateJob, GetJob, DescribeEndpoints
+    └── iam:PassRole → pitfal-mediaconvert-role
+
+MediaConvert Execution Role (pitfal-mediaconvert-role):
+├── S3:
+│   ├── GetObject: staging/videos/*, gallery/*/videos/*
+│   └── PutObject: video-previews/*
+└── (Assumed by MediaConvert service)
 
 CloudFront OAC:
 └── S3: GetObject
@@ -1251,3 +1289,4 @@ CloudWatch Log Groups:
 | 1.5 | February 2026 | Claude Code | **Infrastructure hardening:** (1) Added WAF, ACM certificate management; (2) Added DMARC/SPF/DKIM for SES; (3) Added S3 lifecycle rules and logging buckets; (4) Added detailed IAM policies and deployment phases. |
 | 1.6 | February 23, 2026 | Claude Code | **Evolved Pipeline & REST API:** (1) Updated section 2.4 to reflect multi-lambda image processing (orchestrator/poller); (2) Added /portfolio/viewer route details; (3) Documented bulk download implementation; (4) Synchronized tech stack and S3 structure. |
 | 1.7 | March 5, 2026 | Claude Code | **Colorado Notary service:** Updated application structure to show all 5 service landing pages under `services/`. |
+| 1.8 | March 22, 2026 | Claude Code | **Video system:** Added MediaConvert to architecture diagram, video API routes (`/admin/videos/*`, `/galleries/video-previews`), video S3 prefixes (`staging/videos/`, `video-previews/`, `gallery/*/videos/`), MediaConvert IAM role, Glacier Instant Retrieval lifecycle for gallery videos, `mediaconvert.tf` to Terraform modules. See `docs/VIDEO-PLAN.md` for full design. |

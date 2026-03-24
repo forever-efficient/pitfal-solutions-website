@@ -9,6 +9,7 @@ import { ImageUploader } from '@/components/admin/ImageUploader';
 import { SectionManager } from '@/components/admin/SectionManager';
 import { HeroPositionEditor } from '@/components/admin/HeroPositionEditor';
 import { KanbanBoard } from '@/components/admin/KanbanBoard';
+import { GalleryVideoPanel } from '@/components/admin/GalleryVideoPanel';
 
 function GalleryEditContent() {
   const searchParams = useSearchParams();
@@ -119,6 +120,14 @@ function GalleryEditContent() {
           initialZoom={gallery.heroZoom}
           initialGradientOpacity={gallery.heroGradientOpacity}
           initialHeight={gallery.heroHeight}
+        />
+      )}
+
+      {gallery.videos && gallery.videos.length > 0 && (
+        <GalleryVideoPanel
+          galleryId={id}
+          videos={gallery.videos}
+          onUpdate={() => loadGallery()}
         />
       )}
 

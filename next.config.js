@@ -39,6 +39,18 @@ const nextConfig = {
   // Strict mode for development
   reactStrictMode: true,
 
+  // Proxy API calls through Next.js dev server to avoid CORS issues with API Gateway
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl || apiUrl.startsWith('/')) return [];
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
+      },
+    ];
+  },
+
   // Webpack configuration
   webpack: (config, { isServer }) => {
     // Handle SVG imports

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { adminImages } from '@/lib/api';
+import { isRawFile } from '@/lib/utils';
 
 interface DashboardUploaderProps {
   onUploaded: () => void;
@@ -22,7 +23,7 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
   const handleFiles = useCallback(
     async (fileList: FileList) => {
       const accepted = Array.from(fileList).filter(f =>
-        /\.(jpg|jpeg|png)$/i.test(f.name)
+        /\.(jpg|jpeg|png|cr2|cr3|nef|arw|dng|raf|orf|rw2|pef|srw)$/i.test(f.name)
       );
       if (accepted.length === 0) return;
 
@@ -39,12 +40,12 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
         try {
           const { uploadUrl } = await adminImages.getUploadUrl(
             file.name,
-            file.type || 'image/jpeg'
+            file.type || (isRawFile(file.name) ? 'application/octet-stream' : 'image/jpeg')
           );
           await fetch(uploadUrl, {
             method: 'PUT',
             body: file,
-            headers: { 'Content-Type': file.type || 'image/jpeg' },
+            headers: { 'Content-Type': file.type || (isRawFile(file.name) ? 'application/octet-stream' : 'image/jpeg') },
           });
           setFiles(prev => prev.map(e => e.id === id ? { ...e, status: 'done' } : e));
           anyUploaded = true;
@@ -78,7 +79,7 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
         <input
           type="file"
           multiple
-          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+          accept=".jpg,.jpeg,.png,.cr2,.cr3,.nef,.arw,.dng,.raf,.orf,.rw2,.pef,.srw,image/jpeg,image/png"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
           className="hidden"
           id="dashboard-upload"
@@ -98,7 +99,7 @@ export function DashboardUploader({ onUploaded }: DashboardUploaderProps) {
             />
           </svg>
           <p className="text-sm text-neutral-600">
-            Drag & drop JPG or PNG files, or click to browse
+            Drag & drop JPG, PNG, or RAW camera files, or click to browse
           </p>
           <p className="text-xs text-neutral-400 mt-1">
             Images go directly to the ready queue below

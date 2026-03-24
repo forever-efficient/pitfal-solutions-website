@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { clientGallery, clientAuth, type GallerySection } from '@/lib/api';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, isRawFile, getRawFormatLabel } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
 import { DownloadButton } from './DownloadButton';
 import { useBulkDownload, type BulkDownloadProgress } from './useBulkDownload';
@@ -13,6 +13,14 @@ import { ClientSectionNav } from './ClientSectionNav';
 interface GalleryImage {
   key: string;
   alt?: string;
+}
+
+interface GalleryVideo {
+  key: string;
+  alt?: string;
+  previewKey?: string;
+  title?: string;
+  youtubeUrl?: string;
 }
 
 interface Comment {
@@ -47,6 +55,7 @@ export function ClientGalleryView({
     heroHeight?: 'sm' | 'md' | 'lg';
     allowDownloads?: boolean;
     kanbanCounts?: { todo: number; inProgress: number; done: number };
+    videos?: GalleryVideo[];
   } | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -119,15 +128,17 @@ export function ClientGalleryView({
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
   const goNext = useCallback(() => {
     if (!gallery) return;
+    const count = gallery.images.filter(img => !isRawFile(img.key)).length;
     setLightboxIndex((prev) =>
-      prev !== null ? (prev + 1) % gallery.images.length : null
+      prev !== null ? (prev + 1) % count : null
     );
   }, [gallery]);
   const goPrev = useCallback(() => {
     if (!gallery) return;
+    const count = gallery.images.filter(img => !isRawFile(img.key)).length;
     setLightboxIndex((prev) =>
       prev !== null
-        ? (prev - 1 + gallery.images.length) % gallery.images.length
+        ? (prev - 1 + count) % count
         : null
     );
   }, [gallery]);
@@ -179,15 +190,19 @@ export function ClientGalleryView({
     );
   }
 
+  // Viewable images exclude RAW files (RAW can't render in lightbox)
+  const viewableImages = gallery.images.filter(img => !isRawFile(img.key));
   const currentImage =
-    lightboxIndex !== null ? gallery.images[lightboxIndex] : null;
+    lightboxIndex !== null ? viewableImages[lightboxIndex] : null;
   const currentComments = currentImage
     ? comments.filter((c) => c.imageKey === currentImage.key)
     : [];
 
   const hasSections = gallery.sections && gallery.sections.length > 0;
-  const imageIndexMap = new Map(gallery.images.map((img, i) => [img.key, i]));
+  // Map viewable image keys to their lightbox index
+  const viewableIndexMap = new Map(viewableImages.map((img, i) => [img.key, i]));
   const allowDownloads = !!gallery.allowDownloads;
+  const rawCount = gallery.images.length - viewableImages.length;
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -231,7 +246,9 @@ export function ClientGalleryView({
               </div>
             )}
             <span className="text-sm text-neutral-500">
-              {gallery.images.length} photos
+              {viewableImages.length} {viewableImages.length === 1 ? 'photo' : 'photos'}
+              {rawCount > 0 && `, ${rawCount} raw ${rawCount === 1 ? 'file' : 'files'}`}
+              {gallery.videos && gallery.videos.length > 0 && `, ${gallery.videos.length} ${gallery.videos.length === 1 ? 'video' : 'videos'}`}
             </span>
             {allowDownloads && gallery.images.length > 0 && !gallery.heroImage && (
               <BulkDownloadButton
@@ -410,7 +427,7 @@ export function ClientGalleryView({
                   <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
                     <ImageGrid
                       images={sectionImages}
-                      imageIndexMap={imageIndexMap}
+                      viewableIndexMap={viewableIndexMap}
                       onImageClick={setLightboxIndex}
                       comments={comments}
                       galleryId={galleryId}
@@ -474,7 +491,7 @@ export function ClientGalleryView({
                   <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
                     <ImageGrid
                       images={unassignedImages}
-                      imageIndexMap={imageIndexMap}
+                      viewableIndexMap={viewableIndexMap}
                       onImageClick={setLightboxIndex}
                       comments={comments}
                       galleryId={galleryId}
@@ -489,7 +506,7 @@ export function ClientGalleryView({
         ) : (
           <ImageGrid
             images={gallery.images}
-            imageIndexMap={imageIndexMap}
+            viewableIndexMap={viewableIndexMap}
             onImageClick={setLightboxIndex}
             comments={comments}
             galleryId={galleryId}
@@ -498,7 +515,72 @@ export function ClientGalleryView({
         )}
       </div>
 
-      {/* Lightbox */}
+      {/* Videos Section */}
+      {gallery.videos && gallery.videos.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 pb-8">
+          <div className="border-t border-neutral-200 pt-8">
+            <h2 className="text-2xl font-display font-semibold text-neutral-900 mb-6">
+              Videos
+              <span className="text-sm font-normal text-neutral-400 ml-2">
+                {gallery.videos.length} {gallery.videos.length === 1 ? 'video' : 'videos'}
+              </span>
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {gallery.videos.map((video) => (
+                <div key={video.key} className="bg-white rounded-xl overflow-hidden shadow-sm border border-neutral-200">
+                  {/* Preview clip or placeholder */}
+                  <div className="relative aspect-video bg-neutral-900">
+                    {video.previewKey ? (
+                      <video
+                        src={getImageUrl(video.previewKey)}
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-16 h-16 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {/* Video info */}
+                  <div className="p-4">
+                    {video.title && (
+                      <h3 className="font-medium text-neutral-900 mb-2">{video.title}</h3>
+                    )}
+                    <div className="flex items-center gap-3">
+                      {video.youtubeUrl && (
+                        <a
+                          href={video.youtubeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                          </svg>
+                          Watch Full Video
+                        </a>
+                      )}
+                      {allowDownloads && (
+                        <DownloadButton
+                          galleryId={galleryId}
+                          imageKey={video.key}
+                          variant="icon"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightboxIndex !== null && currentImage && (
@@ -531,7 +613,7 @@ export function ClientGalleryView({
             </button>
 
             <div className="absolute top-4 left-4 text-white/70 text-sm">
-              {lightboxIndex + 1} / {gallery.images.length}
+              {lightboxIndex + 1} / {viewableImages.length}
             </div>
 
             <button
@@ -802,39 +884,74 @@ function BulkDownloadIcon({ className }: { className?: string }) {
 
 interface ImageGridProps {
   images: GalleryImage[];
-  imageIndexMap: Map<string, number>;
+  viewableIndexMap: Map<string, number>;
   onImageClick: (index: number) => void;
   comments: Comment[];
   galleryId: string;
   allowDownloads: boolean;
 }
 
-function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, allowDownloads }: ImageGridProps) {
+function ImageGrid({ images, viewableIndexMap, onImageClick, comments, galleryId, allowDownloads }: ImageGridProps) {
   return (
     <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
       {images.map((image) => {
-        const globalIndex = imageIndexMap.get(image.key) ?? 0;
+        const raw = isRawFile(image.key);
+        const filename = image.key.split('/').pop() || '';
+
+        if (raw) {
+          return (
+            <div
+              key={image.key}
+              className="relative group rounded-lg overflow-hidden break-inside-avoid mb-4"
+            >
+              <div className="relative bg-neutral-900 rounded-lg overflow-hidden aspect-[4/3]">
+                <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                  <svg className="w-12 h-12 mb-3 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                  </svg>
+                  <span className="text-sm font-bold tracking-wider text-amber-400 bg-amber-400/10 px-3 py-1 rounded-md mb-2">
+                    {getRawFormatLabel(image.key)}
+                  </span>
+                  <p className="text-xs text-neutral-400 truncate max-w-[80%] text-center">
+                    {filename}
+                  </p>
+                </div>
+              </div>
+              {allowDownloads && (
+                <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <DownloadButton
+                    galleryId={galleryId}
+                    imageKey={image.key}
+                    variant="icon"
+                    rawOnly
+                  />
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        const viewableIndex = viewableIndexMap.get(image.key) ?? 0;
         return (
           <div
             key={image.key}
             className="relative group rounded-lg overflow-hidden break-inside-avoid mb-4"
           >
             <button
-              onClick={() => onImageClick(globalIndex)}
+              onClick={() => onImageClick(viewableIndex)}
               className="block w-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 rounded-lg overflow-hidden text-left relative"
             >
               <div className="relative bg-neutral-200 rounded-lg overflow-hidden min-h-[200px] z-0">
-                {/* Using standard img tag with z-index fixes that resolved visibility issues */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getImageUrl(image.key, 'lg')}
-                  alt={image.alt || `Photo ${globalIndex + 1}`}
+                  alt={image.alt || `Photo ${viewableIndex + 1}`}
                   className="w-full h-auto object-cover group-hover:scale-[1.02] transition-transform duration-300 relative z-10"
                   loading="eager"
                 />
               </div>
             </button>
-            {/* Download icon overlay - bottom right */}
             {allowDownloads && (
               <div className="absolute bottom-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <DownloadButton
@@ -844,7 +961,6 @@ function ImageGrid({ images, imageIndexMap, onImageClick, comments, galleryId, a
                 />
               </div>
             )}
-            {/* Comment badge - top right */}
             {comments.some((c) => c.imageKey === image.key) && (
               <div className="absolute top-2 right-2 bg-primary-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center z-20">
                 {comments.filter((c) => c.imageKey === image.key).length}

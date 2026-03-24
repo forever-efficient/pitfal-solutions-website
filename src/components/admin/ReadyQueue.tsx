@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { adminImages, adminGalleries } from '@/lib/api';
-import { getImageUrl } from '@/lib/utils';
+import { getImageUrl, isRawFile, getRawFormatLabel } from '@/lib/utils';
 import { useToast } from '@/components/admin/Toast';
 
 interface ReadyImage {
@@ -229,8 +229,20 @@ export function ReadyQueue({ galleryId, onAssigned, refreshKey }: ReadyQueueProp
                     : 'border-transparent hover:border-neutral-300'
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={getImageUrl(img.key)} alt={img.filename} className="w-full h-full object-cover" />
+                {isRawFile(img.key) ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-neutral-800 to-neutral-900 text-white">
+                    <svg className="w-8 h-8 mb-2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    </svg>
+                    <span className="text-xs font-bold tracking-wider text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
+                      {getRawFormatLabel(img.key)}
+                    </span>
+                  </div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={getImageUrl(img.key)} alt={img.filename} className="w-full h-full object-cover" />
+                )}
                 {selected.has(img.key) && (
                   <div className="absolute inset-0 bg-primary-500/20 flex items-center justify-center">
                     <div className="w-6 h-6 bg-primary-500 rounded-full flex items-center justify-center">

@@ -22,6 +22,9 @@ export function isMobile(): boolean {
  */
 export function canShareFiles(): boolean {
   if (typeof navigator === 'undefined') return false;
+  // Only use Web Share API on mobile — desktop browsers may report canShare
+  // support but reject navigator.share() with "Permission denied"
+  if (!isMobile()) return false;
   if (!navigator.share || !navigator.canShare) return false;
 
   try {

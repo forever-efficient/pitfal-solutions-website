@@ -2,6 +2,12 @@ import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } f
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcryptjs';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import {
+  MediaConvertClient,
+  CreateJobCommand,
+  GetJobCommand,
+  DescribeEndpointsCommand,
+} from '@aws-sdk/client-mediaconvert';
 import { shuffleArray } from '../shared/array';
 import { getItem, putItem, updateItem, deleteItem, queryItems, scanItems, buildUpdateExpression } from '../shared/db';
 import {
@@ -41,9 +47,23 @@ const MEDIA_BUCKET = process.env.MEDIA_BUCKET;
 const ORCHESTRATOR_FUNCTION_NAME = process.env.ORCHESTRATOR_FUNCTION_NAME;
 const IMAGENAI_PROFILE_ID_JPG = process.env.IMAGENAI_PROFILE_ID_JPG || '';
 const IMAGENAI_PROFILE_ID_RAW = process.env.IMAGENAI_PROFILE_ID_RAW || '';
+const MEDIACONVERT_ROLE_ARN = process.env.MEDIACONVERT_ROLE_ARN || '';
 const COOKIE_NAME = 'pitfal_admin_session';
 
 const lambdaClient = new LambdaClient({});
+
+// MediaConvert endpoint is region-specific — must discover once per cold start
+let mediaConvertEndpoint: string | null = null;
+async function getMediaConvertClient(): Promise<MediaConvertClient> {
+  if (!mediaConvertEndpoint) {
+    const tempClient = new MediaConvertClient({});
+    const resp = await tempClient.send(new DescribeEndpointsCommand({ MaxResults: 0 }));
+    mediaConvertEndpoint = resp.Endpoints?.[0]?.Url || '';
+  }
+  return new MediaConvertClient({ endpoint: mediaConvertEndpoint });
+}
+
+const VIDEO_EXTENSIONS_SET = new Set(['mp4', 'mov', 'avi', 'mkv', 'webm']);
 
 if (!ADMIN_TABLE || !GALLERIES_TABLE || !INQUIRIES_TABLE || !BOOKINGS_TABLE || !MEDIA_BUCKET) {
   throw new Error(
@@ -120,9 +140,24 @@ interface GalleryRecord {
   passwordHash?: string;
   allowDownloads?: boolean;
   featured?: boolean;
+  videos?: Array<{
+    key: string;
+    alt?: string;
+    previewKey?: string;
+    previewStart?: number;
+    previewDuration?: number;
+    title?: string;
+    youtubeUrl?: string;
+  }>;
   kanbanCards?: Array<{ id: string; title: string; status: string; order: number; createdAt: string }>;
   createdAt: string;
   updatedAt: string;
+}
+
+const RAW_EXTENSIONS_SET = new Set(['cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2', 'pef', 'srw']);
+function isRawKey(key: string): boolean {
+  const ext = key.split('.').pop()?.toLowerCase() || '';
+  return RAW_EXTENSIONS_SET.has(ext);
 }
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -197,6 +232,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
   if (resource.includes('/admin/imagen/edited')) {
     return handleImagenEdited(event, method, ctx, requestOrigin);
+  }
+
+  // Video routes (must check before generic images route)
+  if (resource.includes('/admin/videos/ready')) {
+    return handleVideosReady(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/videos/preview-status')) {
+    return handleVideoPreviewStatus(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/videos/preview')) {
+    return handleVideoPreview(event, method, ctx, requestOrigin);
+  }
+  if (resource.includes('/admin/videos/assign')) {
+    return handleVideosAssign(event, method, ctx, requestOrigin);
   }
 
   // Image ready queue route (must check before generic images route)
@@ -561,7 +610,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards'];
+    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards', 'videos'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -663,11 +712,19 @@ async function handleImages(
     // All uploads go directly to staging/ready/
     const filename = safeFilename;
     const ext = filename.split('.').pop()?.toLowerCase() || '';
-    const acceptedExtensions = new Set(['jpg', 'jpeg', 'png']);
+    const acceptedExtensions = new Set([
+      'jpg', 'jpeg', 'png',
+      'cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2', 'pef', 'srw',
+    ]);
     if (!acceptedExtensions.has(ext)) {
-      return badRequest('Unsupported file type. Use JPG, JPEG, or PNG.', requestOrigin);
+      return badRequest(
+        'Unsupported file type. Use JPG, JPEG, PNG, or RAW camera formats (CR2, CR3, NEF, ARW, DNG, RAF, ORF, RW2, PEF, SRW).',
+        requestOrigin
+      );
     }
-    const contentType = (body.contentType as string) || 'image/jpeg';
+    const rawExtensions = new Set(['cr2', 'cr3', 'nef', 'arw', 'dng', 'raf', 'orf', 'rw2', 'pef', 'srw']);
+    const isRaw = rawExtensions.has(ext);
+    const contentType = isRaw ? 'application/octet-stream' : ((body.contentType as string) || 'image/jpeg');
     const key = `staging/ready/${filename}`;
     const uploadUrl = await generatePresignedUploadUrl(MEDIA_BUCKET!, key, contentType, 3600);
 
@@ -1293,6 +1350,27 @@ async function handlePublicGalleries(
 
   const resource = event.resource || '';
 
+  // GET /api/galleries/video-previews
+  if (resource.includes('/galleries/video-previews')) {
+    const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+    const previews = allGalleries
+      .filter(g => !g.passwordHash && g.videos && g.videos.length > 0)
+      .flatMap(g =>
+        (g.videos || [])
+          .filter(v => v.previewKey)
+          .map(v => ({
+            previewKey: v.previewKey,
+            title: v.title || g.title,
+            youtubeUrl: v.youtubeUrl,
+            galleryId: g.id,
+            category: g.category,
+            gallerySlug: g.slug,
+          }))
+      );
+    log('INFO', 'Video previews fetched', ctx, { count: previews.length });
+    return success({ previews: shuffleArray(previews) }, 200, requestOrigin);
+  }
+
   // GET /api/galleries/featured/images
   if (resource.includes('/galleries/featured/images')) {
     const limitParam = event.queryStringParameters?.limit;
@@ -1301,7 +1379,8 @@ async function handlePublicGalleries(
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const allKeys = allGalleries
       .filter(g => !g.passwordHash)
-      .flatMap(g => (g.images || []).map(img => img.key));
+      .flatMap(g => (g.images || []).map(img => img.key))
+      .filter(key => !isRawKey(key));
 
     const images = shuffleArray(allKeys).slice(0, limit);
     log('INFO', 'Public gallery images fetched', ctx, { total: allKeys.length, returned: images.length, limit });
@@ -1319,7 +1398,7 @@ async function handlePublicGalleries(
         title: g.title,
         category: g.category,
         slug: g.slug,
-        coverImage: g.heroImage || g.images?.[0]?.key || null,
+        coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
         href: `/portfolio/${g.category}/${g.slug}`,
       }));
     log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
@@ -1341,6 +1420,7 @@ async function handlePublicGalleries(
     return success({
       gallery: {
         ...publicGallery,
+        images: (publicGallery.images || []).filter(img => !isRawKey(img.key)),
         passwordHash: undefined,
         passwordEnabled: !!gallery.passwordHash,
         kanbanCounts: kanbanCards?.length ? {
@@ -1364,8 +1444,8 @@ async function handlePublicGalleries(
         title: g.title,
         category: g.category,
         slug: g.slug,
-        coverImage: g.heroImage || g.images?.[0]?.key || null,
-        imageCount: g.images?.length || 0,
+        coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
+        imageCount: g.images?.filter(img => !isRawKey(img.key)).length || 0,
         description: g.description,
         createdAt: g.createdAt,
       }));
@@ -1648,4 +1728,329 @@ async function handleImagenApprove(
 
   log('INFO', 'Approved imagen edits to ready queue', ctx, { count: approved });
   return success({ approved }, 200, requestOrigin);
+}
+
+// ============ VIDEO HANDLERS ============
+
+async function handleVideosReady(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method === 'GET') {
+    const objects = await listS3Objects(MEDIA_BUCKET!, 'staging/videos/');
+    const videos = objects
+      .filter(obj => obj.key !== 'staging/videos/')
+      .map(obj => ({
+        key: obj.key,
+        filename: obj.key.split('/').pop() || '',
+        uploadedAt: obj.lastModified,
+        size: obj.size,
+        url: `https://${process.env.MEDIA_BUCKET}.s3.amazonaws.com/${obj.key}`,
+      }));
+    log('INFO', 'Listed staged videos', ctx, { count: videos.length });
+    return success({ videos }, 200, requestOrigin);
+  }
+
+  if (method === 'DELETE') {
+    const body = JSON.parse(event.body || '{}');
+    const { keys } = body;
+    if (!Array.isArray(keys) || keys.length === 0) {
+      return badRequest('keys array is required', requestOrigin);
+    }
+    for (const key of keys) {
+      if (!key.startsWith('staging/videos/')) {
+        return badRequest(`Invalid key: ${key}. Must start with staging/videos/`, requestOrigin);
+      }
+    }
+    await deleteS3Objects(MEDIA_BUCKET!, keys);
+    log('INFO', 'Deleted staged videos', ctx, { count: keys.length });
+    return success({ deleted: keys.length }, 200, requestOrigin);
+  }
+
+  return methodNotAllowed(undefined, requestOrigin);
+}
+
+async function handleVideoPreview(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'POST') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const { videoKey, startTime, duration } = body;
+
+  if (!videoKey || typeof videoKey !== 'string') {
+    return badRequest('videoKey is required', requestOrigin);
+  }
+  if (!videoKey.startsWith('staging/videos/') && !videoKey.startsWith('gallery/')) {
+    return badRequest('videoKey must start with staging/videos/ or gallery/', requestOrigin);
+  }
+  if (typeof startTime !== 'number' || startTime < 0) {
+    return badRequest('startTime must be a non-negative number (seconds)', requestOrigin);
+  }
+  if (typeof duration !== 'number' || duration < 3 || duration > 15) {
+    return badRequest('duration must be between 3 and 15 seconds', requestOrigin);
+  }
+
+  const videoId = randomUUID();
+  const previewKey = `video-previews/${videoId}-preview.mp4`;
+
+  try {
+    const client = await getMediaConvertClient();
+
+    const jobResponse = await client.send(new CreateJobCommand({
+      Role: MEDIACONVERT_ROLE_ARN,
+      Settings: {
+        Inputs: [{
+          FileInput: `s3://${MEDIA_BUCKET}/${videoKey}`,
+          TimecodeSource: 'ZEROBASED',
+          InputClippings: [{
+            StartTimecode: secondsToTimecode(startTime),
+            EndTimecode: secondsToTimecode(startTime + duration),
+          }],
+          AudioSelectors: {},
+          VideoSelector: {},
+        }],
+        OutputGroups: [{
+          Name: 'Preview',
+          OutputGroupSettings: {
+            Type: 'FILE_GROUP_SETTINGS',
+            FileGroupSettings: {
+              Destination: `s3://${MEDIA_BUCKET}/video-previews/${videoId}-preview`,
+            },
+          },
+          Outputs: [{
+            ContainerSettings: { Container: 'MP4' },
+            VideoDescription: {
+              CodecSettings: {
+                Codec: 'H_264',
+                H264Settings: {
+                  RateControlMode: 'QVBR',
+                  QvbrSettings: { QvbrQualityLevel: 7 },
+                  MaxBitrate: 2000000,
+                  CodecProfile: 'HIGH',
+                  CodecLevel: 'AUTO',
+                },
+              },
+              Width: 1280,
+              Height: 720,
+              ScalingBehavior: 'DEFAULT',
+              AntiAlias: 'ENABLED',
+            },
+            // No AudioDescription = muted output
+          }],
+        }],
+      },
+    }));
+
+    const jobId = jobResponse.Job?.Id || '';
+
+    // Track job in DynamoDB
+    await putItem({
+      TableName: ADMIN_TABLE!,
+      Item: {
+        pk: `VIDEO_JOB#${videoId}`,
+        sk: 'JOB',
+        videoId,
+        videoKey,
+        previewKey,
+        startTime,
+        duration,
+        mediaConvertJobId: jobId,
+        status: 'processing',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    log('INFO', 'MediaConvert job created', ctx, { videoId, jobId, startTime, duration });
+    return success({ videoId, jobId, previewKey }, 200, requestOrigin);
+  } catch (err) {
+    log('ERROR', 'Failed to create MediaConvert job', ctx, { error: String(err) });
+    return serverError('Failed to create preview job', requestOrigin);
+  }
+}
+
+function secondsToTimecode(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const f = Math.round((seconds % 1) * 30); // 30fps frames
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`;
+}
+
+async function handleVideoPreviewStatus(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  if (method !== 'GET') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const jobId = event.queryStringParameters?.jobId;
+  if (!jobId) {
+    return badRequest('jobId query parameter is required', requestOrigin);
+  }
+
+  try {
+    const client = await getMediaConvertClient();
+    const jobResponse = await client.send(new GetJobCommand({ Id: jobId }));
+    const mcStatus = jobResponse.Job?.Status || 'UNKNOWN';
+
+    let status: string;
+    let previewKey: string | undefined;
+    let errorMessage: string | undefined;
+
+    switch (mcStatus) {
+      case 'COMPLETE':
+        status = 'complete';
+        // Find the previewKey from outputs
+        previewKey = jobResponse.Job?.Settings?.OutputGroups?.[0]
+          ?.OutputGroupSettings?.FileGroupSettings?.Destination;
+        if (previewKey) {
+          // Destination is like s3://bucket/video-previews/{id}-preview
+          // Actual output adds .mp4 extension
+          previewKey = previewKey.replace(`s3://${MEDIA_BUCKET}/`, '') + '.mp4';
+        }
+        break;
+      case 'ERROR':
+      case 'CANCELED':
+        status = 'error';
+        errorMessage = jobResponse.Job?.ErrorMessage || `Job ${mcStatus.toLowerCase()}`;
+        break;
+      default:
+        status = 'processing';
+    }
+
+    log('INFO', 'Video preview status checked', ctx, { jobId, mcStatus, status });
+    return success({ status, previewKey, error: errorMessage }, 200, requestOrigin);
+  } catch (err) {
+    log('ERROR', 'Failed to get MediaConvert job status', ctx, { jobId, error: String(err) });
+    return serverError('Failed to check preview status', requestOrigin);
+  }
+}
+
+async function handleVideosAssign(
+  event: APIGatewayProxyEvent,
+  method: string,
+  ctx: LogContext,
+  requestOrigin?: string
+): Promise<APIGatewayProxyResult> {
+  // DELETE = unassign video from gallery, move back to staging
+  if (method === 'DELETE') {
+    const body = JSON.parse(event.body || '{}');
+    const { videoKey, galleryId } = body;
+
+    if (!videoKey || !galleryId) {
+      return badRequest('videoKey and galleryId are required', requestOrigin);
+    }
+
+    const gallery = await getItem<GalleryRecord>({
+      TableName: GALLERIES_TABLE!,
+      Key: { id: galleryId },
+    });
+    if (!gallery) {
+      return notFound('Gallery not found', requestOrigin);
+    }
+
+    // Remove from gallery videos array
+    const updatedVideos = (gallery.videos || []).filter(v => v.key !== videoKey);
+    await updateItem({
+      TableName: GALLERIES_TABLE!,
+      Key: { id: galleryId },
+      ...buildUpdateExpression({
+        videos: updatedVideos,
+        updatedAt: new Date().toISOString(),
+      }),
+    });
+
+    // Move file back to staging
+    if (videoKey.startsWith('gallery/')) {
+      const filename = videoKey.split('/').pop() || `${randomUUID()}.mp4`;
+      const stagingKey = `staging/videos/${filename}`;
+      try {
+        await copyS3Object(MEDIA_BUCKET!, videoKey, stagingKey);
+        await deleteS3Objects(MEDIA_BUCKET!, [videoKey]);
+        log('INFO', 'Video unassigned and moved back to staging', ctx, { galleryId, videoKey, stagingKey });
+      } catch (err) {
+        log('ERROR', 'Failed to move video back to staging', ctx, { videoKey, error: String(err) });
+        // Gallery was already updated, so the video is removed from the gallery but file stays in S3
+      }
+    }
+
+    return success({ unassigned: true }, 200, requestOrigin);
+  }
+
+  if (method !== 'POST') {
+    return methodNotAllowed(undefined, requestOrigin);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const { videoKey, previewKey, galleryId, youtubeUrl, title, alt } = body;
+
+  if (!videoKey || !galleryId) {
+    return badRequest('videoKey and galleryId are required', requestOrigin);
+  }
+
+  if (!previewKey) {
+    return badRequest('previewKey is required. Generate a preview before assigning.', requestOrigin);
+  }
+
+  // Validate gallery exists
+  const gallery = await getItem<GalleryRecord>({
+    TableName: GALLERIES_TABLE!,
+    Key: { id: galleryId },
+  });
+  if (!gallery) {
+    return notFound('Gallery not found', requestOrigin);
+  }
+
+  // Copy video from staging to gallery
+  const filename = videoKey.split('/').pop() || `${randomUUID()}.mp4`;
+  const destKey = `gallery/${galleryId}/videos/${filename}`;
+
+  try {
+    await copyS3Object(MEDIA_BUCKET!, videoKey, destKey);
+  } catch (err) {
+    log('ERROR', 'Failed to copy video to gallery', ctx, { videoKey, destKey, error: String(err) });
+    return serverError('Failed to assign video', requestOrigin);
+  }
+
+  // Update gallery videos array
+  const existingVideos = gallery.videos || [];
+  const newVideo = {
+    key: destKey,
+    alt: alt || undefined,
+    previewKey: previewKey || undefined,
+    title: title || undefined,
+    youtubeUrl: youtubeUrl || undefined,
+  };
+
+  // Dedupe by key
+  const updatedVideos = [...existingVideos.filter(v => v.key !== destKey), newVideo];
+
+  await updateItem({
+    TableName: GALLERIES_TABLE!,
+    Key: { id: galleryId },
+    ...buildUpdateExpression({
+      videos: updatedVideos,
+      updatedAt: new Date().toISOString(),
+    }),
+  });
+
+  // Delete staging copy
+  if (videoKey.startsWith('staging/videos/')) {
+    await deleteS3Objects(MEDIA_BUCKET!, [videoKey]);
+  }
+
+  log('INFO', 'Video assigned to gallery', ctx, { galleryId, destKey, previewKey });
+  return success({ assigned: true, videoKey: destKey }, 200, requestOrigin);
 }

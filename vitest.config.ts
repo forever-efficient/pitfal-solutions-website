@@ -47,6 +47,7 @@ export default defineConfig({
       '@aws-sdk/client-s3': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/client-s3'),
       '@aws-sdk/s3-request-presigner': path.resolve(__dirname, 'lambda/shared/node_modules/@aws-sdk/s3-request-presigner'),
       '@aws-sdk/client-lambda': path.resolve(__dirname, 'lambda/admin/node_modules/@aws-sdk/client-lambda'),
+      '@aws-sdk/client-mediaconvert': path.resolve(__dirname, 'lambda/admin/node_modules/@aws-sdk/client-mediaconvert'),
       'bcryptjs': path.resolve(__dirname, 'lambda/client-auth/node_modules/bcryptjs'),
     },
   },

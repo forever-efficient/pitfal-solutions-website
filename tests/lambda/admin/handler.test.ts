@@ -1067,8 +1067,9 @@ describe('Admin Lambda Handler', () => {
       expect(body.data.key).toMatch(/^staging\/RAW\//);
     });
 
-    it('returns 400 for unsupported file extension (RAW now rejected)', async () => {
+    it('accepts RAW camera file uploads (CR2)', async () => {
       setupAuthenticatedAdmin();
+      mockGeneratePresignedUploadUrl.mockImplementation(async () => 'https://upload.s3.example.com');
 
       const event = createEvent({
         httpMethod: 'POST',
@@ -1077,9 +1078,10 @@ describe('Admin Lambda Handler', () => {
       });
       const result = await handler(event, mockContext, () => {});
 
-      expect(result!.statusCode).toBe(400);
+      expect(result!.statusCode).toBe(200);
       const body = JSON.parse(result!.body);
-      expect(body.error).toContain('Unsupported file type');
+      expect(body.data.key).toMatch(/^staging\/ready\//);
+      expect(body.data.key).toContain('photo.cr2');
     });
 
     it('returns 400 for unsupported file extension', async () => {

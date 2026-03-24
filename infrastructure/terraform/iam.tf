@@ -360,6 +360,32 @@ resource "aws_iam_role_policy" "admin_dlq" {
   })
 }
 
+# MediaConvert permissions — allows admin Lambda to create/poll preview jobs
+resource "aws_iam_role_policy" "admin_mediaconvert" {
+  name = "${local.name_prefix}-admin-mediaconvert"
+  role = aws_iam_role.admin_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "mediaconvert:CreateJob",
+          "mediaconvert:GetJob",
+          "mediaconvert:DescribeEndpoints"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = aws_iam_role.mediaconvert.arn
+      }
+    ]
+  })
+}
+
 # Lambda invoke permission — allows admin Lambda to trigger the orchestrator
 resource "aws_iam_role_policy" "admin_lambda_invoke" {
   name = "${local.name_prefix}-admin-lambda-invoke"

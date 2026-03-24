@@ -47,11 +47,12 @@ website/
 ├── CLAUDE.md                    # This file
 ├── .mcp.json                    # MCP server configuration
 ├── Makefile                     # **Primary** build/deploy entry point
-├── docs/                        # Project documentation (v1.7)
-│   ├── REQUIREMENTS.md          # Functional requirements
-│   ├── ARCHITECTURE.md          # System design (v1.6)
-│   ├── DEPLOYMENT.md            # Deployment guide (v1.3)
-│   ├── PRD.md                   # Product requirements (v1.7)
+├── docs/                        # Project documentation
+│   ├── REQUIREMENTS.md          # Functional requirements (v1.7)
+│   ├── ARCHITECTURE.md          # System design (v1.8)
+│   ├── DEPLOYMENT.md            # Deployment guide (v1.6)
+│   ├── PRD.md                   # Product requirements (v1.9)
+│   ├── VIDEO-PLAN.md            # Video system design & decisions
 │   └── SKILL-WORKFLOWS.md       # How skills work together
 ├── content/                     # Static content (managed via Git)
 │   ├── testimonials.json        # Client testimonials
@@ -114,8 +115,21 @@ website/
 ### Admin Dashboard
 - [x] Gallery management (Create/Edit/Delete)
 - [x] Image upload pipeline (S3 → Lambda → Prossessed)
+- [x] Video management (S3 CLI upload → admin discovery → MediaConvert previews)
 - [x] Inquiry viewing
 - [/] Role-based access (Basic password protection)
+
+### Video System (March 2026)
+- Videos uploaded to S3 via CLI: `aws s3 cp video.mp4 s3://pitfal-prod-media/staging/videos/ --profile pitfal`
+- Admin discovers staged videos at `/admin/videos`, sets preview clip start/duration + YouTube URL
+- MediaConvert generates short muted MP4 preview clips → `video-previews/{videoId}-preview.mp4`
+- Admin assigns video + preview to gallery → `gallery/{galleryId}/videos/{filename}`
+- Homepage: auto-scrolling VideoCarousel replaces videography card in FeaturedGallery
+- Full playback via YouTube embed/link (admin provides YouTube URL per video)
+- Client galleries: video download via presigned URLs
+- Storage tiering: gallery videos → Glacier Instant Retrieval after 90 days
+- S3 prefixes: `staging/videos/` (30-day cleanup), `video-previews/` (permanent), `gallery/{id}/videos/`
+- See `docs/VIDEO-PLAN.md` for full design
 
 ---
 
