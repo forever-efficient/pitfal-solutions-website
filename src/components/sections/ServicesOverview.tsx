@@ -221,20 +221,40 @@ function InlineVideoCarousel({ fallbackImage }: { fallbackImage: string }) {
           {preview.title}
         </p>
       </div>
-      {/* Dot indicators */}
+      {/* Navigation arrows + dot indicators */}
       {previews.length > 1 && (
-        <div className="absolute bottom-4 right-4 z-10 flex gap-1.5">
-          {previews.map((_, i) => (
-            <button
-              key={i}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                i === current ? 'bg-white' : 'bg-white/40'
-              }`}
-              aria-label={`Video ${i + 1}`}
-            />
-          ))}
-        </div>
+        <>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(c => (c - 1 + previews.length) % previews.length); }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+            aria-label="Previous video"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(c => (c + 1) % previews.length); }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+            aria-label="Next video"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div className="absolute bottom-4 right-4 z-10 flex gap-1.5">
+            {previews.map((_, i) => (
+              <button
+                key={i}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  i === current ? 'bg-white' : 'bg-white/40'
+                }`}
+                aria-label={`Video ${i + 1}`}
+              />
+            ))}
+          </div>
+        </>
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/30 to-transparent lg:hidden" />
     </>
