@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Section } from '@/components/ui/Container';
 import { ArrowRightIcon, ChevronRightIcon } from '@/components/icons';
@@ -136,11 +137,17 @@ function InlineCarousel() {
         }}
       >
         {strip.map((key, i) => (
-          <div key={i} className="h-[300px] w-[200px] flex-shrink-0 rounded-lg overflow-hidden">
-            <img
+          <div
+            key={i}
+            className="relative h-[300px] w-[200px] flex-shrink-0 overflow-hidden rounded-lg"
+          >
+            <Image
               src={getImageUrl(key, 'sm')}
               alt="Photography work"
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="200px"
+              unoptimized
             />
           </div>
         ))}
@@ -190,10 +197,13 @@ function InlineVideoCarousel({ fallbackImage }: { fallbackImage: string }) {
   if (previews.length === 0) {
     return (
       <>
-        <img
+        <Image
           src={getImageUrl(fallbackImage)}
           alt="Videography"
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          className="object-cover"
+          sizes="(min-width: 1024px) 50vw, 100vw"
+          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/30 to-transparent lg:hidden" />
       </>
@@ -296,11 +306,13 @@ function ServiceRow({ service, index }: { service: ServiceRowData; index: number
               <InlineVideoCarousel fallbackImage={service.image} />
             ) : (
               <>
-                <img
+                <Image
                   src={getImageUrl(service.image)}
                   alt={service.title}
-                  className="absolute inset-0 w-full h-full object-cover
-                    group-hover:scale-105 transition-transform duration-700 ease-out"
+                  fill
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-neutral-900/30 to-transparent lg:hidden" />
               </>

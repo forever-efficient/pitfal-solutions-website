@@ -85,7 +85,7 @@ describe('lib/api', () => {
 
     await clientAuth.check();
 
-    expect(global.fetch).toHaveBeenLastCalledWith('/api/api/client/auth', {
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/client/auth', {
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -110,7 +110,7 @@ describe('lib/api', () => {
 
     await adminGalleries.list();
 
-    expect(global.fetch).toHaveBeenLastCalledWith('/api/api/admin/galleries', {
+    expect(global.fetch).toHaveBeenLastCalledWith('/api/admin/galleries', {
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -220,7 +220,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      '/api/api/client/g1',
+      '/api/client/g1',
       expect.objectContaining({
         headers: expect.objectContaining({
           'Content-Type': 'application/json',
@@ -231,7 +231,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       2,
-      '/api/api/client/g1/comment',
+      '/api/client/g1/comment',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -244,7 +244,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      '/api/api/client/g1/download',
+      '/api/client/g1/download',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -256,7 +256,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       4,
-      '/api/api/client/g1/bulk-download',
+      '/api/client/g1/bulk-download',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -268,7 +268,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       5,
-      '/api/api/client/g1/bulk-download',
+      '/api/client/g1/bulk-download',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({}),
@@ -334,17 +334,17 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      '/api/api/admin/galleries',
+      '/api/admin/galleries',
       expect.objectContaining({ headers: expect.any(Object) })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       2,
-      '/api/api/admin/galleries/g1',
+      '/api/admin/galleries/g1',
       expect.objectContaining({ headers: expect.any(Object) })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      '/api/api/admin/galleries',
+      '/api/admin/galleries',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -357,7 +357,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       4,
-      '/api/api/admin/galleries/g1',
+      '/api/admin/galleries/g1',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({
@@ -369,12 +369,12 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       5,
-      '/api/api/admin/galleries/g1',
+      '/api/admin/galleries/g1',
       expect.objectContaining({ method: 'DELETE' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      '/api/api/admin/galleries/g1/bulk-download',
+      '/api/admin/galleries/g1/bulk-download',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ imageKeys: ['k1', 'k2'] }),
@@ -382,7 +382,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       7,
-      '/api/api/admin/galleries/g2/bulk-download',
+      '/api/admin/galleries/g2/bulk-download',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({}),
@@ -441,7 +441,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      '/api/api/admin/images',
+      '/api/admin/images',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -452,7 +452,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       2,
-      '/api/api/admin/images',
+      '/api/admin/images',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({
@@ -464,7 +464,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      '/api/api/admin/images',
+      '/api/admin/images',
       expect.objectContaining({
         method: 'DELETE',
         body: JSON.stringify({
@@ -473,10 +473,10 @@ describe('lib/api', () => {
         }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/api/admin/images/ready', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/admin/images/ready', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       5,
-      '/api/api/admin/images/assign',
+      '/api/admin/images/assign',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ keys: ['key1', 'key2'], galleryId: 'g1' }),
@@ -484,21 +484,21 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      '/api/api/admin/images/ready',
+      '/api/admin/images/ready',
       expect.objectContaining({
         method: 'DELETE',
         body: JSON.stringify({ keys: ['key1', 'key2'] }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(7, '/api/api/admin/inquiries', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(7, '/api/admin/inquiries', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       8,
-      '/api/api/admin/inquiries?status=new',
+      '/api/admin/inquiries?status=new',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       9,
-      '/api/api/admin/inquiries/i1',
+      '/api/admin/inquiries/i1',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({ status: 'read' }),
@@ -506,12 +506,12 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       10,
-      '/api/api/admin/inquiries/i1',
+      '/api/admin/inquiries/i1',
       expect.objectContaining({ method: 'DELETE' })
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       11,
-      '/api/api/admin/galleries/g1/notify',
+      '/api/admin/galleries/g1/notify',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -523,21 +523,21 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       12,
-      '/api/api/admin/processing-jobs?galleryId=g1',
+      '/api/admin/processing-jobs?galleryId=g1',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       13,
-      '/api/api/admin/processing-jobs',
+      '/api/admin/processing-jobs',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ galleryId: 'g1', rawKeys: ['raw1'] }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(14, '/api/api/admin/settings', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(14, '/api/admin/settings', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       15,
-      '/api/api/admin/settings',
+      '/api/admin/settings',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({ processingMode: 'auto' }),
@@ -589,15 +589,18 @@ describe('lib/api', () => {
     });
     await publicGalleries.getGallery('portraits', 'public-gallery');
 
+    mockFetchJson({ success: true, data: { previews: [] } });
+    await publicGalleries.getVideoPreviews();
+
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      '/api/api/client/auth?galleryId=g%2F1',
+      '/api/client/auth?galleryId=g%2F1',
       expect.any(Object)
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/api/admin/auth', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/admin/auth', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      '/api/api/admin/auth',
+      '/api/admin/auth',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({
@@ -608,22 +611,27 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       4,
-      '/api/api/galleries/featured',
+      '/api/galleries/featured',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       5,
-      '/api/api/galleries/featured/images?limit=12',
+      '/api/galleries/featured/images?limit=12',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      '/api/api/galleries/portraits',
+      '/api/galleries/portraits',
       expect.any(Object)
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       7,
-      '/api/api/galleries/portraits/public-gallery',
+      '/api/galleries/portraits/public-gallery',
+      expect.any(Object)
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      8,
+      '/api/galleries/video-previews',
       expect.any(Object)
     );
   });
@@ -658,7 +666,7 @@ describe('lib/api', () => {
 
     expect(global.fetch).toHaveBeenNthCalledWith(
       1,
-      '/api/api/admin/imagen/upload',
+      '/api/admin/imagen/upload',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -667,20 +675,20 @@ describe('lib/api', () => {
         }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/api/admin/imagen/upload', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/admin/imagen/upload', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      '/api/api/admin/imagen/process',
+      '/api/admin/imagen/process',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ rawKeys: ['raw/a.cr3'] }),
       })
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/api/admin/imagen/jobs', expect.any(Object));
-    expect(global.fetch).toHaveBeenNthCalledWith(5, '/api/api/admin/imagen/edited', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(4, '/api/admin/imagen/jobs', expect.any(Object));
+    expect(global.fetch).toHaveBeenNthCalledWith(5, '/api/admin/imagen/edited', expect.any(Object));
     expect(global.fetch).toHaveBeenNthCalledWith(
       6,
-      '/api/api/admin/imagen/approve',
+      '/api/admin/imagen/approve',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ keys: ['edited/a.jpg'] }),
@@ -688,7 +696,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       7,
-      '/api/api/admin/imagen/edited',
+      '/api/admin/imagen/edited',
       expect.objectContaining({
         method: 'DELETE',
         body: JSON.stringify({ keys: ['edited/a.jpg'] }),
@@ -696,7 +704,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       8,
-      '/api/api/admin/imagen/upload',
+      '/api/admin/imagen/upload',
       expect.objectContaining({
         method: 'DELETE',
         body: JSON.stringify({ keys: ['raw/a.cr3'] }),
@@ -704,7 +712,7 @@ describe('lib/api', () => {
     );
     expect(global.fetch).toHaveBeenNthCalledWith(
       9,
-      '/api/api/admin/imagen/jobs',
+      '/api/admin/imagen/jobs',
       expect.objectContaining({
         method: 'DELETE',
         body: JSON.stringify({ jobIds: ['job-1'] }),

@@ -43,6 +43,8 @@ vi.mock('@/lib/shareFiles', () => ({
 }));
 
 describe('useBulkDownload', () => {
+  let anchorClickSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockGenerateAsync.mockClear();
@@ -50,9 +52,12 @@ describe('useBulkDownload', () => {
     mockGetDownloadStrategy.mockReturnValue('zip');
     mockShareFiles.mockResolvedValue(0);
     global.fetch = vi.fn();
+    // jsdom throws "Not implemented: navigation" when programmatic anchor clicks run
+    anchorClickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
   });
 
   afterEach(() => {
+    anchorClickSpy.mockRestore();
     (global.fetch as ReturnType<typeof vi.fn>).mockRestore?.();
   });
 

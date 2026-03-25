@@ -57,12 +57,11 @@ describe('ReadyQueue', () => {
     renderWithToast(<ReadyQueue />);
 
     await waitFor(() => {
-      expect(mockListReady).toHaveBeenCalled();
+      expect(
+        screen.getByText(/No images in the ready queue/)
+      ).toBeInTheDocument();
     });
-
-    expect(
-      screen.getByText(/No images in the ready queue/)
-    ).toBeInTheDocument();
+    expect(mockListReady).toHaveBeenCalled();
   });
 
   it('shows images when loaded', async () => {

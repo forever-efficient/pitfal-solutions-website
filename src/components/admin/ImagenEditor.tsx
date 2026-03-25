@@ -483,6 +483,8 @@ export function ImagenEditor() {
                       </div>
                     </div>
                     {/\.(jpg|jpeg|png)$/i.test(file.filename) ? (
+                      // Presigned S3 URLs — not stable for next/image remotePatterns
+                      // eslint-disable-next-line @next/next/no-img-element -- admin preview thumbnails
                       <img
                         src={file.url}
                         alt={file.filename}
@@ -649,6 +651,7 @@ export function ImagenEditor() {
                       : 'border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- presigned edited previews */}
                   <img
                     src={file.url}
                     alt={file.filename}
