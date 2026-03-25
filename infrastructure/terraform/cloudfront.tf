@@ -279,6 +279,48 @@ resource "aws_cloudfront_distribution" "website" {
     }
   }
 
+  # Client gallery pages — Lambda@Edge injects OG meta tags for link previews
+  # URL pattern: /client/?id={galleryId}
+  ordered_cache_behavior {
+    path_pattern     = "/client*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-Website"
+
+    cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    lambda_function_association {
+      event_type   = "viewer-request"
+      lambda_arn   = aws_lambda_function.og_injector.qualified_arn
+      include_body = false
+    }
+  }
+
+  # Portfolio gallery detail pages — Lambda@Edge injects OG meta tags for link previews
+  # Matches /portfolio/{category}/{slug} but NOT /portfolio/{category} (single segment)
+  ordered_cache_behavior {
+    path_pattern     = "/portfolio/*/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-Website"
+
+    cache_policy_id            = aws_cloudfront_cache_policy.static_assets.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    lambda_function_association {
+      event_type   = "viewer-request"
+      lambda_arn   = aws_lambda_function.og_injector.qualified_arn
+      include_body = false
+    }
+  }
+
   # Media files behavior
   ordered_cache_behavior {
     path_pattern     = "/media/*"

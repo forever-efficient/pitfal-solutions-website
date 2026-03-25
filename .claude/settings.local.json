@@ -93,7 +93,9 @@
       "Bash(kill %1)",
       "Bash(kill %2)",
       "Bash(ffprobe -v quiet -print_format json -show_streams /tmp/preview-check.mp4)",
-      "Bash(aws mediaconvert:*)"
+      "Bash(aws mediaconvert:*)",
+      "Bash(find /Users/thomasarchuleta/Desktop/pitfal-solutions/website/public -name *og* -o -name *meta*)",
+      "Bash(aws lambda:*)"
     ]
   },
   "enabledMcpjsonServers": [
