@@ -29,7 +29,7 @@ export default defineConfig({
   webServer: {
     // Run against the production build for reliable E2E tests without compiling on-the-fly
     // Static export means we must use a static server rather than 'next start'
-    command: 'pnpm run build && npx serve@latest out -p 3098',
+    command: 'pnpm run build && pnpm dlx serve@latest out -p 3098',
     url: 'http://localhost:3098',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

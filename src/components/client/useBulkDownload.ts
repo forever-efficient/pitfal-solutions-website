@@ -2,8 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { clientGallery } from '@/lib/api';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
 import { getDownloadStrategy } from '@/lib/platform';
 import { shareFiles } from '@/lib/shareFiles';
 
@@ -146,7 +144,11 @@ export function useBulkDownload(galleryId: string) {
             }
           }
         } else {
-          // Desktop: ZIP download (original behavior)
+          // Desktop: ZIP download — lazy-load JSZip + file-saver (large deps, zip path only)
+          const [{ default: JSZip }, { saveAs }] = await Promise.all([
+            import('jszip'),
+            import('file-saver'),
+          ]);
           const zip = new JSZip();
           for (const { filename, blob } of fetchedFiles) {
             zip.file(filename, blob);

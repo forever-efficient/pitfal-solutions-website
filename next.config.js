@@ -39,18 +39,6 @@ const nextConfig = {
   // Strict mode for development
   reactStrictMode: true,
 
-  // Proxy API calls through Next.js dev server to avoid CORS issues with API Gateway
-  async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl || apiUrl.startsWith('/')) return [];
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${apiUrl}/api/:path*`,
-      },
-    ];
-  },
-
   // Webpack configuration
   webpack: (config, { isServer }) => {
     // Handle SVG imports
@@ -66,5 +54,20 @@ const nextConfig = {
   // (infrastructure/terraform/cloudfront.tf) since output: 'export' generates
   // static files. Next.js headers() and redirects() only work with a server.
 };
+
+// Dev-only: proxy /api → API Gateway. Do not set `rewrites` on production export builds —
+// Next still warns if the key exists (even returning []).
+if (process.env.NODE_ENV !== 'production') {
+  nextConfig.rewrites = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl || apiUrl.startsWith('/')) return [];
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
+      },
+    ];
+  };
+}
 
 module.exports = withBundleAnalyzer(nextConfig);

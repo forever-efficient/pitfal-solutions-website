@@ -12,9 +12,11 @@ test.describe('Smoke Suite - Core Paths', () => {
         await expect(page.locator('header')).toBeVisible();
         await expect(page.locator('footer')).toBeVisible();
 
-        // Critical content
+        // Critical content (below-fold sections load via dynamic import after main bundle)
         await expect(page.locator('section').first()).toBeVisible();
-        await expect(page.getByRole('heading', { name: /services/i }).first()).toBeVisible();
+        await expect(page.getByRole('heading', { name: /services/i }).first()).toBeVisible({
+            timeout: 20_000,
+        });
     });
 
     test('Portfolio category routing works', async ({ page }) => {

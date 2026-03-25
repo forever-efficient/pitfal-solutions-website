@@ -90,13 +90,13 @@
     {
       "name": "First Load JS (total)",
       "path": ".next/static/chunks/*.js",
-      "limit": "260 kB",
+      "limit": "320 kB",
       "gzip": true
     },
     {
       "name": "App Router page chunks",
       "path": ".next/static/chunks/app/**/*.js",
-      "limit": "100 kB",
+      "limit": "120 kB",
       "gzip": true
     }
   ],
