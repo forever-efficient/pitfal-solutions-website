@@ -81,6 +81,28 @@ resource "aws_cloudfront_cache_policy" "static_assets" {
   }
 }
 
+# /portfolio/viewer redirects depend on query string — include all query params in cache key
+resource "aws_cloudfront_cache_policy" "viewer_querystring" {
+  name        = "${local.name_prefix}-viewer-querystring"
+  min_ttl     = 0
+  default_ttl = 86400
+  max_ttl     = 604800
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "none"
+    }
+    query_strings_config {
+      query_string_behavior = "all"
+    }
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
+  }
+}
+
 # Cache policy for media (longer cache)
 resource "aws_cloudfront_cache_policy" "media" {
   name        = "${local.name_prefix}-media"
@@ -153,6 +175,33 @@ resource "aws_cloudfront_function" "url_rewrite" {
 
       var uri = request.uri;
 
+      // Consolidate /portfolio/viewer?category=&slug= onto canonical /portfolio/{cat}/{slug}/
+      // Bare /portfolio/viewer/ → /portfolio/ (avoids soft-404 thin HTML for crawlers)
+      if (uri === '/portfolio/viewer' || uri === '/portfolio/viewer/') {
+        var q = request.querystring || {};
+        var cat = (q.category && q.category.value) ? q.category.value : '';
+        var slug = (q.slug && q.slug.value) ? q.slug.value : '';
+        var allowedCat = { brands: 1, portraits: 1, events: 1, videography: 1, drone: 1, ai: 1 };
+        if (cat && slug && allowedCat[cat]) {
+          return {
+            statusCode: 301,
+            statusDescription: 'Moved Permanently',
+            headers: {
+              location: {
+                value: 'https://' + host + '/portfolio/' + encodeURIComponent(cat) + '/' + encodeURIComponent(slug) + '/'
+              }
+            }
+          };
+        }
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: {
+            location: { value: 'https://' + host + '/portfolio/' }
+          }
+        };
+      }
+
       // If URI has a file extension, serve static assets as-is
       // but block non-static extensions (e.g. .php, .asp, .env) that are bot probes
       if (uri.includes('.')) {
@@ -168,16 +217,40 @@ resource "aws_cloudfront_function" "url_rewrite" {
         return request;
       }
 
-      // Legacy Squarespace URLs — permanently removed (410 Gone)
-      var gone = ['/cart', '/portraits/candid-photos', '/portraits/family-photos',
-        '/portraits/group-photos', '/portraits/couples-photos', '/portraits/individual-photos',
-        '/events', '/pricing', '/brands/restaurants', '/advertising', '/photography-videography'];
+      // Legacy Squarespace / old site URLs → 301 to current equivalents (Search Console consolidation)
       var lookupUri = uri.endsWith('/') && uri.length > 1 ? uri.slice(0, -1) : uri;
 
-      if (gone.indexOf(lookupUri) !== -1) {
-        return { statusCode: 410, statusDescription: 'Gone',
-          headers: { 'content-type': { value: 'text/plain' } },
-          body: { encoding: 'text', data: 'This page has been permanently removed.' } };
+      if (lookupUri.indexOf('/weddings/') === 0 || lookupUri === '/weddings') {
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: {
+            location: { value: 'https://' + host + '/portfolio/events/' }
+          }
+        };
+      }
+
+      var legacy301 = {
+        '/cart': '/contact/',
+        '/pricing': '/services/',
+        '/advertising': '/services/photography/',
+        '/events': '/portfolio/events/',
+        '/brands/restaurants': '/portfolio/brands/',
+        '/photography-videography': '/services/',
+        '/portraits/candid-photos': '/portfolio/portraits/',
+        '/portraits/family-photos': '/portfolio/portraits/',
+        '/portraits/group-photos': '/portfolio/portraits/',
+        '/portraits/couples-photos': '/portfolio/portraits/',
+        '/portraits/individual-photos': '/portfolio/portraits/'
+      };
+      if (legacy301[lookupUri]) {
+        return {
+          statusCode: 301,
+          statusDescription: 'Moved Permanently',
+          headers: {
+            location: { value: 'https://' + host + legacy301[lookupUri] }
+          }
+        };
       }
 
       // Block bogus clean URLs by validating the first path segment
@@ -318,6 +391,25 @@ resource "aws_cloudfront_distribution" "website" {
       event_type   = "viewer-request"
       lambda_arn   = aws_lambda_function.og_injector.qualified_arn
       include_body = false
+    }
+  }
+
+  # Query-param redirects for /portfolio/viewer — cache key must include query string
+  ordered_cache_behavior {
+    path_pattern     = "/portfolio/viewer*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-Website"
+
+    cache_policy_id            = aws_cloudfront_cache_policy.viewer_querystring.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.url_rewrite.arn
     }
   }
 

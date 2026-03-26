@@ -7,9 +7,10 @@ import { getImageUrl } from '@/lib/utils';
 
 interface VideoCarouselProps {
   fallback: React.ReactNode;
+  className?: string;
 }
 
-export function VideoCarousel({ fallback }: VideoCarouselProps) {
+export function VideoCarousel({ fallback, className }: VideoCarouselProps) {
   const [previews, setPreviews] = useState<VideoPreviewInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(0);
@@ -93,7 +94,7 @@ export function VideoCarousel({ fallback }: VideoCarouselProps) {
   return (
     <div
       ref={containerRef}
-      className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-black shadow-lg hover:shadow-xl transition-shadow duration-300"
+      className={`group relative aspect-[4/3] overflow-hidden rounded-2xl bg-black shadow-lg hover:shadow-xl transition-shadow duration-300 ${className || ''}`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

@@ -1,12 +1,9 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { RecentWorkCarousel } from '@/components/sections/RecentWorkCarousel';
-import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { SERVICES, PAGE_META } from '@/lib/constants';
-import { getImageUrl } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: PAGE_META.servicesPhotography.title,
@@ -29,33 +26,18 @@ export default function PhotographyPage() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
               {service.title}
             </h1>
-            <p className="text-xl text-neutral-600 mb-8">
+            <p className="text-xl text-neutral-600">
               {service.description}
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Button asChild>
-                <Link href="/contact">Get a Quote</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/portfolio">View Portfolio</Link>
-              </Button>
-            </div>
           </div>
         </Container>
       </Section>
 
       {/* What's included */}
-      <Section size="lg" background="white">
+      <Section size="md" background="white">
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="aspect-[4/3] bg-neutral-200 rounded-2xl overflow-hidden relative">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getImageUrl(service.image)}
-                alt={service.title}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </div>
+            <RecentWorkCarousel showHeader={false} showCta={false} className="lg:max-w-none" />
 
             {/* Content */}
             <div>
@@ -82,8 +64,6 @@ export default function PhotographyPage() {
         </Container>
       </Section>
 
-      <RecentWorkCarousel />
-
       {/* Pricing placeholder */}
       <Section size="md" background="white">
         <Container size="sm">
@@ -97,9 +77,6 @@ export default function PhotographyPage() {
             <p className="text-neutral-500 text-sm mb-8">
               Detailed pricing coming soon — reach out for a custom quote.
             </p>
-            <Button asChild>
-              <Link href="/contact">Request a Quote</Link>
-            </Button>
           </div>
         </Container>
       </Section>

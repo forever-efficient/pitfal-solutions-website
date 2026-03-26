@@ -31,7 +31,7 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
   const strip = [...paddedImages, ...paddedImages];
 
   return (
-    <Section size="lg" background="light" className={cn('pt-4 md:pt-6', className)}>
+    <Section size="md" background="light" className={cn('pt-4 md:pt-6', className)}>
       <style>{`
         @keyframes carousel-scroll {
           from { transform: translateX(0); }
@@ -46,12 +46,6 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
           </div>
         </Container>
       )}
-
-      <Container>
-        <p className="text-center text-neutral-700 text-xl md:text-2xl font-accent font-medium italic tracking-wide pt-1 pb-6 md:pt-2 md:pb-8 mb-4 md:mb-6">
-          Refresh your browser for a new photo experience...
-        </p>
-      </Container>
 
       <div className="overflow-hidden">
         {loading ? (

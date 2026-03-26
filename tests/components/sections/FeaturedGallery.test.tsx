@@ -94,19 +94,18 @@ describe('FeaturedGallery', () => {
       expect(screen.getByText('Tech Startup Rebrand')).toBeInTheDocument();
     });
 
-    const links = screen.getAllByRole('link');
-    // Featured work items use /portfolio/viewer?category=X&slug=Y
-    // Service cards use /portfolio/X or /portfolio/X/Y
-    // Find featured work links specifically
-    const featuredLinks = links.filter((link) => {
-      const href = link.getAttribute('href');
-      return href?.includes('/portfolio/viewer?');
-    });
-
-    expect(featuredLinks).toHaveLength(3);
-    expect(featuredLinks[0]).toHaveAttribute('href', '/portfolio/viewer?category=portraits&slug=family-session');
-    expect(featuredLinks[1]).toHaveAttribute('href', '/portfolio/viewer?category=brands&slug=tech-startup-rebrand');
-    expect(featuredLinks[2]).toHaveAttribute('href', '/portfolio/viewer?category=events&slug=johnson-wedding');
+    expect(screen.getByRole('link', { name: /Smith Family Session/i })).toHaveAttribute(
+      'href',
+      '/portfolio/portraits/family-session/'
+    );
+    expect(screen.getByRole('link', { name: /Tech Startup Rebrand/i })).toHaveAttribute(
+      'href',
+      '/portfolio/brands/tech-startup-rebrand/'
+    );
+    expect(screen.getByRole('link', { name: /Johnson Wedding/i })).toHaveAttribute(
+      'href',
+      '/portfolio/events/johnson-wedding/'
+    );
   });
 
   it('renders View Full Portfolio CTA', async () => {
@@ -201,6 +200,6 @@ describe('FeaturedGallery', () => {
 
     const links = screen.getAllByRole('link');
     const studioLink = links.find(l => l.textContent?.includes('Studio Session'));
-    expect(studioLink).toHaveAttribute('href', '/portfolio/viewer?category=videography&slug=studio-session');
+    expect(studioLink).toHaveAttribute('href', '/portfolio/videography/studio-session/');
   });
 });

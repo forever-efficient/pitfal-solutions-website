@@ -41,7 +41,7 @@ export const SERVICES = {
     title: 'Photography',
     shortDescription: 'Professional photography for every occasion',
     description:
-      'From brand imagery to portraits and events — compelling visuals that tell your story with clarity and style.',
+      'Brands, portraits, events. Your story, sharply told.',
     features: [
       'Brand & product photography',
       'Portrait sessions',
@@ -57,7 +57,7 @@ export const SERVICES = {
     title: 'Videography',
     shortDescription: 'Cinematic video production',
     description:
-      'High-quality video content for brands, events, social media, and beyond. Every project is handled from concept through final cut.',
+      'Concept to final cut. Every frame intentional.',
     features: [
       'Brand films',
       'Event videography',
@@ -73,7 +73,7 @@ export const SERVICES = {
     title: 'Commercial Drone',
     shortDescription: 'Aerial photography & videography',
     description:
-      'FAA-compliant aerial imagery that gives your project a perspective no ground-level shoot can match.',
+      'New perspectives. FAA-certified, fully handled.',
     features: [
       'Aerial photography',
       'Aerial videography',
@@ -89,7 +89,7 @@ export const SERVICES = {
     title: 'AI & Software',
     shortDescription: 'AI consulting & custom development',
     description:
-      'From AI strategy and custom model integration to full website development — helping businesses leverage technology intelligently.',
+      'Smart tools, real leverage. Strategy through delivery.',
     features: [
       'AI consulting & strategy',
       'Custom AI integrations',
@@ -105,7 +105,7 @@ export const SERVICES = {
     title: 'Colorado Notary',
     shortDescription: 'Mobile notary services across Colorado',
     description:
-      'Convenient in-person notary services — traveling to you for loan signings, real estate closings, legal documents, and more. Colorado-commissioned and RULONA-compliant.',
+      'Colorado-commissioned. RULONA-compliant. Coming to you.',
     features: [
       'Mobile notary services',
       'Loan document signings',
@@ -251,7 +251,7 @@ export const COPY = {
   },
   about: {
     heroTitle: 'Built on Vision',
-    heroDescription: `At ${BUSINESS.name}, storytelling is a passion. Whether through a lens, a drone, or a line of code — it's all about creating work that resonates and inspires.`,
+    heroDescription: 'Lens, drone, or code — work that resonates.',
     philosophyTitle: 'The Philosophy',
     philosophy: [
       "Excellence is built at the intersection of technical precision and creative vision. Whether the project involves a camera, a drone, or a line of code, the focus remains on delivering high-impact solutions that stand the test of time.",
@@ -399,6 +399,8 @@ export type PortfolioCategorySlug = keyof typeof PORTFOLIO_CATEGORIES;
 // =============================================================================
 // SITE IMAGES (S3 keys — upload to s3://pitfal-prod-media/site/...)
 // =============================================================================
+
+export const BUILD_VERSION = Date.now();
 
 export const SITE_IMAGES = {
   hero: 'site/hero-bg.jpg',

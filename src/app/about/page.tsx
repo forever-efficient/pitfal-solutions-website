@@ -40,7 +40,7 @@ export default function AboutPage() {
             {/* Photographer portrait */}
             <figure className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative">
               <Image
-                src={getImageUrl(SITE_IMAGES.about)}
+                src={getImageUrl(SITE_IMAGES.about, undefined, true)}
                 alt={`Portrait of ${BUSINESS.name} founder`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"

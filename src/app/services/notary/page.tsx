@@ -1,9 +1,7 @@
 import { Metadata } from 'next';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
-import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { SERVICES, PAGE_META } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
@@ -29,14 +27,9 @@ export default function NotaryPage() {
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
               {service.title}
             </h1>
-            <p className="text-xl text-neutral-600 mb-8">
+            <p className="text-xl text-neutral-600">
               {service.description}
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Button asChild>
-                <Link href="/contact">Schedule a Signing</Link>
-              </Button>
-            </div>
           </div>
         </Container>
       </Section>
@@ -144,9 +137,6 @@ export default function NotaryPage() {
             </p>
           </div>
           <div className="text-center">
-            <Button asChild>
-              <Link href="/contact">Schedule a Signing</Link>
-            </Button>
           </div>
         </Container>
       </Section>

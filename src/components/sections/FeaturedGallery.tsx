@@ -127,7 +127,7 @@ export function FeaturedGallery() {
               {featuredWork.map((item) => (
                 <Link
                   key={item.id}
-                  href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
+                  href={item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`}
                   className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   {item.coverImage ? (
@@ -166,7 +166,7 @@ export function FeaturedGallery() {
                 return (
                   <Link
                     key={item.id}
-                    href={item.slug ? `/portfolio/viewer?category=${item.category}&slug=${item.slug}` : `/portfolio/${item.category}`}
+                    href={item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`}
                     className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}

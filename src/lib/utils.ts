@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { BUILD_VERSION } from './constants';
 
 /**
  * Merge Tailwind CSS classes with clsx
@@ -89,13 +90,15 @@ export function truncate(text: string, length: number): string {
  */
 export function getImageUrl(
   key: string,
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'original'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'original',
+  cacheBust?: boolean
 ): string {
   const mediaBaseUrl =
     process.env.NEXT_PUBLIC_MEDIA_URL || 'https://media.pitfal.solutions';
+  const suffix = cacheBust ? `?v=${BUILD_VERSION}` : '';
 
   if (!size || size === 'original') {
-    return `${mediaBaseUrl}/${key}`;
+    return `${mediaBaseUrl}/${key}${suffix}`;
   }
 
   // Width map matches the thumbnail-generator Lambda output convention
@@ -112,7 +115,7 @@ export function getImageUrl(
   const processedPath = baseName.startsWith('gallery/')
     ? baseName.replace(/^gallery\//, 'processed/')
     : `processed/${baseName}`;
-  return `${mediaBaseUrl}/${processedPath}/${width}w.webp`;
+  return `${mediaBaseUrl}/${processedPath}/${width}w.webp${suffix}`;
 }
 
 /**

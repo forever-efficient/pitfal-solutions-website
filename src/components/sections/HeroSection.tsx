@@ -23,7 +23,7 @@ export function HeroSection({
   ctaHref = '/contact',
   secondaryCtaText = COPY.hero.cta,
   secondaryCtaHref = '/portfolio',
-  backgroundImage = getImageUrl(SITE_IMAGES.hero),
+  backgroundImage = getImageUrl(SITE_IMAGES.hero, undefined, true),
 }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">

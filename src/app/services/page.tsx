@@ -5,6 +5,8 @@ import { getImageUrl } from '@/lib/utils';
 import { Container, Section } from '@/components/ui/Container';
 import { Card, CardContent } from '@/components/ui/Card';
 import { ContactCTA } from '@/components/sections';
+import { RecentWorkCarousel } from '@/components/sections/RecentWorkCarousel';
+import { VideoCarousel } from '@/components/sections/VideoCarousel';
 import {
   ArrowRightIcon,
   BuildingIcon,
@@ -59,8 +61,7 @@ export default function ServicesPage() {
               Full Service Offerings
             </h1>
             <p className="text-xl text-neutral-600">
-              From cinematic photography and video to aerial imaging and AI-powered
-              solutions — creative and technical expertise applied to every project.
+              Creative vision, technical precision. Every project.
             </p>
           </div>
         </Container>
@@ -73,17 +74,27 @@ export default function ServicesPage() {
             {serviceCards.map(({ service }) => (
               <Link key={service.id} href={service.href} className="group">
                 <Card hover className="overflow-hidden h-full">
-                <div className="h-64 bg-neutral-200 relative overflow-hidden">
-                  <Image
-                    src={getImageUrl(service.image)}
-                    alt={service.title}
-                    fill
-                    priority
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                </div>
+                {service.id === 'photography' ? (
+                  <div className="h-64 overflow-hidden [&>section]:!py-0 [&>section]:!pt-0 [&>section]:!pb-0 flex items-center">
+                    <RecentWorkCarousel showHeader={false} showCta={false} />
+                  </div>
+                ) : service.id === 'videography' ? (
+                  <div className="h-64 overflow-hidden flex justify-center">
+                    <VideoCarousel fallback={<div className="h-64 bg-neutral-200" />} className="h-full rounded-none" />
+                  </div>
+                ) : (
+                  <div className="h-64 bg-neutral-200 relative overflow-hidden">
+                    <Image
+                      src={getImageUrl(service.image)}
+                      alt={service.title}
+                      fill
+                      priority
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                )}
 
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-bold text-neutral-900 mb-2 font-display group-hover:text-primary-600 transition-colors">

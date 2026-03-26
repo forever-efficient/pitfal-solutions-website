@@ -107,8 +107,7 @@ export default function PortfolioPage() {
               Featured Projects
             </h1>
             <p className="text-xl text-neutral-600">
-              Explore our collection of photography and videography projects to see what the future can bring you.
-              Each gallery showcases the commitment to quality and creativity you will receive.
+              Past projects, future possibilities.
             </p>
           </div>
         </Container>
@@ -121,9 +120,6 @@ export default function PortfolioPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
               Photography
             </h2>
-            <p className="text-neutral-600 text-lg">
-              Professional photography for every occasion
-            </p>
           </div>
           <div
             className="grid md:grid-cols-3 gap-6 lg:gap-8"
@@ -178,11 +174,8 @@ export default function PortfolioPage() {
         <Container>
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
-              Services
+              Everything Else
             </h2>
-            <p className="text-neutral-600 text-lg">
-              Additional services to complement your creative projects
-            </p>
           </div>
           <div
             className="grid md:grid-cols-3 gap-6 lg:gap-8"
