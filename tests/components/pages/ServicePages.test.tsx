@@ -38,8 +38,7 @@ describe('Service detail pages', () => {
     expect(photographyMetadata.description).toBe(PAGE_META.servicesPhotography.description);
 
     expect(screen.getByRole('heading', { level: 1, name: SERVICES.photography.title })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Get a Quote' })).toHaveAttribute('href', '/contact');
-    expect(screen.getByRole('link', { name: 'View Portfolio' })).toHaveAttribute('href', '/portfolio');
+    expect(screen.getByRole('link', { name: 'Get in Touch' })).toHaveAttribute('href', '/contact');
 
     for (const feature of SERVICES.photography.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();
@@ -53,8 +52,7 @@ describe('Service detail pages', () => {
     expect(videographyMetadata.description).toBe(PAGE_META.servicesVideography.description);
 
     expect(screen.getByRole('heading', { level: 1, name: SERVICES.videography.title })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Get a Quote' })).toHaveAttribute('href', '/contact');
-    expect(screen.getByRole('link', { name: 'View Portfolio' })).toHaveAttribute('href', '/portfolio');
+    expect(screen.getByRole('link', { name: 'Get in Touch' })).toHaveAttribute('href', '/contact');
 
     for (const feature of SERVICES.videography.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();
@@ -68,8 +66,7 @@ describe('Service detail pages', () => {
     expect(droneMetadata.description).toBe(PAGE_META.servicesDrone.description);
 
     expect(screen.getByRole('heading', { level: 1, name: SERVICES.drone.title })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Get a Quote' })).toHaveAttribute('href', '/contact');
-    expect(screen.getByRole('link', { name: 'View Portfolio' })).toHaveAttribute('href', '/portfolio');
+    expect(screen.getByRole('link', { name: 'Get in Touch' })).toHaveAttribute('href', '/contact');
 
     for (const feature of SERVICES.drone.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();
@@ -83,7 +80,7 @@ describe('Service detail pages', () => {
     expect(aiMetadata.description).toBe(PAGE_META.servicesAI.description);
 
     expect(screen.getByRole('heading', { level: 1, name: SERVICES.ai.title })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Start a Conversation' }).some((link) => link.getAttribute('href') === '/contact')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Get in Touch' })).toHaveAttribute('href', '/contact');
 
     for (const feature of SERVICES.ai.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();
@@ -97,7 +94,7 @@ describe('Service detail pages', () => {
     expect(notaryMetadata.description).toBe(PAGE_META.servicesNotary.description);
 
     expect(screen.getByRole('heading', { level: 1, name: SERVICES.notary.title })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Schedule a Signing' }).some((link) => link.getAttribute('href') === '/contact')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Get in Touch' })).toHaveAttribute('href', '/contact');
 
     for (const feature of SERVICES.notary.features) {
       expect(screen.getByText(feature)).toBeInTheDocument();

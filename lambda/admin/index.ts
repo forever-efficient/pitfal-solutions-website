@@ -35,7 +35,7 @@ import {
   encodeToken,
   decodeToken,
 } from '../shared/session';
-import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteS3Objects, copyS3Object, listS3Objects } from '../shared/s3';
+import { generatePresignedUploadUrl, generatePresignedDownloadUrl, deleteS3Objects, copyS3Object, listS3Objects, getObjectSize } from '../shared/s3';
 import { sendTemplatedEmail } from '../shared/email';
 
 // Environment variables
@@ -969,8 +969,32 @@ async function handleBulkDownload(
     }))
   );
 
-  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length });
-  return success({ downloads }, 200, requestOrigin);
+  // Look up file sizes for client-side batching
+  const isFullGallery = !body.imageKeys || body.imageKeys.length === 0;
+  let sizeMap: Map<string, number>;
+
+  if (isFullGallery) {
+    const objects = await listS3Objects(MEDIA_BUCKET!, `gallery/${galleryId}/`);
+    sizeMap = new Map(objects.map(o => [o.key, o.size]));
+  } else {
+    const SIZE_CONCURRENCY = 20;
+    sizeMap = new Map();
+    for (let i = 0; i < requestedKeys.length; i += SIZE_CONCURRENCY) {
+      const batch = requestedKeys.slice(i, i + SIZE_CONCURRENCY);
+      const sizes = await Promise.all(
+        batch.map(async (key) => ({ key, size: await getObjectSize(MEDIA_BUCKET!, key) }))
+      );
+      sizes.forEach(({ key, size }) => sizeMap.set(key, size));
+    }
+  }
+
+  const downloadsWithSizes = downloads.map(d => ({
+    ...d,
+    sizeBytes: sizeMap.get(d.key) ?? 0,
+  }));
+
+  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloadsWithSizes.length });
+  return success({ downloads: downloadsWithSizes }, 200, requestOrigin);
 }
 
 // ============ GALLERY NOTIFY HANDLER ============
@@ -1288,22 +1312,34 @@ async function handleImagesAssign(
   if (!gallery) return notFound('Gallery not found', requestOrigin);
 
   // Move each image from staging/ready/ → gallery/{galleryId}/
+  // Process in batches to avoid S3 throttling and Lambda timeout
+  const BATCH_SIZE = 50;
   const assignedImages: Array<{ key: string; alt?: string }> = [];
   const failed: string[] = [];
 
-  await Promise.all(
-    body.keys.map(async (readyKey: string) => {
-      const filename = readyKey.split('/').pop()!;
-      const galleryKey = `gallery/${body.galleryId}/${filename}`;
-      try {
-        await copyS3Object(MEDIA_BUCKET!, readyKey, galleryKey);
-        await deleteS3Objects(MEDIA_BUCKET!, [readyKey]);
-        assignedImages.push({ key: galleryKey });
-      } catch (err) {
-        failed.push(readyKey);
+  for (let i = 0; i < body.keys.length; i += BATCH_SIZE) {
+    const batch = body.keys.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (readyKey: string) => {
+        const filename = readyKey.split('/').pop()!;
+        const galleryKey = `gallery/${body.galleryId}/${filename}`;
+        try {
+          await copyS3Object(MEDIA_BUCKET!, readyKey, galleryKey);
+          await deleteS3Objects(MEDIA_BUCKET!, [readyKey]);
+          return { success: true, key: galleryKey, readyKey };
+        } catch (err) {
+          return { success: false, key: galleryKey, readyKey };
+        }
+      })
+    );
+    for (const result of batchResults) {
+      if (result.success) {
+        assignedImages.push({ key: result.key });
+      } else {
+        failed.push(result.readyKey);
       }
-    })
-  );
+    }
+  }
 
   if (assignedImages.length > 0) {
     // Append to gallery images array, deduplicating by key

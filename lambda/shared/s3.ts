@@ -68,13 +68,24 @@ export async function copyS3Object(bucket: string, sourceKey: string, destKey: s
 }
 
 export async function listS3Objects(bucket: string, prefix: string): Promise<Array<{ key: string; size: number; lastModified: Date }>> {
-  const result = await s3Client.send(new ListObjectsV2Command({
-    Bucket: bucket,
-    Prefix: prefix,
-  }));
-  return (result.Contents || []).map(obj => ({
-    key: obj.Key!,
-    size: obj.Size || 0,
-    lastModified: obj.LastModified || new Date(),
-  }));
+  const allObjects: Array<{ key: string; size: number; lastModified: Date }> = [];
+  let continuationToken: string | undefined;
+
+  do {
+    const result = await s3Client.send(new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix,
+      ContinuationToken: continuationToken,
+    }));
+    for (const obj of result.Contents || []) {
+      allObjects.push({
+        key: obj.Key!,
+        size: obj.Size || 0,
+        lastModified: obj.LastModified || new Date(),
+      });
+    }
+    continuationToken = result.IsTruncated ? result.NextContinuationToken : undefined;
+  } while (continuationToken);
+
+  return allObjects;
 }

@@ -36,11 +36,11 @@ export default function PhotographyPage() {
       {/* What's included */}
       <Section size="md" background="white">
         <Container>
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <RecentWorkCarousel showHeader={false} showCta={false} className="lg:max-w-none" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center min-w-0">
+            <RecentWorkCarousel showHeader={false} showCta={false} className="lg:max-w-none min-w-0" />
 
             {/* Content */}
-            <div>
+            <div className="min-w-0">
               <h2 className="text-3xl font-bold text-neutral-900 mb-4 font-display">
                 What&apos;s Included
               </h2>

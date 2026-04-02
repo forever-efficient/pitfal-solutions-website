@@ -84,11 +84,11 @@ describe('ServicesOverview', () => {
 
   it('renders service descriptions', async () => {
     await renderServicesOverview();
-    expect(screen.getByText(/From brand imagery to portraits and events/i)).toBeInTheDocument();
-    expect(screen.getByText(/High-quality video content for brands/i)).toBeInTheDocument();
-    expect(screen.getByText(/FAA-compliant aerial imagery/i)).toBeInTheDocument();
-    expect(screen.getByText(/From AI strategy and custom model integration/i)).toBeInTheDocument();
-    expect(screen.getByText(/Convenient in-person notary services/i)).toBeInTheDocument();
+    expect(screen.getByText(/Brands, portraits, events\. Your story, sharply told\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Concept to final cut\. Every frame intentional\./i)).toBeInTheDocument();
+    expect(screen.getByText(/New perspectives\. FAA-certified, fully handled\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Smart tools, real leverage\. Strategy through delivery\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Colorado-commissioned\. RULONA-compliant\. Coming to you\./i)).toBeInTheDocument();
   });
 
   it('renders service links with correct hrefs', async () => {

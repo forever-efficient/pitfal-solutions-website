@@ -51,6 +51,7 @@ export interface BulkDownloadResult {
   downloads: Array<{
     key: string;
     downloadUrl: string;
+    sizeBytes?: number;
   }>;
 }
 
@@ -425,14 +426,28 @@ export const adminImages = {
       }>;
     }>('/api/admin/images/ready'),
 
-  assign: (keys: string[], galleryId: string) =>
-    request<{ assigned: number; failed: number; failedKeys: string[] }>(
-      '/api/admin/images/assign',
-      {
-        method: 'POST',
-        body: JSON.stringify({ keys, galleryId }),
-      }
-    ),
+  assign: async (keys: string[], galleryId: string): Promise<{ assigned: number; failed: number; failedKeys: string[] }> => {
+    const BATCH_SIZE = 50;
+    let totalAssigned = 0;
+    let totalFailed = 0;
+    const allFailedKeys: string[] = [];
+
+    for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+      const batch = keys.slice(i, i + BATCH_SIZE);
+      const result = await request<{ assigned: number; failed: number; failedKeys: string[] }>(
+        '/api/admin/images/assign',
+        {
+          method: 'POST',
+          body: JSON.stringify({ keys: batch, galleryId }),
+        }
+      );
+      totalAssigned += result.assigned;
+      totalFailed += result.failed;
+      allFailedKeys.push(...result.failedKeys);
+    }
+
+    return { assigned: totalAssigned, failed: totalFailed, failedKeys: allFailedKeys };
+  },
 
   deleteFromReady: (keys: string[]) =>
     request<{ deleted: number }>('/api/admin/images/ready', {

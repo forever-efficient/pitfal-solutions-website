@@ -35,6 +35,7 @@ const mockGeneratePresignedDownloadUrl = vi.hoisted(() => vi.fn());
 const mockDeleteS3Objects = vi.hoisted(() => vi.fn());
 const mockCopyS3Object = vi.hoisted(() => vi.fn());
 const mockListS3Objects = vi.hoisted(() => vi.fn());
+const mockGetObjectSize = vi.hoisted(() => vi.fn());
 const mockSendTemplatedEmail = vi.hoisted(() => vi.fn());
 const mockLambdaInvokeSend = vi.hoisted(() => vi.fn());
 
@@ -82,6 +83,7 @@ vi.mock('../../../lambda/shared/s3', () => ({
   deleteS3Objects: mockDeleteS3Objects,
   copyS3Object: mockCopyS3Object,
   listS3Objects: mockListS3Objects,
+  getObjectSize: mockGetObjectSize,
 }));
 
 // Mock email utilities
@@ -167,6 +169,7 @@ describe('Admin Lambda Handler', () => {
     mockDeleteS3Objects.mockClear();
     mockCopyS3Object.mockClear();
     mockListS3Objects.mockClear();
+    mockGetObjectSize.mockClear();
     mockSendTemplatedEmail.mockClear();
     mockLambdaInvokeSend.mockClear();
 
@@ -2223,6 +2226,10 @@ describe('Admin Lambda Handler', () => {
         slug: 'test', images: [{ key: 'img1.jpg' }, { key: 'img2.jpg' }],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
+      mockListS3Objects.mockImplementation(async () => [
+        { key: 'img1.jpg', size: 3000000, lastModified: new Date() },
+        { key: 'img2.jpg', size: 4000000, lastModified: new Date() },
+      ]);
 
       const event = createEvent({
         httpMethod: 'POST',
@@ -2237,7 +2244,9 @@ describe('Admin Lambda Handler', () => {
       expect(body.data.downloads).toHaveLength(2);
       expect(body.data.downloads[0].key).toBe('img1.jpg');
       expect(body.data.downloads[0].downloadUrl).toBe('https://download-url.example.com');
+      expect(body.data.downloads[0].sizeBytes).toBe(3000000);
       expect(body.data.downloads[1].key).toBe('img2.jpg');
+      expect(body.data.downloads[1].sizeBytes).toBe(4000000);
     });
 
     it('returns presigned URLs only for requested image keys', async () => {
@@ -2247,6 +2256,7 @@ describe('Admin Lambda Handler', () => {
         slug: 'test', images: [{ key: 'img1.jpg' }, { key: 'img2.jpg' }, { key: 'img3.jpg' }],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
+      mockGetObjectSize.mockImplementation(async () => 5000000);
 
       const event = createEvent({
         httpMethod: 'POST',
@@ -2376,6 +2386,9 @@ describe('Admin Lambda Handler', () => {
         slug: 'test', images: [{ key: 'gallery/g1/photo.jpg' }],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
+      mockListS3Objects.mockImplementation(async () => [
+        { key: 'gallery/g1/photo.jpg', size: 5000000, lastModified: new Date() },
+      ]);
 
       const event = createEvent({
         httpMethod: 'POST',

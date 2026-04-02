@@ -7,7 +7,7 @@ import { clientGallery, clientAuth, type GallerySection } from '@/lib/api';
 import { getImageUrl, isRawFile, getRawFormatLabel } from '@/lib/utils';
 import { ImageComment } from './ImageComment';
 import { DownloadButton } from './DownloadButton';
-import { useBulkDownload, type BulkDownloadProgress } from './useBulkDownload';
+import { useBulkDownload, clearResumeState, getResumeState, type BulkDownloadProgress, type ResumeState } from './useBulkDownload';
 import { ClientSectionNav } from './ClientSectionNav';
 
 interface GalleryImage {
@@ -257,6 +257,18 @@ export function ClientGalleryView({
                 progress={bulkDownload.progress}
                 error={bulkDownload.error}
                 onClearError={bulkDownload.clearError}
+                onCancel={bulkDownload.cancelDownload}
+                galleryId={galleryId}
+                imageCount={gallery.images.length}
+                onResume={(size, resumeFrom) =>
+                  bulkDownload.startBulkDownload(
+                    gallery.images.map((img) => img.key),
+                    size,
+                    gallery.title,
+                    { resumeFrom }
+                  )
+                }
+                onClearResume={(size) => clearResumeState(galleryId, size)}
                 onDownload={(size) =>
                   bulkDownload.startBulkDownload(
                     gallery.images.map((img) => img.key),
@@ -348,6 +360,18 @@ export function ClientGalleryView({
                   progress={bulkDownload.progress}
                   error={bulkDownload.error}
                   onClearError={bulkDownload.clearError}
+                  onCancel={bulkDownload.cancelDownload}
+                  galleryId={galleryId}
+                  imageCount={gallery.images.length}
+                  onResume={(size, resumeFrom) =>
+                    bulkDownload.startBulkDownload(
+                      gallery.images.map((img) => img.key),
+                      size,
+                      gallery.title,
+                      { resumeFrom }
+                    )
+                  }
+                  onClearResume={(size) => clearResumeState(galleryId, size)}
                   onDownload={(size) =>
                     bulkDownload.startBulkDownload(
                       gallery.images.map((img) => img.key),
@@ -415,6 +439,7 @@ export function ClientGalleryView({
                           progress={bulkDownload.progress}
                           error={bulkDownload.error}
                           onClearError={bulkDownload.clearError}
+                          onCancel={bulkDownload.cancelDownload}
                           onDownload={(size) =>
                             bulkDownload.startBulkDownload(section.images, size, section.title)
                           }
@@ -477,6 +502,7 @@ export function ClientGalleryView({
                         progress={bulkDownload.progress}
                         error={bulkDownload.error}
                         onClearError={bulkDownload.clearError}
+                        onCancel={bulkDownload.cancelDownload}
                         onDownload={(size) =>
                           bulkDownload.startBulkDownload(
                             unassignedImages.map((img) => img.key),
@@ -716,7 +742,12 @@ interface BulkDownloadButtonProps {
   progress: BulkDownloadProgress | null;
   error: string | null;
   onClearError: () => void;
+  onCancel?: () => void;
   onDownload: (size: 'full' | 'web') => void;
+  onResume?: (size: 'full' | 'web', resumeFrom: number) => void;
+  onClearResume?: (size: 'full' | 'web') => void;
+  galleryId?: string;
+  imageCount?: number;
   variant: 'header' | 'hero' | 'section';
 }
 
@@ -726,33 +757,50 @@ function BulkDownloadButton({
   progress,
   error,
   onClearError,
+  onCancel,
   onDownload,
+  onResume,
+  onClearResume,
+  galleryId,
+  imageCount,
   variant,
 }: BulkDownloadButtonProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const [resumePrompt, setResumePrompt] = useState<{ size: 'full' | 'web'; state: ResumeState } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!showMenu) return;
+    if (!showMenu && !resumePrompt) return;
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowMenu(false);
+        setResumePrompt(null);
       }
     }
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, [showMenu]);
+  }, [showMenu, resumePrompt]);
 
+  const hasBatches = progress?.batchTotal && progress.batchTotal > 1;
+  const failedInfo = progress?.failedCount ? ` (${progress.failedCount} failed)` : '';
   const progressText = progress
     ? progress.phase === 'sharing'
       ? progress.batchTotal && progress.batchTotal > 1
         ? `Sharing batch ${progress.batchCurrent} of ${progress.batchTotal}…`
         : 'Saving to device…'
       : progress.phase === 'zipping'
-        ? 'Creating ZIP…'
-        : progress.total > 0
-          ? `Fetching ${progress.current} of ${progress.total}`
-          : 'Preparing…'
+        ? hasBatches
+          ? `Creating ZIP (Part ${progress.batchCurrent} of ${progress.batchTotal})…`
+          : 'Creating ZIP…'
+        : progress.phase === 'saving'
+          ? hasBatches
+            ? `Saving Part ${progress.batchCurrent} of ${progress.batchTotal}…`
+            : 'Saving…'
+          : progress.total > 0
+            ? hasBatches
+              ? `Part ${progress.batchCurrent}/${progress.batchTotal} — ${progress.current}/${progress.total}${failedInfo}`
+              : `Fetching ${progress.current} of ${progress.total}${failedInfo}`
+            : 'Preparing…'
     : 'Preparing…';
 
   const base =
@@ -779,6 +827,14 @@ function BulkDownloadButton({
       <button
         type="button"
         onClick={() => {
+          if (galleryId && imageCount && onResume) {
+            const resume = getResumeState(galleryId, 'full', imageCount);
+            if (resume) {
+              setShowMenu(false);
+              setResumePrompt({ size: 'full', state: resume });
+              return;
+            }
+          }
           onDownload('full');
           setShowMenu(false);
         }}
@@ -792,6 +848,14 @@ function BulkDownloadButton({
       <button
         type="button"
         onClick={() => {
+          if (galleryId && imageCount && onResume) {
+            const resume = getResumeState(galleryId, 'web', imageCount);
+            if (resume) {
+              setShowMenu(false);
+              setResumePrompt({ size: 'web', state: resume });
+              return;
+            }
+          }
           onDownload('web');
           setShowMenu(false);
         }}
@@ -809,24 +873,84 @@ function BulkDownloadButton({
 
   return (
     <div ref={containerRef} className="relative flex flex-col items-start gap-1">
-      <button
-        type="button"
-        onClick={() => {
-          if (isDownloading) return;
-          setShowMenu((prev) => !prev);
-        }}
-        disabled={isDownloading}
-        className={`${base} ${styles[variant]}`}
-        aria-busy={isDownloading}
-        aria-expanded={showMenu}
-        aria-haspopup="true"
-        aria-live="polite"
-        aria-label={label}
-      >
-        <BulkDownloadIcon className="w-4 h-4 shrink-0" />
-        {isDownloading ? progressText : label}
-      </button>
-      {showMenu && !isDownloading && menuContent}
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            if (isDownloading) return;
+            setShowMenu((prev) => !prev);
+          }}
+          disabled={isDownloading}
+          className={`${base} ${styles[variant]}`}
+          aria-busy={isDownloading}
+          aria-expanded={showMenu}
+          aria-haspopup="true"
+          aria-live="polite"
+          aria-label={label}
+        >
+          <BulkDownloadIcon className="w-4 h-4 shrink-0" />
+          {isDownloading ? progressText : label}
+        </button>
+        {isDownloading && onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className={`text-xs px-2 py-1 rounded transition-colors ${
+              isHero
+                ? 'text-white/80 hover:text-white hover:bg-white/10'
+                : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200'
+            }`}
+            aria-label="Cancel download"
+          >
+            Cancel
+          </button>
+        )}
+      </div>
+      {showMenu && !isDownloading && !resumePrompt && menuContent}
+      {resumePrompt && !isDownloading && onResume && onClearResume && (
+        <div
+          className={`absolute z-50 min-w-[220px] rounded-lg border shadow-xl overflow-hidden ${
+            isHero
+              ? 'bottom-full mb-2 right-0 border-white/30 bg-neutral-900/95 backdrop-blur-sm'
+              : 'top-full mt-2 right-0 border-neutral-200 bg-white'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className={`px-4 py-3 text-sm ${isHero ? 'text-white/90' : 'text-neutral-600'}`}>
+            {resumePrompt.state.completedBatches.length} of {resumePrompt.state.totalBatches} parts already downloaded
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const nextBatch = resumePrompt.state.completedBatches.length;
+              onResume(resumePrompt.size, nextBatch);
+              setResumePrompt(null);
+            }}
+            className={`w-full px-4 py-3 text-left text-sm font-medium flex items-center gap-3 border-t transition-colors ${
+              isHero
+                ? 'border-white/20 text-white hover:bg-white/10'
+                : 'border-neutral-100 text-neutral-700 hover:bg-neutral-50'
+            }`}
+          >
+            Resume from Part {resumePrompt.state.completedBatches.length + 1}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClearResume(resumePrompt.size);
+              onDownload(resumePrompt.size);
+              setResumePrompt(null);
+            }}
+            className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 border-t transition-colors ${
+              isHero
+                ? 'border-white/20 text-white/70 hover:bg-white/10'
+                : 'border-neutral-100 text-neutral-500 hover:bg-neutral-50'
+            }`}
+          >
+            Start Over
+          </button>
+        </div>
+      )}
       {error && (
         <p className="text-xs text-red-600 flex items-center gap-1">
           {error}

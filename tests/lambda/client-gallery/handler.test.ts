@@ -38,10 +38,12 @@ vi.mock('../../../lambda/shared/session', () => ({
 
 // Mock S3 utilities
 const mockGetObjectSize = vi.hoisted(() => vi.fn());
+const mockListS3Objects = vi.hoisted(() => vi.fn());
 vi.mock('../../../lambda/shared/s3', () => ({
   generatePresignedDownloadUrl: mockGeneratePresignedDownloadUrl,
   objectExists: mockObjectExists,
   getObjectSize: mockGetObjectSize,
+  listS3Objects: mockListS3Objects,
   generatePresignedUploadUrl: vi.fn(),
   deleteS3Objects: vi.fn(),
 }));
@@ -588,6 +590,13 @@ describe('Client Gallery Lambda Handler', () => {
   describe('POST /api/client/{galleryId}/bulk-download', () => {
     beforeEach(() => {
       setupAuthenticatedClient();
+      // Default: listS3Objects returns sizes matching gallery images
+      mockListS3Objects.mockImplementation(async () => [
+        { key: 'finished/gallery-1/img1.jpg', size: 4000000, lastModified: new Date() },
+        { key: 'finished/gallery-1/img2.jpg', size: 3500000, lastModified: new Date() },
+        { key: 'finished/gallery-1/img3.jpg', size: 5000000, lastModified: new Date() },
+      ]);
+      mockGetObjectSize.mockImplementation(async () => 4000000);
     });
 
     it('returns presigned URLs for all gallery images when no keys specified', async () => {
@@ -606,6 +615,7 @@ describe('Client Gallery Lambda Handler', () => {
       expect(body.data.downloads).toHaveLength(3);
       expect(body.data.downloads[0].key).toBe('finished/gallery-1/img1.jpg');
       expect(body.data.downloads[0].downloadUrl).toContain('signed=true');
+      expect(body.data.downloads[0].sizeBytes).toBe(4000000);
     });
 
     it('returns presigned URLs for specific requested image keys', async () => {
@@ -628,6 +638,8 @@ describe('Client Gallery Lambda Handler', () => {
         'finished/gallery-1/img1.jpg',
         'finished/gallery-1/img3.jpg',
       ]);
+      // Subset requests use getObjectSize (HEAD requests) for sizes
+      expect(body.data.downloads[0].sizeBytes).toBe(4000000);
     });
 
     it('returns 400 when some requested keys do not belong to gallery', async () => {

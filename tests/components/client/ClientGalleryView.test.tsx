@@ -26,6 +26,8 @@ vi.mock('@/lib/api', async () => {
 
 vi.mock('@/components/client/useBulkDownload', () => ({
   useBulkDownload: (galleryId: string) => mockUseBulkDownload(galleryId),
+  getResumeState: () => null,
+  clearResumeState: () => {},
 }));
 
 vi.mock('@/components/client/DownloadButton', () => ({

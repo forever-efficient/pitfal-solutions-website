@@ -12,7 +12,7 @@ import {
   corsResponse,
 } from '../shared/response';
 import { parseAuthToken } from '../shared/session';
-import { generatePresignedDownloadUrl, objectExists, getObjectSize } from '../shared/s3';
+import { generatePresignedDownloadUrl, objectExists, getObjectSize, listS3Objects } from '../shared/s3';
 import { shuffleArray } from '../shared/array';
 
 const GALLERIES_TABLE = process.env.GALLERIES_TABLE;
@@ -489,16 +489,48 @@ async function handleBulkDownload(
         3600,
         downloadFilename
       );
-      return { key, downloadUrl };
+      return { key, downloadUrl, downloadKey };
     })
   );
 
-  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloads.length, size });
+  // Look up file sizes for client-side batching
+  let sizeMap: Map<string, number>;
+  const isFullGallery = !body.imageKeys || body.imageKeys.length === 0;
+
+  if (isFullGallery && size === 'full') {
+    // Full gallery, full size — single LIST call is most efficient
+    const objects = await listS3Objects(MEDIA_BUCKET!, `gallery/${galleryId}/`);
+    sizeMap = new Map(objects.map(o => [o.key, o.size]));
+  } else {
+    // Subset or web-sized — parallel HEAD requests for actual download keys
+    const SIZE_CONCURRENCY = 20;
+    sizeMap = new Map();
+    const downloadKeys = downloads.map(d => ({ originalKey: d.key, downloadKey: d.downloadKey }));
+    for (let i = 0; i < downloadKeys.length; i += SIZE_CONCURRENCY) {
+      const batch = downloadKeys.slice(i, i + SIZE_CONCURRENCY);
+      const sizes = await Promise.all(
+        batch.map(async ({ originalKey, downloadKey }) => ({
+          key: originalKey,
+          size: await getObjectSize(MEDIA_BUCKET!, downloadKey),
+        }))
+      );
+      sizes.forEach(({ key, size: s }) => sizeMap.set(key, s));
+    }
+  }
+
+  // Attach sizes and strip internal downloadKey from response
+  const downloadsWithSizes = downloads.map(({ key, downloadUrl, downloadKey }) => ({
+    key,
+    downloadUrl,
+    sizeBytes: sizeMap.get(key) ?? 0,
+  }));
+
+  log('INFO', 'Bulk download URLs generated', ctx, { galleryId, count: downloadsWithSizes.length, size });
 
   // Fire-and-forget download tracking (count per image, not per request)
-  incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'downloadCount', downloads.length).catch(() => {});
+  incrementCounter(GALLERIES_TABLE!, { id: galleryId }, 'downloadCount', downloadsWithSizes.length).catch(() => {});
 
-  return success({ downloads }, 200, requestOrigin);
+  return success({ downloads: downloadsWithSizes }, 200, requestOrigin);
 }
 
 async function handleDownload(
