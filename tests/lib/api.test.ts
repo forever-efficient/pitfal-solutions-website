@@ -719,4 +719,48 @@ describe('lib/api', () => {
       })
     );
   });
+
+  it('retries GETs on transient 5xx/429 and returns the eventual success payload', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: false, status: 500, text: async () => '', json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: false, status: 429, text: async () => '', json: async () => ({}) })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, data: { galleries: [{ id: 'g1' }] } }),
+      });
+
+    const result = await publicGalleries.getByCategory('portraits');
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ galleries: [{ id: 'g1' }] });
+  });
+
+  it('does not retry POSTs on 500', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({ success: false, error: 'boom' }),
+    });
+
+    await expect(clientAuth.login('g1', 'pw')).rejects.toBeInstanceOf(ApiError);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up after max retries and throws the final ApiError', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ ok: false, status: 503, text: async () => '', json: async () => ({}) })
+      .mockResolvedValueOnce({ ok: false, status: 503, text: async () => '', json: async () => ({}) })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        text: async () => '',
+        json: async () => ({ success: false, error: 'unavailable' }),
+      });
+
+    await expect(publicGalleries.getByCategory('events')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 503,
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
 });

@@ -177,6 +177,7 @@ resource "aws_cloudfront_origin_request_policy" "docuseal" {
         "Host",
         "Origin",
         "Referer",
+        "Turbo-Frame",
         "X-CSRF-Token",
         "X-Requested-With",
       ]

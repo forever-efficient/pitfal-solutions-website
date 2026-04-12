@@ -445,19 +445,23 @@ resource "aws_cloudfront_distribution" "website" {
     viewer_protocol_policy = "https-only"
   }
 
-  # Custom error responses - SPA fallback so client-side routes work on direct URL access
-  # Next.js client router handles the route once index.html loads
+  # Custom error responses - SPA fallback so direct URL access still works.
+  # We serve /404.html (Next.js app/not-found.tsx) instead of /index.html so
+  # that unknown paths don't render the home page. /404.html is a client
+  # component that detects /portfolio/{category}/{slug}/ paths created after
+  # the last deploy and dynamically loads the gallery, falling back to a
+  # real 404 UI for any other unknown path.
   custom_error_response {
     error_code            = 403
     response_code         = 200
-    response_page_path    = "/index.html"
+    response_page_path    = "/404.html"
     error_caching_min_ttl = 0
   }
 
   custom_error_response {
     error_code            = 404
     response_code         = 200
-    response_page_path    = "/index.html"
+    response_page_path    = "/404.html"
     error_caching_min_ttl = 0
   }
 

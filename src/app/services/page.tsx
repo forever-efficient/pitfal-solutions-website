@@ -72,7 +72,7 @@ export default function ServicesPage() {
         <Container>
           <div className="grid md:grid-cols-2 gap-8">
             {serviceCards.map(({ service }) => (
-              <Link key={service.id} href={service.href} className="group">
+              <Link key={service.id} href={service.href} className="group min-w-0">
                 <Card hover className="overflow-hidden h-full">
                 {service.id === 'photography' ? (
                   <div className="h-64 overflow-hidden [&>section]:!py-0 [&>section]:!pt-0 [&>section]:!pb-0 flex items-center">

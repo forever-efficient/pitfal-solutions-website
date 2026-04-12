@@ -1,8 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+/** Wait for static assets + React hydration so controlled inputs are not reset after the first fill. */
+async function gotoContactReady(page: Page) {
+  await page.goto('/contact', { waitUntil: 'load' });
+  await page.waitForLoadState('networkidle');
+}
 
 test.describe('Contact Form', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await gotoContactReady(page);
   });
 
   test('contact page loads with form', async ({ page }) => {
@@ -78,7 +84,7 @@ test.describe('Contact Form', () => {
 
 test.describe('Contact Form - Validation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await gotoContactReady(page);
   });
 
   test('shows validation error for short message', async ({ page }) => {
@@ -154,7 +160,7 @@ test.describe('Contact Form - Validation', () => {
 
 test.describe('Contact Form - Submission', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await gotoContactReady(page);
   });
 
   test('submit button triggers form submission', async ({ page }) => {
@@ -179,6 +185,12 @@ test.describe('Contact Form - Submission', () => {
     await emailInput.fill('john@example.com');
     await messageInput.click();
     await messageInput.fill('I would like to book a photography session please.');
+
+    await expect(nameInput).toHaveValue('John Doe');
+    await expect(emailInput).toHaveValue('john@example.com');
+    await expect(messageInput).toHaveValue(
+      'I would like to book a photography session please.'
+    );
 
     // Submit
     await submitButton.click();
@@ -209,6 +221,13 @@ test.describe('Contact Form - Submission', () => {
     await emailInput.fill('john@example.com');
     await messageInput.click();
     await messageInput.fill('I would like to book a photography session please.');
+
+    await expect(nameInput).toHaveValue('John Doe');
+    await expect(emailInput).toHaveValue('john@example.com');
+    await expect(messageInput).toHaveValue(
+      'I would like to book a photography session please.'
+    );
+
     await submitButton.click();
 
     // Should show success
@@ -237,6 +256,13 @@ test.describe('Contact Form - Submission', () => {
     await emailInput.fill('john@example.com');
     await messageInput.click();
     await messageInput.fill('I would like to book a photography session please.');
+
+    await expect(nameInput).toHaveValue('John Doe');
+    await expect(emailInput).toHaveValue('john@example.com');
+    await expect(messageInput).toHaveValue(
+      'I would like to book a photography session please.'
+    );
+
     await submitButton.click();
 
     // Form should still be visible (not success state) or error shown
@@ -259,7 +285,7 @@ test.describe('Contact Form - Submission', () => {
 
 test.describe('Contact Form - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await gotoContactReady(page);
   });
 
   test('form fields are keyboard accessible', async ({ page }) => {

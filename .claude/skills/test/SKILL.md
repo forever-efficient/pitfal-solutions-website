@@ -50,22 +50,27 @@ pnpm test:coverage
 
 ## Coverage Thresholds
 
-The project enforces 80% coverage thresholds for:
-- Lines
-- Functions
-- Branches
-- Statements
+Configured in `vitest.config.ts` (global `coverage.thresholds`). The `test:coverage` command fails if any metric falls below its threshold:
 
-If coverage drops below 80%, the `test:coverage` command will fail.
+| Metric | Threshold |
+|--------|-----------|
+| Lines | 90% |
+| Statements | 90% |
+| Functions | 88% |
+| Branches | 87% |
+
+Coverage is collected for `src/components/**`, `src/lib/**`, and `lambda/**` (see `coverage.include` / `coverage.exclude` in `vitest.config.ts`).
 
 ## Test Categories
 
-| Category | Location | Framework |
-|----------|----------|-----------|
-| Unit Tests | `src/**/*.test.ts` | Vitest |
-| Component Tests | `src/**/*.test.tsx` | Vitest + Testing Library |
-| API Tests | `lambda/**/*.test.ts` | Vitest |
-| E2E Tests | `tests/e2e/*.spec.ts` | Playwright |
+Vitest picks up `**/*.test.{ts,tsx}` (see `vitest.config.ts`); most live under `tests/`.
+
+| Category | Typical location | Framework |
+|----------|------------------|-----------|
+| Unit / lib | `tests/lib/**/*.test.ts` | Vitest |
+| Component | `tests/components/**/*.test.{ts,tsx}` | Vitest + Testing Library |
+| Lambda | `tests/lambda/**/*.test.ts` | Vitest |
+| E2E | `tests/e2e/*.spec.ts` | Playwright |
 
 ## Pre-Commit Workflow
 

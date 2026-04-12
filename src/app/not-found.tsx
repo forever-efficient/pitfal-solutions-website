@@ -1,8 +1,46 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Container } from '@/components/ui/Container';
 import { Button } from '@/components/ui/Button';
+import { GalleryPageClient } from './portfolio/[category]/[gallery]/GalleryPageClient';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+
+// Matches /portfolio/{category}/{slug} with optional trailing slash.
+const GALLERY_PATH = /^\/portfolio\/([^/]+)\/([^/]+)\/?$/;
 
 export default function NotFound() {
+  const [galleryParams, setGalleryParams] = useState<
+    { category: string; slug: string } | null
+  >(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    const match = window.location.pathname.match(GALLERY_PATH);
+    const category = match?.[1];
+    const slug = match?.[2];
+    // Only treat this as a gallery fallback if the category is a known
+    // portfolio category — otherwise fall through to the 404 UI.
+    if (category && slug && category in PORTFOLIO_CATEGORIES) {
+      setGalleryParams({ category, slug });
+    }
+    setChecked(true);
+  }, []);
+
+  // Render nothing on the initial pass so the hydrated client decides what
+  // to show. This avoids a flash of 404 before the gallery loads.
+  if (!checked) return null;
+
+  if (galleryParams) {
+    return (
+      <GalleryPageClient
+        category={galleryParams.category}
+        slug={galleryParams.slug}
+      />
+    );
+  }
+
   return (
     <Container className="flex min-h-[60vh] flex-col items-center justify-center py-16 text-center">
       <h1 className="font-display text-6xl font-bold text-neutral-900 sm:text-8xl">

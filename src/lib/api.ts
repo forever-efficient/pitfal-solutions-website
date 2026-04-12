@@ -90,6 +90,21 @@ export class ApiError extends Error {
   }
 }
 
+// Transient statuses worth retrying. 500 is included because API Gateway
+// surfaces Lambda concurrency throttles (integrationStatus 429) as 500.
+const RETRYABLE_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+
+function isRetryableMethod(method?: string): boolean {
+  const m = (method || 'GET').toUpperCase();
+  return m === 'GET' || m === 'HEAD';
+}
+
+function backoffDelay(attempt: number): number {
+  // 300ms, 600ms, 1200ms... with up to 150ms jitter.
+  const base = 300 * Math.pow(2, attempt);
+  return base + Math.floor(Math.random() * 150);
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   // Select the right token based on path
   const token = path.startsWith('/api/admin')
@@ -99,28 +114,55 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       : null;
 
   const url = `${resolveApiBaseUrl()}${path}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-  });
+  const maxAttempts = isRetryableMethod(options.method) ? 3 : 1;
 
-  const data = await res.json();
+  let lastError: ApiError | Error | null = null;
 
-  if (!res.ok || !data.success) {
-    throw new ApiError(
-      data.error || 'Request failed',
-      res.status,
-      data.code,
-      data.errors
-    );
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+      });
+    } catch (err) {
+      // Network failure — retry if we have attempts left.
+      lastError = err as Error;
+      if (attempt < maxAttempts - 1) {
+        await new Promise(r => setTimeout(r, backoffDelay(attempt)));
+        continue;
+      }
+      throw err;
+    }
+
+    if (RETRYABLE_STATUSES.has(res.status) && attempt < maxAttempts - 1) {
+      // Drain body so the connection can be reused, then back off and retry.
+      try { await res.text(); } catch { /* ignore */ }
+      await new Promise(r => setTimeout(r, backoffDelay(attempt)));
+      continue;
+    }
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new ApiError(
+        data.error || 'Request failed',
+        res.status,
+        data.code,
+        data.errors
+      );
+    }
+
+    return data.data;
   }
 
-  return data.data;
+  // Should be unreachable — the loop either returns or throws.
+  throw lastError || new ApiError('Request failed', 0);
 }
 
 // =============================================================================

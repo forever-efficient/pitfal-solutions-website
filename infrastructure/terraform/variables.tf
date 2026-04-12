@@ -104,7 +104,7 @@ variable "lambda_timeout" {
 variable "lambda_reserved_concurrency" {
   description = "Reserved concurrent executions for Lambda functions (-1 = unreserved, use account pool)"
   type        = number
-  default     = -1
+  default     = 50
 }
 
 # CloudFront settings
