@@ -172,7 +172,7 @@ export const PAGE_META = {
   },
   services: {
     title: 'Services',
-    description: `Professional ${BUSINESS.servicesOffering}. View our full range of offerings.`,
+    description: `Professional ${BUSINESS.servicesOffering}. View the full range of offerings.`,
   },
   servicesPhotography: {
     title: 'Photography',
@@ -196,7 +196,7 @@ export const PAGE_META = {
   },
   portfolio: {
     title: 'Portfolio',
-    description: `View our photography and videography portfolio featuring brand photography, portrait sessions, and event coverage. Based in ${BUSINESS.location.full}.`,
+    description: `Photography and videography portfolio featuring brand photography, portrait sessions, and event coverage. Based in ${BUSINESS.location.full}.`,
   },
   contact: {
     title: 'Contact',
@@ -212,11 +212,11 @@ export const PAGE_META = {
   },
   privacy: {
     title: 'Privacy Policy',
-    description: `Privacy policy for ${BUSINESS.name}. Learn how we handle your data and protect your privacy.`,
+    description: `Privacy policy for ${BUSINESS.name}. Learn how your data is handled and your privacy is protected.`,
   },
   terms: {
     title: 'Terms of Service',
-    description: `Terms of service for ${BUSINESS.name}. Read our terms and conditions for using our services.`,
+    description: `Terms of service for ${BUSINESS.name}. Read the terms and conditions for services.`,
   },
 } as const;
 
@@ -226,7 +226,7 @@ export const PAGE_META = {
 
 export const COPY = {
   hero: {
-    title: 'Delivering Solutions That Matter',
+    title: 'Solutions Start Here',
     subtitle: `Professional ${BUSINESS.servicesOffering} in ${BUSINESS.location.full}`,
     tagline: BUSINESS.tagline,
     cta: 'View Portfolio',
@@ -365,13 +365,13 @@ export const PORTFOLIO_CATEGORIES = {
   portraits: {
     slug: 'portraits',
     title: 'Portraits',
-    description: 'Headshots, family portraits, and personal branding',
+    description: 'Headshots, family portraits, and weddings',
     image: 'site/portfolio-portraits.jpg',
   },
   events: {
     slug: 'events',
     title: 'Events',
-    description: 'Corporate events, weddings, and special occasions',
+    description: 'Corporate events and special occasions',
     image: 'site/portfolio-events.jpg',
   },
   videography: {

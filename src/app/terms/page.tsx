@@ -56,13 +56,13 @@ export default function TermsPage() {
         </ul>
 
         <h2>Liability</h2>
-        <p>While we take every precaution, {BUSINESS.name} is not liable for unforeseen circumstances that may affect the session (equipment failure, acts of nature, venue restrictions). In such cases, we will work with you to reschedule or find alternative solutions.</p>
+        <p>While every precaution is taken, {BUSINESS.name} is not liable for unforeseen circumstances that may affect the session (equipment failure, acts of nature, venue restrictions). In such cases, every effort will be made to reschedule or find alternative solutions.</p>
 
         <h2>Intellectual Property</h2>
         <p>All images and videos remain the intellectual property of {BUSINESS.name} until full payment is received. Upon full payment, clients receive a license to use the images as outlined above.</p>
 
         <h2>Contact</h2>
-        <p>Questions about these terms? Contact us at <a href={`mailto:${BUSINESS.contact.email}`}>{BUSINESS.contact.email}</a>.</p>
+        <p>Questions about these terms? Reach out at <a href={`mailto:${BUSINESS.contact.email}`}>{BUSINESS.contact.email}</a>.</p>
       </div>
     </div>
   );

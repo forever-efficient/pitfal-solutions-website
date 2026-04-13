@@ -9,12 +9,12 @@
         {
           "id": "booking-001",
           "question": "How do I book a session?",
-          "answer": "Fill out the inquiry form on our [Contact](/contact) page with your preferred session type and date. We'll get back to you within 24 hours to discuss details and availability."
+          "answer": "Fill out the inquiry form on the [Contact](/contact) page with your preferred session type and date. You'll hear back within 24 hours to discuss details and availability."
         },
         {
           "id": "booking-002",
           "question": "What is your cancellation policy?",
-          "answer": "We understand plans change. Please give us at least 48 hours notice for cancellations or rescheduling. Last-minute cancellations may forfeit the deposit."
+          "answer": "Plans change — that's understood. Please give at least 48 hours notice for cancellations or rescheduling. Last-minute cancellations may forfeit the deposit."
         }
       ]
     },
@@ -25,12 +25,12 @@
         {
           "id": "sessions-001",
           "question": "What should I wear to my session?",
-          "answer": "Check out our [Style Guide](/style-guide) for detailed recommendations. Generally, solid colors work best, and we recommend avoiding busy patterns or logos."
+          "answer": "Be comfortable and be yourself! Solid colors are generally recommended, as busy patterns or logos can be distracting on camera."
         },
         {
           "id": "sessions-002",
           "question": "Can I bring props or pets?",
-          "answer": "Absolutely! Props and well-behaved pets are welcome. Let us know in advance so we can plan accordingly."
+          "answer": "Absolutely! Props and well-behaved pets are welcome. Just mention it in advance so the session can be planned accordingly."
         }
       ]
     },
@@ -41,7 +41,7 @@
         {
           "id": "delivery-001",
           "question": "How long until I receive my photos?",
-          "answer": "Turnaround time depends on the session type:\n- **Portraits:** 1-2 weeks\n- **Events:** 2-3 weeks\n- **Brand/Commercial:** 1-2 weeks\n\nRush delivery is available for an additional fee."
+          "answer": "A first look of photos is delivered within 24 hours of your session. Full edited galleries are typically ready within 1-2 weeks, though this may vary depending on complexity and scope."
         },
         {
           "id": "delivery-002",
@@ -62,7 +62,7 @@
         {
           "id": "pricing-002",
           "question": "Do you offer payment plans?",
-          "answer": "For larger packages or commercial projects, we can discuss payment arrangements. Please ask during your consultation."
+          "answer": "For larger packages or commercial projects, payment arrangements can be discussed. Just ask during your consultation."
         }
       ]
     },
@@ -73,12 +73,12 @@
         {
           "id": "general-001",
           "question": "What areas do you serve?",
-          "answer": "We're based in Denver, CO and primarily serve the Denver metro area. Travel fees may apply for locations outside a 25-mile radius."
+          "answer": "Pitfal Solutions is based in Denver, CO and primarily serves the Denver metro area. Travel fees may apply for locations outside a 25-mile radius."
         },
         {
           "id": "general-002",
           "question": "Do you offer both photography and videography?",
-          "answer": "Yes! We offer both services individually or as combined packages. This is perfect for brand content, events, or anyone who wants both photo and video coverage."
+          "answer": "Yes! Both services are available individually or as combined packages. This is perfect for brand content, events, or anyone who wants both photo and video coverage."
         }
       ]
     }

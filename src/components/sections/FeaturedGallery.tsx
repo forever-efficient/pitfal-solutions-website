@@ -19,7 +19,7 @@ interface FeaturedItem {
 const STATIC_FALLBACKS: FeaturedItem[] = [
   { id: '1', title: 'Urban Portrait Session', category: 'portraits', slug: '', coverImage: null },
   { id: '2', title: 'Corporate Brand Shoot', category: 'brands', slug: '', coverImage: null },
-  { id: '3', title: 'Wedding Celebration', category: 'events', slug: '', coverImage: null },
+  { id: '3', title: 'Event Coverage', category: 'events', slug: '', coverImage: null },
 ];
 
 export function FeaturedGallery() {

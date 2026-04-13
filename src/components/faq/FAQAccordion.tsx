@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ChevronDownIcon } from '@/components/icons';
 
@@ -11,6 +12,32 @@ interface FAQItem {
 
 interface FAQAccordionProps {
   items: FAQItem[];
+}
+
+const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+function renderMarkdownLinks(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(
+      <Link key={match.index} href={match[2]!} className="text-accent hover:underline">
+        {match[1]}
+      </Link>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts;
 }
 
 export function FAQAccordion({ items }: FAQAccordionProps) {
@@ -53,7 +80,7 @@ export function FAQAccordion({ items }: FAQAccordionProps) {
             <div className="p-4 pt-0 text-neutral-600 prose prose-sm max-w-none">
               {item.answer.split('\n').map((paragraph, i) => (
                 <p key={i} className={i > 0 ? 'mt-2' : ''}>
-                  {paragraph}
+                  {renderMarkdownLinks(paragraph)}
                 </p>
               ))}
             </div>

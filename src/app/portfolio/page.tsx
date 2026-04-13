@@ -37,7 +37,7 @@ export default function PortfolioPage() {
     {
       slug: PORTFOLIO_CATEGORIES.events.slug,
       title: PORTFOLIO_CATEGORIES.events.title,
-      description: 'Weddings, corporate events, and special occasions',
+      description: 'Corporate events and special occasions',
       image: PORTFOLIO_CATEGORIES.events.image,
       count: 0,
     },
