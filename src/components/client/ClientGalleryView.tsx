@@ -449,7 +449,7 @@ export function ClientGalleryView({
                     </div>
                   </div>
 
-                  <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
+                  <div className={isCollapsed ? 'max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out' : 'opacity-100 transition-opacity duration-500 ease-in-out'}>
                     <ImageGrid
                       images={sectionImages}
                       viewableIndexMap={viewableIndexMap}
@@ -468,6 +468,7 @@ export function ClientGalleryView({
               const assignedKeys = new Set(gallery.sections?.flatMap(s => s.images) || []);
               const unassignedImages = gallery.images.filter(img => !assignedKeys.has(img.key));
 
+              if (unassignedImages.length === 0) return null;
               const isCollapsed = collapsedSections.has('unassigned');
               return (
                 <div id="section-unassigned" className="scroll-mt-40">
@@ -514,7 +515,7 @@ export function ClientGalleryView({
                       />
                     )}
                   </div>
-                  <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[10000px] opacity-100'}`}>
+                  <div className={isCollapsed ? 'max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out' : 'opacity-100 transition-opacity duration-500 ease-in-out'}>
                     <ImageGrid
                       images={unassignedImages}
                       viewableIndexMap={viewableIndexMap}
@@ -526,7 +527,6 @@ export function ClientGalleryView({
                   </div>
                 </div>
               );
-              return null;
             })()}
           </div>
         ) : (

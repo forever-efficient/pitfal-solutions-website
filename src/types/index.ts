@@ -255,7 +255,7 @@ export interface ApiGallery {
   type: string;
   slug: string;
   images: ApiGalleryImage[];
-  featured?: boolean;
+  featuredIn?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -268,7 +268,7 @@ export interface ApiGallerySummary {
   type: string;
   slug: string;
   imageCount: number;
-  featured: boolean;
+  featuredIn: string[];
   createdAt: string;
   updatedAt: string;
 }

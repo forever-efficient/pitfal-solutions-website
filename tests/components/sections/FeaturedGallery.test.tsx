@@ -30,6 +30,7 @@ const MOCK_GALLERIES = [
     slug: 'tech-startup-rebrand',
     coverImage: 'gallery/g1/cover.jpg',
     href: '/portfolio/brands/tech-startup-rebrand',
+    featuredIn: ['brands'],
   },
   {
     id: 'g2',
@@ -38,6 +39,7 @@ const MOCK_GALLERIES = [
     slug: 'johnson-wedding',
     coverImage: null,
     href: '/portfolio/events/johnson-wedding',
+    featuredIn: ['events'],
   },
   {
     id: 'g3',
@@ -46,6 +48,7 @@ const MOCK_GALLERIES = [
     slug: 'family-session',
     coverImage: null,
     href: '/portfolio/portraits/family-session',
+    featuredIn: ['portraits'],
   },
 ];
 
@@ -188,6 +191,7 @@ describe('FeaturedGallery', () => {
             category: 'videography',
             slug: 'studio-session',
             coverImage: 'gallery/v1/cover.jpg',
+            featuredIn: ['videography'],
           }
         ]
       })

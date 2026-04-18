@@ -313,7 +313,7 @@ describe('lib/api', () => {
       title: 'Gallery',
       category: 'events',
       slug: 'gallery',
-      featured: true,
+      featuredIn: ['events'],
     });
 
     mockFetchJson({ success: true, data: { updated: true } });
@@ -351,7 +351,7 @@ describe('lib/api', () => {
           title: 'Gallery',
           category: 'events',
           slug: 'gallery',
-          featured: true,
+          featuredIn: ['events'],
         }),
       })
     );

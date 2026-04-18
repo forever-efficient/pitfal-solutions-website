@@ -14,6 +14,7 @@ interface FeaturedItem {
   category: string;
   slug: string;
   coverImage: string | null;
+  previewVideo?: string | null;
 }
 
 const STATIC_FALLBACKS: FeaturedItem[] = [
@@ -32,24 +33,42 @@ export function FeaturedGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    publicGalleries.getFeatured()
-      .then((featured) => {
-        // --- 1. Top Row (Photography: Portraits, Brands, Events) ---
-        // Filter out only photography categories from all featured galleries
-        const photographyFeatured = featured.galleries.filter(g =>
-          ['portraits', 'brands', 'events'].includes(g.category)
-        );
+    Promise.all([
+      publicGalleries.getFeatured(),
+      publicGalleries.getVideoPreviews().catch(() => ({ previews: [] })),
+    ])
+      .then(([featured, videoData]) => {
+        // Helper: check if a gallery is featured for a given category
+        // Supports both new `featuredIn` array and legacy `category` matching
+        // If featuredIn exists (even empty array), use it; only fall back to category for legacy records without the field
+        const isFeaturedFor = (g: typeof featured.galleries[0], cat: string) =>
+          g.featuredIn !== undefined ? g.featuredIn.includes(cat) : g.category === cat;
 
-        // Map each photography slot to either a featured gallery OR the static fallback
+        // Find the best featured gallery for a category, preferring ones with cover images
+        const findFeaturedFor = (cat: string) => {
+          const candidates = featured.galleries.filter(g => isFeaturedFor(g, cat));
+          return candidates.find(g => g.coverImage) || candidates[0] || null;
+        };
+
+        // Build a map of galleryId → first video preview key
+        const videoByGallery = new Map<string, string>();
+        for (const p of videoData.previews) {
+          if (!videoByGallery.has(p.galleryId)) {
+            videoByGallery.set(p.galleryId, p.previewKey);
+          }
+        }
+
+        // --- 1. Top Row (Photography: Portraits, Brands, Events) ---
         const updatedFeatured = STATIC_FALLBACKS.map(fallback => {
-          const featuredForCategory = photographyFeatured.find(g => g.category === fallback.category);
-          if (featuredForCategory) {
+          const match = findFeaturedFor(fallback.category);
+          if (match) {
             return {
-              id: featuredForCategory.id,
-              title: featuredForCategory.title,
-              category: featuredForCategory.category,
-              slug: featuredForCategory.slug,
-              coverImage: featuredForCategory.coverImage,
+              id: match.id,
+              title: match.title,
+              category: fallback.category,
+              slug: match.slug,
+              coverImage: match.coverImage,
+              previewVideo: !match.coverImage ? (videoByGallery.get(match.id) || null) : null,
             };
           }
           return fallback;
@@ -57,26 +76,22 @@ export function FeaturedGallery() {
         setFeaturedWork(updatedFeatured);
 
         // --- 2. Bottom Row (Services: Videography, Drone, AI) ---
-        // Map each service slot: 1. Featured of category, else 2. Static fallback
         const updatedServiceCards = [
           { category: 'videography', defaultTitle: 'Cinematic Video Production', defaultId: 'v' },
           { category: 'drone', defaultTitle: 'Aerial Photography & Videography', defaultId: 'd' },
           { category: 'ai', defaultTitle: 'Custom AI Solutions', defaultId: 'a' }
         ].map(slot => {
-          // A: Is there a featured gallery for this service category?
-          const featuredForService = featured.galleries.find(g => g.category === slot.category);
-
-          if (featuredForService) {
+          const match = findFeaturedFor(slot.category);
+          if (match) {
             return {
-              id: featuredForService.id,
-              title: featuredForService.title,
-              category: featuredForService.category,
-              slug: featuredForService.slug,
-              coverImage: featuredForService.coverImage,
+              id: match.id,
+              title: match.title,
+              category: slot.category,
+              slug: match.slug,
+              coverImage: match.coverImage,
+              previewVideo: !match.coverImage ? (videoByGallery.get(match.id) || null) : null,
             };
           }
-
-          // B: Ultimate fallback to static info (removed latestInCategory check)
           return {
             id: slot.defaultId,
             title: slot.defaultTitle,
@@ -138,6 +153,15 @@ export function FeaturedGallery() {
                       className="absolute inset-0 w-full h-full object-cover"
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage!); }}
                     />
+                  ) : item.previewVideo ? (
+                    <video
+                      src={getImageUrl(item.previewVideo)}
+                      muted
+                      autoPlay
+                      loop
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="absolute inset-0 bg-gradient-to-br from-neutral-400 to-neutral-500" />
                   )}
@@ -169,13 +193,24 @@ export function FeaturedGallery() {
                     href={item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`}
                     className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getImageUrl(item.coverImage || fallbackImage, 'md')}
-                      alt={`${item.title} preview`}
-                      className="absolute inset-0 w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage || fallbackImage); }}
-                    />
+                    {item.previewVideo ? (
+                      <video
+                        src={getImageUrl(item.previewVideo)}
+                        muted
+                        autoPlay
+                        loop
+                        playsInline
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={getImageUrl(item.coverImage || fallbackImage, 'md')}
+                        alt={`${item.title} preview`}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = getImageUrl(item.coverImage || fallbackImage); }}
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent group-hover:from-black/90 transition-colors duration-300" />
                     <div className="absolute inset-0 p-6 flex flex-col justify-end">
                       <span className="text-accent-400 text-sm font-semibold uppercase tracking-wider mb-2">

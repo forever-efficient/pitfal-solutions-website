@@ -11,7 +11,7 @@ interface GalleryEditorProps {
     description?: string;
     category?: string;
     slug?: string;
-    featured?: boolean;
+    featuredIn?: string[];
     passwordEnabled?: boolean;
     allowDownloads?: boolean;
   };
@@ -25,7 +25,7 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
     description: gallery.description || '',
     category: gallery.category || 'brands',
     slug: gallery.slug || '',
-    featured: gallery.featured || false,
+    featuredIn: gallery.featuredIn || [],
   });
   const [passwordEnabled, setPasswordEnabled] = useState(!!gallery.passwordEnabled);
   const [passwordInput, setPasswordInput] = useState('');
@@ -147,15 +147,29 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
           rows={3}
         />
       </div>
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={form.featured}
-          onChange={(e) => setForm({ ...form, featured: e.target.checked })}
-          className="rounded"
-        />
-        Featured gallery
-      </label>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 mb-2">
+          Featured In
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {Object.entries(PORTFOLIO_CATEGORIES).map(([key, info]) => (
+            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.featuredIn.includes(key)}
+                onChange={(e) => {
+                  const next = e.target.checked
+                    ? [...form.featuredIn, key]
+                    : form.featuredIn.filter(k => k !== key);
+                  setForm({ ...form, featuredIn: next });
+                }}
+                className="rounded"
+              />
+              {info.title}
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="submit"

@@ -688,12 +688,12 @@ describe('Admin Lambda Handler', () => {
       setupAuthenticatedAdmin();
       mockScanItems.mockImplementation(async () => [
         {
-          id: 'g1', title: 'Older Gallery', category: 'portraits',           slug: 'older', images: [{ key: 'img1.jpg' }], featured: false,
+          id: 'g1', title: 'Older Gallery', category: 'portraits',           slug: 'older', images: [{ key: 'img1.jpg' }], featuredIn: [],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
         {
           id: 'g2', title: 'Newer Gallery', category: 'brands', passwordHash: '$2a$10$hash',
-          slug: 'newer', images: [], featured: true,
+          slug: 'newer', images: [], featuredIn: ['brands'],
           createdAt: '2026-02-01T00:00:00Z', updatedAt: '2026-02-01T00:00:00Z',
         },
       ]);
@@ -1479,7 +1479,7 @@ describe('Admin Lambda Handler', () => {
     it('moves images from staging/ready/ to gallery/{galleryId}/', async () => {
       setupAuthenticatedAdmin();
       mockGetItem.mockImplementation(async () => ({
-        id: 'gallery-123', title: 'Test Gallery', category: 'portraits',         slug: 'test', images: [], featured: false,
+        id: 'gallery-123', title: 'Test Gallery', category: 'portraits',         slug: 'test', images: [], featuredIn: [],
         createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
       }));
 
@@ -1638,11 +1638,11 @@ describe('Admin Lambda Handler', () => {
     it('GET /api/galleries/featured - returns featured galleries without auth', async () => {
       mockScanItems.mockImplementation(async () => [
         {
-          id: 'g1', title: 'Featured Portfolio', category: 'portraits',           slug: 'featured-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: true,
+          id: 'g1', title: 'Featured Portfolio', category: 'portraits',           slug: 'featured-test', images: [{ key: 'gallery/g1/photo.jpg' }], featuredIn: ['portraits'],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
         {
-          id: 'g2', title: 'Not Featured', category: 'brands',           slug: 'not-featured', images: [], featured: false,
+          id: 'g2', title: 'Not Featured', category: 'brands',           slug: 'not-featured', images: [], featuredIn: [],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
       ]);
@@ -1658,6 +1658,7 @@ describe('Admin Lambda Handler', () => {
       expect(body.data.galleries).toHaveLength(1);
       expect(body.data.galleries[0].id).toBe('g1');
       expect(body.data.galleries[0].href).toBe('/portfolio/portraits/featured-test');
+      expect(body.data.galleries[0].featuredIn).toEqual(['portraits']);
     });
 
     it('GET /api/galleries/featured - includes password-free galleries even if legacy isClientGallery=true', async () => {
@@ -1668,7 +1669,7 @@ describe('Admin Lambda Handler', () => {
           category: 'portraits',
           slug: 'legacy-flag',
           images: [{ key: 'gallery/g1/photo.jpg' }],
-          featured: true,
+          featuredIn: ['portraits'],
           isClientGallery: true,
           createdAt: '2026-01-01T00:00:00Z',
           updatedAt: '2026-01-01T00:00:00Z',
@@ -1679,7 +1680,7 @@ describe('Admin Lambda Handler', () => {
           category: 'portraits',
           slug: 'private',
           images: [{ key: 'gallery/g2/photo.jpg' }],
-          featured: true,
+          featuredIn: ['portraits'],
           passwordHash: '$2a$10$hash',
           createdAt: '2026-01-02T00:00:00Z',
           updatedAt: '2026-01-02T00:00:00Z',
@@ -1751,7 +1752,7 @@ describe('Admin Lambda Handler', () => {
     it('GET /api/galleries/featured - uses heroImage as coverImage when available', async () => {
       mockScanItems.mockImplementation(async () => [
         {
-          id: 'g1', title: 'Hero Gallery', category: 'brands',           slug: 'hero-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: true,
+          id: 'g1', title: 'Hero Gallery', category: 'brands',           slug: 'hero-test', images: [{ key: 'gallery/g1/photo.jpg' }], featuredIn: ['brands'],
           heroImage: 'gallery/g1/hero.jpg',
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
@@ -1771,7 +1772,7 @@ describe('Admin Lambda Handler', () => {
       mockScanItems.mockImplementation(async () => [
         {
           id: 'g1', title: 'Client Gallery', category: 'events', passwordHash: '$2a$10$hash',
-          slug: 'client-test', images: [], featured: true,
+          slug: 'client-test', images: [], featuredIn: ['events'],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
       ]);
@@ -1789,16 +1790,16 @@ describe('Admin Lambda Handler', () => {
     it('GET /api/galleries/{category} - returns portfolio galleries by category (excludes password-protected)', async () => {
       mockScanItems.mockImplementation(async () => [
         {
-          id: 'g1', title: 'Brand Gallery', category: 'brands', slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: false,
+          id: 'g1', title: 'Brand Gallery', category: 'brands', slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featuredIn: [],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
         {
-          id: 'g2', title: 'Client Brand Gallery', category: 'brands', slug: 'client-brand', images: [], featured: false,
+          id: 'g2', title: 'Client Brand Gallery', category: 'brands', slug: 'client-brand', images: [], featuredIn: [],
           passwordHash: '$2a$10$hash',
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
         {
-          id: 'g3', title: 'Portrait Gallery', category: 'portraits', slug: 'portrait-test', images: [], featured: false,
+          id: 'g3', title: 'Portrait Gallery', category: 'portraits', slug: 'portrait-test', images: [], featuredIn: [],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
       ]);
@@ -1819,7 +1820,7 @@ describe('Admin Lambda Handler', () => {
     it('GET /api/galleries/{category}/{slug} - returns single portfolio gallery', async () => {
       mockScanItems.mockImplementation(async () => [
         {
-          id: 'g1', title: 'Brand Gallery', category: 'brands',           slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featured: false,
+          id: 'g1', title: 'Brand Gallery', category: 'brands',           slug: 'brand-test', images: [{ key: 'gallery/g1/photo.jpg' }], featuredIn: [],
           createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
         },
       ]);
@@ -2177,7 +2178,7 @@ describe('Admin Lambda Handler', () => {
               { id: 'sec-2', title: 'Section 2', images: [] },
             ],
             heroImage: 'finished/hero.jpg',
-            featured: false, createdAt: '2026-02-01T00:00:00Z', updatedAt: '2026-02-01T00:00:00Z',
+            featuredIn: [], createdAt: '2026-02-01T00:00:00Z', updatedAt: '2026-02-01T00:00:00Z',
           },
         ]);
 
@@ -2198,7 +2199,7 @@ describe('Admin Lambda Handler', () => {
         mockScanItems.mockImplementation(async () => [
           {
             id: 'g1', title: 'Plain Gallery', category: 'portraits', passwordHash: '$2a$10$hash',
-            slug: 'plain', images: [], featured: false,
+            slug: 'plain', images: [], featuredIn: [],
             createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
           },
         ]);

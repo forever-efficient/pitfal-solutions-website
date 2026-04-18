@@ -322,7 +322,7 @@ export const adminGalleries = {
         imageCount: number;
         sectionCount: number;
         heroImage: string | null;
-        featured: boolean;
+        featuredIn: string[];
         viewCount: number;
         downloadCount: number;
         createdAt: string;
@@ -342,7 +342,7 @@ export const adminGalleries = {
         heroImage?: string;
         sections?: GallerySection[];
         clientSort?: ClientSort;
-        featured?: boolean;
+        featuredIn?: string[];
         passwordEnabled?: boolean;
         allowDownloads?: boolean;
         heroFocalPoint?: { x: number; y: number };
@@ -368,7 +368,7 @@ export const adminGalleries = {
     slug: string;
     password?: string;
     allowDownloads?: boolean;
-    featured?: boolean;
+    featuredIn?: string[];
     heroImage?: string;
     sections?: GallerySection[];
   }) =>
@@ -393,7 +393,7 @@ export const adminGalleries = {
       description?: string;
       category?: string;
       slug?: string;
-      featured?: boolean;
+      featuredIn?: string[];
       images?: Array<{ key: string; alt?: string }>;
       heroImage?: string | null;
       sections?: GallerySection[];
@@ -637,6 +637,7 @@ type FeaturedResult = {
     slug: string;
     coverImage: string | null;
     href: string;
+    featuredIn: string[];
   }>;
 };
 

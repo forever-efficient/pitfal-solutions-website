@@ -139,7 +139,8 @@ interface GalleryRecord {
   clientSort?: ClientSort;
   passwordHash?: string;
   allowDownloads?: boolean;
-  featured?: boolean;
+  featured?: boolean; // deprecated — kept for backward compat reads
+  featuredIn?: string[];
   videos?: Array<{
     key: string;
     alt?: string;
@@ -504,7 +505,7 @@ async function handleGalleries(
         imageCount: g.images?.length || 0,
         sectionCount: g.sections?.length || 0,
         heroImage: g.heroImage || null,
-        featured: g.featured || false,
+        featuredIn: g.featuredIn || (g.featured ? [g.category] : []),
         viewCount: (g as Record<string, unknown>).viewCount as number || 0,
         downloadCount: (g as Record<string, unknown>).downloadCount as number || 0,
         createdAt: g.createdAt,
@@ -521,7 +522,7 @@ async function handleGalleries(
       slug?: string;
       password?: string;
       allowDownloads?: boolean;
-      featured?: boolean;
+      featuredIn?: string[];
       heroImage?: string;
       sections?: GallerySection[];
     };
@@ -551,7 +552,7 @@ async function handleGalleries(
       category: body.category,
       slug: body.slug,
       images: [],
-      featured: body.featured || false,
+      featuredIn: body.featuredIn || [],
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -592,6 +593,7 @@ async function handleGalleryById(
         passwordHash: undefined,
         passwordEnabled: !!gallery.passwordHash,
         allowDownloads: !!gallery.allowDownloads,
+        featuredIn: gallery.featuredIn || (gallery.featured ? [gallery.category] : []),
       },
     }, 200, requestOrigin);
   }
@@ -610,7 +612,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'slug', 'featured', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards', 'videos'];
+    const allowedFields = ['title', 'description', 'category', 'slug', 'featuredIn', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards', 'videos'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -1427,7 +1429,7 @@ async function handlePublicGalleries(
   if (resource.includes('/galleries/featured')) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const featured = allGalleries
-      .filter(g => g.featured && !g.passwordHash)
+      .filter(g => (g.featuredIn?.length || g.featured) && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map(g => ({
         id: g.id,
@@ -1436,6 +1438,7 @@ async function handlePublicGalleries(
         slug: g.slug,
         coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
         href: `/portfolio/${g.category}/${g.slug}`,
+        featuredIn: g.featuredIn || (g.featured ? [g.category] : []),
       }));
     log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
     return success({ galleries: featured }, 200, requestOrigin);

@@ -17,7 +17,7 @@ const defaultGallery = {
   description: 'A collection of summer portraits',
   category: 'portraits',
   slug: 'summer-portraits',
-  featured: true,
+  featuredIn: ['portraits', 'brands'],
   passwordEnabled: true,
   allowDownloads: true,
 };
@@ -53,8 +53,8 @@ function getPasswordCheckbox() {
 function getAllowDownloadsCheckbox() {
   return screen.getByLabelText('Allow Downloads');
 }
-function getFeaturedCheckbox() {
-  return screen.getByLabelText('Featured gallery');
+function getFeaturedCheckbox(category: string) {
+  return screen.getByLabelText(category);
 }
 
 describe('GalleryEditor', () => {
@@ -74,7 +74,9 @@ describe('GalleryEditor', () => {
     );
     expect(getPasswordCheckbox()).toBeChecked();
     expect(getAllowDownloadsCheckbox()).toBeChecked();
-    expect(getFeaturedCheckbox()).toBeChecked();
+    expect(getFeaturedCheckbox('Portraits')).toBeChecked();
+    expect(getFeaturedCheckbox('Brand Photography')).toBeChecked();
+    expect(getFeaturedCheckbox('Events')).not.toBeChecked();
   });
 
   it('renders with default values when gallery fields are empty', () => {
@@ -87,7 +89,8 @@ describe('GalleryEditor', () => {
     expect(getPasswordCheckbox()).not.toBeChecked();
     expect(getAllowDownloadsCheckbox()).toBeEnabled();
     expect(getAllowDownloadsCheckbox()).not.toBeChecked();
-    expect(getFeaturedCheckbox()).not.toBeChecked();
+    expect(getFeaturedCheckbox('Portraits')).not.toBeChecked();
+    expect(getFeaturedCheckbox('Brand Photography')).not.toBeChecked();
   });
 
   it('renders the heading', () => {
@@ -181,15 +184,21 @@ describe('GalleryEditor', () => {
     expect(checkbox).not.toBeChecked();
   });
 
-  it('toggles featured checkbox', async () => {
+  it('toggles featured category checkboxes', async () => {
     const user = userEvent.setup();
     renderEditor();
 
-    const checkbox = getFeaturedCheckbox();
-    expect(checkbox).toBeChecked();
+    const portraitsCheckbox = getFeaturedCheckbox('Portraits');
+    expect(portraitsCheckbox).toBeChecked();
 
-    await user.click(checkbox);
-    expect(checkbox).not.toBeChecked();
+    await user.click(portraitsCheckbox);
+    expect(portraitsCheckbox).not.toBeChecked();
+
+    const eventsCheckbox = getFeaturedCheckbox('Events');
+    expect(eventsCheckbox).not.toBeChecked();
+
+    await user.click(eventsCheckbox);
+    expect(eventsCheckbox).toBeChecked();
   });
 
   it('submits form without password field when checkbox checked but input is empty', async () => {
@@ -204,7 +213,7 @@ describe('GalleryEditor', () => {
         description: 'A collection of summer portraits',
         category: 'portraits',
         slug: 'summer-portraits',
-        featured: true,
+        featuredIn: ['portraits', 'brands'],
         allowDownloads: true,
       });
     });
@@ -223,7 +232,7 @@ describe('GalleryEditor', () => {
         description: 'A collection of summer portraits',
         category: 'portraits',
         slug: 'summer-portraits',
-        featured: true,
+        featuredIn: ['portraits', 'brands'],
         password: 'newpass123',
         allowDownloads: true,
       });
@@ -243,7 +252,7 @@ describe('GalleryEditor', () => {
         description: 'A collection of summer portraits',
         category: 'portraits',
         slug: 'summer-portraits',
-        featured: true,
+        featuredIn: ['portraits', 'brands'],
         password: '',
         allowDownloads: true,
       });
