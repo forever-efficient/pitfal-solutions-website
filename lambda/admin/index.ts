@@ -139,7 +139,7 @@ interface GalleryRecord {
   clientSort?: ClientSort;
   passwordHash?: string;
   allowDownloads?: boolean;
-  featured?: boolean; // deprecated — kept for backward compat reads
+  featured?: boolean; // deprecated — removed by migrate-featured.sh
   featuredIn?: string[];
   videos?: Array<{
     key: string;
@@ -505,11 +505,16 @@ async function handleGalleries(
         imageCount: g.images?.length || 0,
         sectionCount: g.sections?.length || 0,
         heroImage: g.heroImage || null,
-        featuredIn: g.featuredIn || (g.featured ? [g.category] : []),
+        featuredIn: g.featuredIn || [],
         viewCount: (g as Record<string, unknown>).viewCount as number || 0,
         downloadCount: (g as Record<string, unknown>).downloadCount as number || 0,
         createdAt: g.createdAt,
         updatedAt: g.updatedAt,
+        kanban: g.kanbanCards?.length ? {
+          todo: g.kanbanCards.filter(c => c.status === 'todo').map(c => c.title),
+          inProgress: g.kanbanCards.filter(c => c.status === 'in_progress').map(c => c.title),
+          doneCount: g.kanbanCards.filter(c => c.status === 'done').length,
+        } : null,
       })),
     }, 200, requestOrigin);
   }
@@ -593,7 +598,7 @@ async function handleGalleryById(
         passwordHash: undefined,
         passwordEnabled: !!gallery.passwordHash,
         allowDownloads: !!gallery.allowDownloads,
-        featuredIn: gallery.featuredIn || (gallery.featured ? [gallery.category] : []),
+        featuredIn: gallery.featuredIn || [],
       },
     }, 200, requestOrigin);
   }
@@ -634,6 +639,33 @@ async function handleGalleryById(
       Key: { id: galleryId },
       ...expr,
     });
+
+    // If featuredIn was set, un-feature other galleries from those categories
+    if (body.featuredIn && Array.isArray(body.featuredIn) && (body.featuredIn as string[]).length > 0) {
+      const newFeatured = body.featuredIn as string[];
+      const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
+      const conflicting = allGalleries.filter(g =>
+        g.id !== galleryId && (g.featuredIn || []).some(cat => newFeatured.includes(cat))
+      );
+      await Promise.all(conflicting.map(g => {
+        const remaining = (g.featuredIn || []).filter(cat => !newFeatured.includes(cat));
+        return updateItem({
+          TableName: GALLERIES_TABLE,
+          Key: { id: g.id },
+          ...buildUpdateExpression({
+            featuredIn: remaining,
+            updatedAt: new Date().toISOString(),
+          }),
+        });
+      }));
+      if (conflicting.length > 0) {
+        log('INFO', 'Un-featured galleries from overlapping categories', ctx, {
+          galleryId,
+          categories: newFeatured,
+          unFeaturedIds: conflicting.map(g => g.id),
+        });
+      }
+    }
 
     log('INFO', 'Gallery updated', ctx, { galleryId });
     return success({ updated: true }, 200, requestOrigin);
@@ -1429,7 +1461,7 @@ async function handlePublicGalleries(
   if (resource.includes('/galleries/featured')) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const featured = allGalleries
-      .filter(g => (g.featuredIn?.length || g.featured) && !g.passwordHash)
+      .filter(g => g.featuredIn?.length && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map(g => ({
         id: g.id,
@@ -1438,7 +1470,7 @@ async function handlePublicGalleries(
         slug: g.slug,
         coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
         href: `/portfolio/${g.category}/${g.slug}`,
-        featuredIn: g.featuredIn || (g.featured ? [g.category] : []),
+        featuredIn: g.featuredIn || [],
       }));
     log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
     return success({ galleries: featured }, 200, requestOrigin);

@@ -107,7 +107,8 @@
       "Bash(playwright-cli -s=pitfal reload)",
       "Bash(playwright-cli -s=pitfal eval \"\\(\\) => { const cards = document.querySelectorAll\\(''''[class*=\"\"grid\"\"] > a''''\\); return Array.from\\(cards\\).map\\(c => \\({ w: c.offsetWidth, parentW: c.parentElement.offsetWidth }\\)\\); }\")",
       "Bash(playwright-cli -s=pitfal screenshot --filename=/tmp/services-mobile-fixed.png)",
-      "Bash(NEXT_PUBLIC_API_URL=https://www.pitfal.solutions/api pnpm build)"
+      "Bash(NEXT_PUBLIC_API_URL=https://www.pitfal.solutions/api pnpm build)",
+      "Bash(find:*)"
     ]
   },
   "enabledMcpjsonServers": [

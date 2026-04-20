@@ -327,6 +327,7 @@ export const adminGalleries = {
         downloadCount: number;
         createdAt: string;
         updatedAt: string;
+        kanban: { todo: string[]; inProgress: string[]; doneCount: number } | null;
       }>;
     }>('/api/admin/galleries'),
 

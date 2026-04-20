@@ -929,6 +929,56 @@ describe('Admin Lambda Handler', () => {
       expect(result!.statusCode).toBe(200);
       expect(mockUpdateItem).toHaveBeenCalledOnce();
     });
+
+    it('un-features other galleries when setting featuredIn', async () => {
+      setupAuthenticatedAdmin();
+      mockBuildUpdateExpression.mockImplementation((updates: Record<string, unknown>) => ({
+        UpdateExpression: 'SET #a = :a',
+        ExpressionAttributeNames: { '#a': 'featuredIn' },
+        ExpressionAttributeValues: { ':a': updates.featuredIn },
+      }));
+      mockScanItems.mockImplementation(async () => [
+        { id: 'g1', title: 'Gallery A', category: 'brands', slug: 'a', images: [], featuredIn: ['brands', 'portraits'], createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+        { id: 'g2', title: 'Gallery B', category: 'brands', slug: 'b', images: [], featuredIn: ['brands'], createdAt: '2026-01-02T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z' },
+        { id: 'g3', title: 'Gallery C', category: 'events', slug: 'c', images: [], featuredIn: ['events'], createdAt: '2026-01-03T00:00:00Z', updatedAt: '2026-01-03T00:00:00Z' },
+      ]);
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/galleries/{id}',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({ featuredIn: ['brands'] }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      // First call: update g1 itself. Second call: un-feature g2 (has 'brands' overlap). g3 unaffected.
+      expect(mockUpdateItem).toHaveBeenCalledTimes(2);
+      const secondCall = mockUpdateItem.mock.calls[1][0];
+      expect(secondCall.Key).toEqual({ id: 'g2' });
+    });
+
+    it('does not un-feature when featuredIn is empty', async () => {
+      setupAuthenticatedAdmin();
+      mockBuildUpdateExpression.mockImplementation(() => ({
+        UpdateExpression: 'SET #a = :a',
+        ExpressionAttributeNames: { '#a': 'featuredIn' },
+        ExpressionAttributeValues: { ':a': [] },
+      }));
+
+      const event = createEvent({
+        httpMethod: 'PUT',
+        resource: '/api/admin/galleries/{id}',
+        pathParameters: { id: 'g1' },
+        body: JSON.stringify({ featuredIn: [] }),
+      });
+      const result = await handler(event, mockContext, () => {});
+
+      expect(result!.statusCode).toBe(200);
+      // Only the gallery itself should be updated, no scan for conflicts
+      expect(mockUpdateItem).toHaveBeenCalledOnce();
+      expect(mockScanItems).not.toHaveBeenCalled();
+    });
   });
 
   // ============ GALLERIES: DELETE ============

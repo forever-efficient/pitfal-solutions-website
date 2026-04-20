@@ -39,10 +39,8 @@ export function FeaturedGallery() {
     ])
       .then(([featured, videoData]) => {
         // Helper: check if a gallery is featured for a given category
-        // Supports both new `featuredIn` array and legacy `category` matching
-        // If featuredIn exists (even empty array), use it; only fall back to category for legacy records without the field
         const isFeaturedFor = (g: typeof featured.galleries[0], cat: string) =>
-          g.featuredIn !== undefined ? g.featuredIn.includes(cat) : g.category === cat;
+          g.featuredIn.includes(cat);
 
         // Find the best featured gallery for a category, preferring ones with cover images
         const findFeaturedFor = (cat: string) => {

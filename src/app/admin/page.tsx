@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { StatCard } from '@/components/admin/StatCard';
 import { ReadyQueue } from '@/components/admin/ReadyQueue';
 import { DashboardUploader } from '@/components/admin/DashboardUploader';
+import { KanbanRollup } from '@/components/admin/KanbanRollup';
 import { useToast } from '@/components/admin/Toast';
 import { adminGalleries, adminInquiries, adminAnalytics } from '@/lib/api';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ export default function AdminDashboardPage() {
     clientViews: 0,
     clientDownloads: 0,
   });
+  const [galleries, setGalleries] = useState<Array<{ id: string; title: string; kanban: { todo: string[]; inProgress: string[]; doneCount: number } | null }>>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +31,7 @@ export default function AdminDashboardPage() {
       adminAnalytics.get().catch(() => ({ totalViews: 0, totalDownloads: 0, galleries: [] })),
     ])
       .then(([galleriesData, inquiriesData, newInquiriesData, analyticsData]) => {
+        setGalleries(galleriesData.galleries);
         const totalImages = galleriesData.galleries.reduce(
           (sum, g) => sum + g.imageCount,
           0
@@ -94,6 +97,8 @@ export default function AdminDashboardPage() {
           />
         </div>
       </div>
+
+      {!loading && <KanbanRollup galleries={galleries} />}
 
       <DashboardUploader onUploaded={() => setRefreshKey(k => k + 1)} />
 
