@@ -2,14 +2,18 @@
 
 import { useState } from 'react';
 import { adminGalleries } from '@/lib/api';
-import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import {
+  PORTFOLIO_CATEGORIES,
+  PORTFOLIO_ROW_SLUGS,
+  FEATURED_CATEGORY_SLUGS,
+} from '@/lib/constants';
 import { useToast } from './Toast';
 
 interface GalleryEditorProps {
   gallery: {
     title?: string;
     description?: string;
-    category?: string;
+    categories?: string[];
     slug?: string;
     featuredIn?: string[];
     passwordEnabled?: boolean;
@@ -23,7 +27,7 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
   const [form, setForm] = useState({
     title: gallery.title || '',
     description: gallery.description || '',
-    category: gallery.category || 'brands',
+    categories: gallery.categories && gallery.categories.length > 0 ? gallery.categories : [],
     slug: gallery.slug || '',
     featuredIn: gallery.featuredIn || [],
   });
@@ -33,8 +37,14 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const noCategorySelected = form.categories.length === 0;
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (noCategorySelected) {
+      showError('Select at least one category');
+      return;
+    }
     setSaving(true);
     setSaved(false);
     try {
@@ -75,32 +85,47 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
           className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
         />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Slug
-          </label>
-          <input
-            type="text"
-            value={form.slug}
-            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
-          />
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 mb-1">
+          Slug
+        </label>
+        <input
+          type="text"
+          value={form.slug}
+          onChange={(e) => setForm({ ...form, slug: e.target.value })}
+          className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-neutral-700 mb-2">
+          Categories <span className="text-neutral-500 font-normal">(select one or more)</span>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {PORTFOLIO_ROW_SLUGS.map((key) => {
+            const info = PORTFOLIO_CATEGORIES[key];
+            return (
+              <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.categories.includes(key)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...form.categories, key]
+                      : form.categories.filter(k => k !== key);
+                    setForm({ ...form, categories: next });
+                  }}
+                  className="rounded"
+                />
+                {info.title}
+              </label>
+            );
+          })}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1">
-            Category
-          </label>
-          <select
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm"
-          >
-            {Object.entries(PORTFOLIO_CATEGORIES).map(([key, info]) => (
-              <option key={key} value={key}>{info.title}</option>
-            ))}
-          </select>
-        </div>
+        {noCategorySelected && (
+          <p className="mt-2 text-xs text-red-600">
+            At least one category is required.
+          </p>
+        )}
       </div>
 
       <div className="border-t border-neutral-200 pt-4 mt-4">
@@ -152,28 +177,31 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
           Featured In
         </label>
         <div className="grid grid-cols-2 gap-2">
-          {Object.entries(PORTFOLIO_CATEGORIES).map(([key, info]) => (
-            <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.featuredIn.includes(key)}
-                onChange={(e) => {
-                  const next = e.target.checked
-                    ? [...form.featuredIn, key]
-                    : form.featuredIn.filter(k => k !== key);
-                  setForm({ ...form, featuredIn: next });
-                }}
-                className="rounded"
-              />
-              {info.title}
-            </label>
-          ))}
+          {FEATURED_CATEGORY_SLUGS.map((key) => {
+            const info = PORTFOLIO_CATEGORIES[key];
+            return (
+              <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.featuredIn.includes(key)}
+                  onChange={(e) => {
+                    const next = e.target.checked
+                      ? [...form.featuredIn, key]
+                      : form.featuredIn.filter(k => k !== key);
+                    setForm({ ...form, featuredIn: next });
+                  }}
+                  className="rounded"
+                />
+                {info.title}
+              </label>
+            );
+          })}
         </div>
       </div>
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || noCategorySelected}
           className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
         >
           {saving ? 'Saving...' : 'Save Changes'}

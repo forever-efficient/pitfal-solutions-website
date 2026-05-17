@@ -130,7 +130,7 @@ export function VideoCarousel({ fallback, className }: VideoCarouselProps) {
 
       {/* Link overlay */}
       <Link
-        href={preview.youtubeUrl || `/portfolio/videography`}
+        href={preview.youtubeUrl || `/portfolio/${preview.categories?.[0] ?? 'event-videography'}/${preview.gallerySlug}`}
         target={preview.youtubeUrl ? '_blank' : undefined}
         rel={preview.youtubeUrl ? 'noopener noreferrer' : undefined}
         className="absolute inset-0 z-10"

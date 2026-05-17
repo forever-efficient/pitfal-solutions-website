@@ -127,11 +127,15 @@ interface ClientSort {
   order?: 'asc' | 'desc';
 }
 
+// Category slugs whose detail / category routes render videos instead of images.
+// Kept in sync with src/lib/constants.ts VIDEO_CATEGORY_SLUGS.
+const VIDEO_CATEGORY_SLUGS = new Set(['corporate-videography', 'event-videography']);
+
 interface GalleryRecord {
   id: string;
   title: string;
   description?: string;
-  category: string;
+  categories: string[];
   slug: string;
   images: Array<{ key: string; alt?: string }>;
   heroImage?: string; // S3 key for gallery cover/hero image
@@ -467,7 +471,7 @@ async function handleAnalytics(
       return {
         id: g.id,
         title: g.title,
-        category: g.category,
+        categories: g.categories || [],
         slug: g.slug,
         imageCount: g.images?.length || 0,
         viewCount: views,
@@ -500,9 +504,10 @@ async function handleGalleries(
       galleries: galleries.map(g => ({
         id: g.id,
         title: g.title,
-        category: g.category,
+        categories: g.categories || [],
         slug: g.slug,
         imageCount: g.images?.length || 0,
+        videoCount: g.videos?.length || 0,
         sectionCount: g.sections?.length || 0,
         heroImage: g.heroImage || null,
         featuredIn: g.featuredIn || [],
@@ -523,7 +528,7 @@ async function handleGalleries(
     let body: {
       title?: string;
       description?: string;
-      category?: string;
+      categories?: string[];
       slug?: string;
       password?: string;
       allowDownloads?: boolean;
@@ -537,8 +542,8 @@ async function handleGalleries(
       return badRequest('Invalid JSON', requestOrigin);
     }
 
-    if (!body.title || !body.category || !body.slug) {
-      return badRequest('title, category, and slug are required', requestOrigin);
+    if (!body.title || !Array.isArray(body.categories) || body.categories.length === 0 || !body.slug) {
+      return badRequest('title, categories (non-empty array), and slug are required', requestOrigin);
     }
 
     // Validate sections if provided
@@ -554,7 +559,7 @@ async function handleGalleries(
       id,
       title: body.title.trim(),
       description: body.description?.trim() || '',
-      category: body.category,
+      categories: body.categories,
       slug: body.slug,
       images: [],
       featuredIn: body.featuredIn || [],
@@ -617,7 +622,7 @@ async function handleGalleryById(
     }
 
     // Build update expression from allowed fields
-    const allowedFields = ['title', 'description', 'category', 'slug', 'featuredIn', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards', 'videos'];
+    const allowedFields = ['title', 'description', 'categories', 'slug', 'featuredIn', 'images', 'heroImage', 'sections', 'clientSort', 'allowDownloads', 'heroFocalPoint', 'heroZoom', 'heroGradientOpacity', 'heroHeight', 'kanbanCards', 'videos'];
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     for (const field of allowedFields) {
@@ -1071,7 +1076,7 @@ async function handleGalleryNotify(
     template: 'gallery-ready',
     data: {
       name: body.clientName,
-      sessionType: gallery.category,
+      sessionType: (gallery.categories || [])[0] || 'gallery',
       galleryUrl,
       password: gallery.passwordHash ? '(use the password provided separately)' : 'No password required',
       expirationDays,
@@ -1433,7 +1438,7 @@ async function handlePublicGalleries(
             title: v.title || g.title,
             youtubeUrl: v.youtubeUrl,
             galleryId: g.id,
-            category: g.category,
+            categories: g.categories || [],
             gallerySlug: g.slug,
           }))
       );
@@ -1463,15 +1468,18 @@ async function handlePublicGalleries(
     const featured = allGalleries
       .filter(g => g.featuredIn?.length && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map(g => ({
-        id: g.id,
-        title: g.title,
-        category: g.category,
-        slug: g.slug,
-        coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
-        href: `/portfolio/${g.category}/${g.slug}`,
-        featuredIn: g.featuredIn || [],
-      }));
+      .map(g => {
+        const primaryCategory = (g.categories || [])[0] || (g.featuredIn || [])[0] || '';
+        return {
+          id: g.id,
+          title: g.title,
+          categories: g.categories || [],
+          slug: g.slug,
+          coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
+          href: primaryCategory ? `/portfolio/${primaryCategory}/${g.slug}` : `/portfolio/${g.slug}`,
+          featuredIn: g.featuredIn || [],
+        };
+      });
     log('INFO', 'Featured galleries fetched', ctx, { count: featured.length });
     return success({ galleries: featured }, 200, requestOrigin);
   }
@@ -1483,7 +1491,7 @@ async function handlePublicGalleries(
   if (category && slug) {
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const gallery = allGalleries.find(
-      g => g.category === category && g.slug === slug && !g.passwordHash
+      g => (g.categories || []).includes(category) && g.slug === slug && !g.passwordHash
     );
     if (!gallery) return notFound('Gallery not found', requestOrigin);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1492,6 +1500,7 @@ async function handlePublicGalleries(
       gallery: {
         ...publicGallery,
         images: (publicGallery.images || []).filter(img => !isRawKey(img.key)),
+        videos: publicGallery.videos || [],
         passwordHash: undefined,
         passwordEnabled: !!gallery.passwordHash,
         kanbanCounts: kanbanCards?.length ? {
@@ -1506,17 +1515,22 @@ async function handlePublicGalleries(
   // GET /api/galleries/{category} or GET /api/galleries?category=
   const categoryParam = category || event.queryStringParameters?.category;
   if (categoryParam) {
+    const isVideoCategory = VIDEO_CATEGORY_SLUGS.has(categoryParam);
     const allGalleries = await scanItems<GalleryRecord>({ TableName: GALLERIES_TABLE });
     const galleries = allGalleries
-      .filter(g => g.category === categoryParam && !g.passwordHash)
+      .filter(g => (g.categories || []).includes(categoryParam) && !g.passwordHash)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map(g => ({
         id: g.id,
         title: g.title,
-        category: g.category,
+        categories: g.categories || [],
         slug: g.slug,
         coverImage: g.heroImage || g.images?.find(img => !isRawKey(img.key))?.key || null,
+        coverVideo: isVideoCategory
+          ? ((g.videos || []).find(v => v.previewKey)?.previewKey || null)
+          : null,
         imageCount: g.images?.filter(img => !isRawKey(img.key)).length || 0,
+        videoCount: (g.videos || []).length,
         description: g.description,
         createdAt: g.createdAt,
       }));

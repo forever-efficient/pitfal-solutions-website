@@ -16,7 +16,7 @@ interface ReadyImage {
 interface GalleryOption {
   id: string;
   title: string;
-  category: string;
+  categories: string[];
 }
 
 interface ReadyQueueProps {
@@ -105,7 +105,7 @@ export function ReadyQueue({ galleryId, onAssigned, refreshKey }: ReadyQueueProp
     const q = search.toLowerCase();
     return (
       g.title.toLowerCase().includes(q) ||
-      g.category.toLowerCase().includes(q)
+      g.categories.some(c => c.toLowerCase().includes(q))
     );
   });
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -303,7 +303,9 @@ export function ReadyQueue({ galleryId, onAssigned, refreshKey }: ReadyQueueProp
                     <span className="text-neutral-900">
                       {selectedGallery.title}
                       <span className="ml-1.5 text-neutral-400 text-xs">
-                        {CATEGORY_LABELS[selectedGallery.category] ?? selectedGallery.category}
+                        {selectedGallery.categories
+                          .map(c => CATEGORY_LABELS[c] ?? c)
+                          .join(', ')}
                       </span>
                     </span>
                   ) : (
@@ -346,7 +348,9 @@ export function ReadyQueue({ galleryId, onAssigned, refreshKey }: ReadyQueueProp
                             >
                               <span className="truncate">{g.title}</span>
                               <span className="ml-2 shrink-0 text-xs text-neutral-400">
-                                {CATEGORY_LABELS[g.category] ?? g.category}
+                                {g.categories
+                                  .map(c => CATEGORY_LABELS[c] ?? c)
+                                  .join(', ')}
                               </span>
                             </button>
                           </li>

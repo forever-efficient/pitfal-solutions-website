@@ -555,7 +555,7 @@ export function ClientGalleryView({
               {gallery.videos.map((video) => (
                 <div key={video.key} className="bg-white rounded-xl overflow-hidden shadow-sm border border-neutral-200">
                   {/* Preview clip or placeholder */}
-                  <div className="relative aspect-video bg-neutral-900">
+                  <div className="relative aspect-[16/9] bg-neutral-900">
                     {video.previewKey ? (
                       <video
                         src={getImageUrl(video.previewKey)}

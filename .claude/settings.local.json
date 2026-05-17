@@ -108,7 +108,15 @@
       "Bash(playwright-cli -s=pitfal eval \"\\(\\) => { const cards = document.querySelectorAll\\(''''[class*=\"\"grid\"\"] > a''''\\); return Array.from\\(cards\\).map\\(c => \\({ w: c.offsetWidth, parentW: c.parentElement.offsetWidth }\\)\\); }\")",
       "Bash(playwright-cli -s=pitfal screenshot --filename=/tmp/services-mobile-fixed.png)",
       "Bash(NEXT_PUBLIC_API_URL=https://www.pitfal.solutions/api pnpm build)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(bash -n /Users/thomasarchuleta/Desktop/pitfal-solutions/website/scripts/migrate-categories.sh)",
+      "Read(//tmp/**)",
+      "Bash(md5 /tmp/placeholder.html /tmp/page.html)",
+      "Bash(aws s3api *)",
+      "Bash(md5 /tmp/404.html /tmp/page.html /tmp/placeholder.html)",
+      "Bash(playwright-cli snapshot *)",
+      "Bash(playwright-cli console *)",
+      "Bash(playwright-cli network *)"
     ]
   },
   "enabledMcpjsonServers": [

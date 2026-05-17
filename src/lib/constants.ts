@@ -380,6 +380,18 @@ export const PORTFOLIO_CATEGORIES = {
     description: 'Brand films, event videography, and social media reels',
     image: 'site/portfolio-videography.jpg',
   },
+  'corporate-videography': {
+    slug: 'corporate-videography',
+    title: 'Corporate Videography',
+    description: 'Brand films, commercials, and corporate content',
+    image: 'site/portfolio-corporate-videography.jpg',
+  },
+  'event-videography': {
+    slug: 'event-videography',
+    title: 'Event Videography',
+    description: 'Weddings, events, and special occasion films',
+    image: 'site/portfolio-event-videography.jpg',
+  },
   drone: {
     slug: 'drone',
     title: 'Commercial Drone',
@@ -395,6 +407,37 @@ export const PORTFOLIO_CATEGORIES = {
 } as const;
 
 export type PortfolioCategorySlug = keyof typeof PORTFOLIO_CATEGORIES;
+
+// Slugs surfaced on /portfolio/ overview rows + valid /portfolio/[category]/ routes.
+// Excludes legacy 'videography' (split into corporate-videography + event-videography).
+export const PORTFOLIO_ROW_SLUGS = [
+  'brands',
+  'portraits',
+  'events',
+  'corporate-videography',
+  'event-videography',
+  'drone',
+  'ai',
+] as const;
+
+// Slugs whose category and detail pages render videos instead of images.
+export const VIDEO_CATEGORY_SLUGS = [
+  'corporate-videography',
+  'event-videography',
+] as const;
+
+// Slugs that appear in the admin "Featured In" checkbox grid and the
+// homepage FeaturedGallery component. Stable list — does not include the
+// new split videography slugs, so the homepage and featured-in UI remain
+// unchanged when PORTFOLIO_CATEGORIES grows.
+export const FEATURED_CATEGORY_SLUGS = [
+  'brands',
+  'portraits',
+  'events',
+  'videography',
+  'drone',
+  'ai',
+] as const;
 
 // =============================================================================
 // SITE IMAGES (S3 keys — upload to s3://pitfal-prod-media/site/...)

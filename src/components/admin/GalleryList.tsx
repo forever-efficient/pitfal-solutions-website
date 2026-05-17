@@ -2,17 +2,29 @@
 
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
+import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
 
 interface GalleryListProps {
     galleries: Array<{
         id: string;
         title: string;
-        category: string;
+        categories: string[];
         slug: string;
         imageCount: number;
+        videoCount: number;
         updatedAt: string;
     }>;
     onDelete: (id: string) => void;
+}
+
+function formatCategories(categories: string[]): string {
+    if (!categories || categories.length === 0) return '—';
+    return categories
+        .map((c) => {
+            const info = PORTFOLIO_CATEGORIES[c as keyof typeof PORTFOLIO_CATEGORIES];
+            return info?.title ?? c;
+        })
+        .join(', ');
 }
 
 export function GalleryList({ galleries, onDelete }: GalleryListProps) {
@@ -33,10 +45,13 @@ export function GalleryList({ galleries, onDelete }: GalleryListProps) {
                             Title
                         </th>
                         <th className="text-left px-4 py-3 font-medium text-neutral-600">
-                            Category
+                            Categories
                         </th>
                         <th className="text-left px-4 py-3 font-medium text-neutral-600">
                             Images
+                        </th>
+                        <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                            Videos
                         </th>
                         <th className="text-left px-4 py-3 font-medium text-neutral-600">
                             Last Updated
@@ -57,11 +72,14 @@ export function GalleryList({ galleries, onDelete }: GalleryListProps) {
                                     {gallery.title}
                                 </Link>
                             </td>
-                            <td className="px-4 py-3 text-neutral-600 capitalize">
-                                {gallery.category}
+                            <td className="px-4 py-3 text-neutral-600">
+                                {formatCategories(gallery.categories)}
                             </td>
                             <td className="px-4 py-3 text-neutral-600">
                                 {gallery.imageCount}
+                            </td>
+                            <td className="px-4 py-3 text-neutral-600">
+                                {gallery.videoCount ?? 0}
                             </td>
                             <td className="px-4 py-3 text-neutral-500">
                                 {formatDate(gallery.updatedAt)}

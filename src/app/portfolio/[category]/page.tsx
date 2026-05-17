@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { CategoryPageClient } from './CategoryPageClient';
-import { PORTFOLIO_CATEGORIES, PortfolioCategorySlug } from '@/lib/constants';
+import {
+  PORTFOLIO_CATEGORIES,
+  PORTFOLIO_ROW_SLUGS,
+  PortfolioCategorySlug,
+} from '@/lib/constants';
 
 export function generateMetadata({ params }: { params: { category: string } }): Metadata {
   const cat = PORTFOLIO_CATEGORIES[params.category as PortfolioCategorySlug];
@@ -11,17 +15,10 @@ export function generateMetadata({ params }: { params: { category: string } }): 
   };
 }
 
-// Pre-render shells for the six known categories at build time.
+// Pre-render shells for the seven public portfolio categories at build time.
 // Content is fetched client-side from the API.
 export function generateStaticParams() {
-  return [
-    { category: 'brands' },
-    { category: 'portraits' },
-    { category: 'events' },
-    { category: 'videography' },
-    { category: 'drone' },
-    { category: 'ai' },
-  ];
+  return PORTFOLIO_ROW_SLUGS.map((category) => ({ category }));
 }
 
 interface PageProps {

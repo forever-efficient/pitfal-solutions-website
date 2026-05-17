@@ -6,223 +6,146 @@ import Image from 'next/image';
 import { Container, Section } from '@/components/ui/Container';
 import { ContactCTA } from '@/components/sections';
 import { ArrowRightIcon } from '@/components/icons';
-import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import { PORTFOLIO_CATEGORIES, PortfolioCategorySlug } from '@/lib/constants';
 import { getImageUrl } from '@/lib/utils';
 import { publicGalleries } from '@/lib/api';
 
-interface CategoryWithCount {
-  slug: string;
-  title: string;
-  description: string;
-  image: string;
-  count: number;
+interface Row {
+  heading: string;
+  background: 'white' | 'light';
+  cols: 2 | 3;
+  slugs: PortfolioCategorySlug[];
 }
 
-export default function PortfolioPage() {
-  const [photographyCategories, setPhotographyCategories] = useState<CategoryWithCount[]>([
-    {
-      slug: PORTFOLIO_CATEGORIES.brands.slug,
-      title: PORTFOLIO_CATEGORIES.brands.title,
-      description: 'Professional brand imagery for businesses and entrepreneurs',
-      image: PORTFOLIO_CATEGORIES.brands.image,
-      count: 0,
-    },
-    {
-      slug: PORTFOLIO_CATEGORIES.portraits.slug,
-      title: PORTFOLIO_CATEGORIES.portraits.title,
-      description: PORTFOLIO_CATEGORIES.portraits.description,
-      image: PORTFOLIO_CATEGORIES.portraits.image,
-      count: 0,
-    },
-    {
-      slug: PORTFOLIO_CATEGORIES.events.slug,
-      title: PORTFOLIO_CATEGORIES.events.title,
-      description: 'Corporate events and special occasions',
-      image: PORTFOLIO_CATEGORIES.events.image,
-      count: 0,
-    },
-  ]);
+const ROWS: Row[] = [
+  {
+    heading: 'Photography',
+    background: 'white',
+    cols: 3,
+    slugs: ['brands', 'portraits', 'events'],
+  },
+  {
+    heading: 'Videography',
+    background: 'light',
+    cols: 2,
+    slugs: ['corporate-videography', 'event-videography'],
+  },
+  {
+    heading: 'Everything Else',
+    background: 'white',
+    cols: 2,
+    slugs: ['drone', 'ai'],
+  },
+];
 
-  const [serviceCategories, setServiceCategories] = useState<CategoryWithCount[]>([
-    {
-      slug: PORTFOLIO_CATEGORIES.videography.slug,
-      title: PORTFOLIO_CATEGORIES.videography.title,
-      description: PORTFOLIO_CATEGORIES.videography.description,
-      image: PORTFOLIO_CATEGORIES.videography.image,
-      count: 0,
-    },
-    {
-      slug: PORTFOLIO_CATEGORIES.drone.slug,
-      title: PORTFOLIO_CATEGORIES.drone.title,
-      description: PORTFOLIO_CATEGORIES.drone.description,
-      image: PORTFOLIO_CATEGORIES.drone.image,
-      count: 0,
-    },
-    {
-      slug: PORTFOLIO_CATEGORIES.ai.slug,
-      title: PORTFOLIO_CATEGORIES.ai.title,
-      description: PORTFOLIO_CATEGORIES.ai.description,
-      image: PORTFOLIO_CATEGORIES.ai.image,
-      count: 0,
-    },
-  ]);
+const ALL_SLUGS: PortfolioCategorySlug[] = ROWS.flatMap((r) => r.slugs);
+
+export default function PortfolioPage() {
+  const [counts, setCounts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(ALL_SLUGS.map((s) => [s, 0]))
+  );
 
   useEffect(() => {
-    // Fetch counts for each category in parallel
-    Promise.all([
-      publicGalleries.getByCategory('brands'),
-      publicGalleries.getByCategory('portraits'),
-      publicGalleries.getByCategory('events'),
-      publicGalleries.getByCategory('videography'),
-      publicGalleries.getByCategory('drone'),
-      publicGalleries.getByCategory('ai'),
-    ]).then(([brands, portraits, events, videography, drone, ai]) => {
-      setPhotographyCategories(prev => prev.map(cat => {
-        if (cat.slug === 'brands') return { ...cat, count: brands.galleries.length };
-        if (cat.slug === 'portraits') return { ...cat, count: portraits.galleries.length };
-        if (cat.slug === 'events') return { ...cat, count: events.galleries.length };
-        return cat;
-      }));
-      setServiceCategories(prev => prev.map(cat => {
-        if (cat.slug === 'videography') return { ...cat, count: videography.galleries.length };
-        if (cat.slug === 'drone') return { ...cat, count: drone.galleries.length };
-        if (cat.slug === 'ai') return { ...cat, count: ai.galleries.length };
-        return cat;
-      }));
-    }).catch(() => {
-      // Counts stay at 0 on error
-    });
+    Promise.all(ALL_SLUGS.map((slug) => publicGalleries.getByCategory(slug)))
+      .then((results) => {
+        const next: Record<string, number> = {};
+        ALL_SLUGS.forEach((slug, i) => {
+          next[slug] = results[i]?.galleries.length ?? 0;
+        });
+        setCounts(next);
+      })
+      .catch(() => {
+        // Counts stay at 0 on error
+      });
   }, []);
 
   return (
     <>
       {/* Hero */}
-      <Section size="lg" className="pt-32 bg-neutral-50">
+      <Section size="lg" background="dark" className="pt-32">
         <Container>
           <div className="max-w-3xl">
-            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-400 font-medium text-sm tracking-widest uppercase mb-3">
               Portfolio
             </p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 font-display">
               Featured Projects
             </h1>
-            <p className="text-xl text-neutral-600">
+            <p className="text-xl text-neutral-300">
               Past projects, future possibilities.
             </p>
           </div>
         </Container>
       </Section>
 
-      {/* Photography Section */}
-      <Section size="lg" background="white">
-        <Container>
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
-              Photography
-            </h2>
-          </div>
-          <div
-            className="grid md:grid-cols-3 gap-6 lg:gap-8"
-            role="list"
-            aria-label="Photography categories"
-          >
-            {photographyCategories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/portfolio/${category.slug}`}
-                className="group block"
-                role="listitem"
-                aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
+      {ROWS.map((row) => {
+        const gridCols = row.cols === 3 ? 'md:grid-cols-3' : 'md:grid-cols-2';
+        return (
+          <Section key={row.heading} size="lg" background={row.background}>
+            <Container>
+              <div className="mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
+                  {row.heading}
+                </h2>
+              </div>
+              <div
+                className={`grid ${gridCols} gap-6 lg:gap-8`}
+                role="list"
+                aria-label={`${row.heading} categories`}
               >
-                <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  <Image
-                    src={getImageUrl(category.image)}
-                    alt={`${category.title} category preview`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover"
-                    priority={category.slug === 'brand-photography'}
-                  />
-                  <div
-                    className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
-                    aria-hidden="true"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium px-3 py-1 rounded-full">
-                      {category.count} {category.count === 1 ? 'gallery' : 'galleries'}
-                    </span>
-                  </div>
-                  <div
-                    className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-100 scale-90"
-                    aria-hidden="true"
-                  >
-                    <ArrowRightIcon size={20} className="text-neutral-900" />
-                  </div>
-                </article>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
-                  {category.title}
-                </h3>
-                <p className="text-neutral-600 text-sm">{category.description}</p>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* Services Section */}
-      <Section size="lg" background="light">
-        <Container>
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-2 font-display">
-              Everything Else
-            </h2>
-          </div>
-          <div
-            className="grid md:grid-cols-3 gap-6 lg:gap-8"
-            role="list"
-            aria-label="Service categories"
-          >
-            {serviceCategories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/portfolio/${category.slug}`}
-                className="group block"
-                role="listitem"
-                aria-label={`View ${category.title} portfolio - ${category.count} galleries`}
-              >
-                <article className="aspect-[4/5] bg-neutral-200 rounded-2xl overflow-hidden relative mb-4">
-                  <Image
-                    src={getImageUrl(category.image)}
-                    alt={`${category.title} category preview`}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover"
-                  />
-                  <div
-                    className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
-                    aria-hidden="true"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium px-3 py-1 rounded-full">
-                      {category.count} {category.count === 1 ? 'gallery' : 'galleries'}
-                    </span>
-                  </div>
-                  <div
-                    className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-100 scale-90"
-                    aria-hidden="true"
-                  >
-                    <ArrowRightIcon size={20} className="text-neutral-900" />
-                  </div>
-                </article>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-1 group-hover:text-primary-600 transition-colors">
-                  {category.title}
-                </h3>
-                <p className="text-neutral-600 text-sm">{category.description}</p>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </Section>
+                {row.slugs.map((slug) => {
+                  const category = PORTFOLIO_CATEGORIES[slug];
+                  const count = counts[slug] ?? 0;
+                  return (
+                    <Link
+                      key={slug}
+                      href={`/portfolio/${slug}`}
+                      className="group block"
+                      role="listitem"
+                      aria-label={`View ${category.title} portfolio - ${count} galleries`}
+                    >
+                      <div className="bg-neutral-800 rounded-2xl overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
+                        <div className="aspect-[4/5] relative">
+                          <Image
+                            src={getImageUrl(category.image)}
+                            alt={`${category.title} category preview`}
+                            fill
+                            sizes={row.cols === 3
+                              ? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                              : '(max-width: 768px) 100vw, 50vw'}
+                            className="object-cover"
+                          />
+                          <div
+                            className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300"
+                            aria-hidden="true"
+                          />
+                          <div className="absolute top-4 left-4">
+                            <span className="bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-medium px-3 py-1 rounded-full">
+                              {count} {count === 1 ? 'gallery' : 'galleries'}
+                            </span>
+                          </div>
+                          <div
+                            className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-100 scale-90"
+                            aria-hidden="true"
+                          >
+                            <ArrowRightIcon size={20} className="text-neutral-900" />
+                          </div>
+                        </div>
+                        <div className="px-5 py-4">
+                          <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-primary-400 transition-colors">
+                            {category.title}
+                          </h3>
+                          <p className="text-neutral-300 text-sm line-clamp-1">{category.description}</p>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </Container>
+          </Section>
+        );
+      })}
 
       <ContactCTA />
     </>

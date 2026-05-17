@@ -42,7 +42,7 @@ interface GalleryRecord {
   id: string;
   title: string;
   description?: string;
-  category: string;
+  categories: string[];
   slug: string;
   heroImage?: string;
   images?: Array<{ key: string; alt?: string }>;
@@ -109,7 +109,7 @@ async function fetchGalleryBySlug(category: string, slug: string): Promise<Galle
   );
 
   const galleries = (result.Items || []) as GalleryRecord[];
-  return galleries.find(g => g.category === category) || null;
+  return galleries.find(g => (g.categories || []).includes(category)) || null;
 }
 
 function escapeHtml(str: string): string {

@@ -9,7 +9,7 @@
 export interface Gallery {
   id: string;
   title: string;
-  category: GalleryCategory;
+  categories: string[];
   description: string;
   coverImage: string;
   isPublic: boolean;
@@ -21,8 +21,6 @@ export interface Gallery {
   createdAt: number;
   updatedAt: number;
 }
-
-export type GalleryCategory = 'brands' | 'portraits' | 'events' | 'custom';
 
 export interface GalleryImage {
   id: string;
@@ -246,15 +244,27 @@ export interface ApiGalleryImage {
   alt?: string;
 }
 
+/** Video reference as returned by the API */
+export interface ApiGalleryVideo {
+  key: string;
+  alt?: string;
+  previewKey?: string;
+  previewStart?: number;
+  previewDuration?: number;
+  title?: string;
+  youtubeUrl?: string;
+}
+
 /** Full gallery object as returned by the API */
 export interface ApiGallery {
   id: string;
   title: string;
   description?: string;
-  category: string;
+  categories: string[];
   type: string;
   slug: string;
   images: ApiGalleryImage[];
+  videos?: ApiGalleryVideo[];
   featuredIn?: string[];
   createdAt: string;
   updatedAt: string;
@@ -264,10 +274,13 @@ export interface ApiGallery {
 export interface ApiGallerySummary {
   id: string;
   title: string;
-  category: string;
+  categories: string[];
   type: string;
   slug: string;
   imageCount: number;
+  videoCount?: number;
+  coverImage?: string;
+  coverVideo?: string;
   featuredIn: string[];
   createdAt: string;
   updatedAt: string;

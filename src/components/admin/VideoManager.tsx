@@ -7,7 +7,7 @@ import { useToast } from '@/components/admin/Toast';
 interface GalleryOption {
   id: string;
   title: string;
-  category: string;
+  categories: string[];
 }
 
 type PreviewState = {
@@ -99,7 +99,7 @@ export function VideoManager() {
   // Gallery picker filter + pagination
   const filtered = galleries.filter(g => {
     const q = search.toLowerCase();
-    return g.title.toLowerCase().includes(q) || g.category.toLowerCase().includes(q);
+    return g.title.toLowerCase().includes(q) || g.categories.some(c => c.toLowerCase().includes(q));
   });
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -382,7 +382,7 @@ export function VideoManager() {
                   {selectedGallery ? (
                     <span className="text-neutral-900">
                       {selectedGallery.title}
-                      <span className="ml-1.5 text-neutral-400 text-xs">{selectedGallery.category}</span>
+                      <span className="ml-1.5 text-neutral-400 text-xs">{selectedGallery.categories.join(', ')}</span>
                     </span>
                   ) : (
                     <span className="text-neutral-400">Select a gallery...</span>
@@ -420,7 +420,7 @@ export function VideoManager() {
                               }`}
                             >
                               <span className="truncate">{g.title}</span>
-                              <span className="ml-2 shrink-0 text-xs text-neutral-400">{g.category}</span>
+                              <span className="ml-2 shrink-0 text-xs text-neutral-400">{g.categories.join(', ')}</span>
                             </button>
                           </li>
                         ))

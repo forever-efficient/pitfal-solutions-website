@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { GalleryPageClient } from './GalleryPageClient';
+import { PORTFOLIO_ROW_SLUGS } from '@/lib/constants';
 
 export function generateMetadata({ params }: { params: { category: string; gallery: string } }): Metadata {
   return {
@@ -10,7 +11,7 @@ export function generateMetadata({ params }: { params: { category: string; galle
 // At build time, fetch gallery slugs from the API to pre-render known pages.
 // Newly created galleries are accessible via SPA routing (CloudFront SPA fallback).
 export async function generateStaticParams() {
-  const CATEGORIES = ['brands', 'portraits', 'events', 'videography', 'drone', 'ai'];
+  const CATEGORIES = [...PORTFOLIO_ROW_SLUGS];
   const baseUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     'https://ei1btpxkmb.execute-api.us-west-2.amazonaws.com/prod';

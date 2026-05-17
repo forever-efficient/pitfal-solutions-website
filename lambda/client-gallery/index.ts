@@ -123,7 +123,7 @@ interface GalleryRecord {
   clientSort?: ClientSort;
   passwordHash?: string;
   allowDownloads?: boolean;
-  category: string;
+  categories: string[];
   heroFocalPoint?: { x: number; y: number };
   heroZoom?: number;
   heroGradientOpacity?: number;
@@ -320,7 +320,7 @@ async function handleGetGallery(galleryId: string, ctx: LogContext, requestOrigi
       images,
       heroImage: gallery.heroImage || null,
       sections,
-      category: gallery.category,
+      categories: gallery.categories || [],
       heroFocalPoint: gallery.heroFocalPoint,
       heroZoom: gallery.heroZoom,
       heroGradientOpacity: gallery.heroGradientOpacity,

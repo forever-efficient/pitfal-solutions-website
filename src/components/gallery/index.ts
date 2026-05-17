@@ -4,3 +4,5 @@ export { GalleryHero } from './GalleryHero';
 export { ImageCard } from './ImageCard';
 export { SectionDivider } from './SectionDivider';
 export { SectionNav } from './SectionNav';
+export { VideoCategoryGrid } from './VideoCategoryGrid';
+export { VideoGalleryViewer } from './VideoGalleryViewer';

@@ -317,7 +317,7 @@ export const adminGalleries = {
       galleries: Array<{
         id: string;
         title: string;
-        category: string;
+        categories: string[];
         slug: string;
         imageCount: number;
         sectionCount: number;
@@ -337,7 +337,7 @@ export const adminGalleries = {
         id: string;
         title: string;
         description?: string;
-        category: string;
+        categories: string[];
         slug: string;
         images: Array<{ key: string; alt?: string }>;
         heroImage?: string;
@@ -365,7 +365,7 @@ export const adminGalleries = {
   create: (data: {
     title: string;
     description?: string;
-    category: string;
+    categories: string[];
     slug: string;
     password?: string;
     allowDownloads?: boolean;
@@ -377,7 +377,7 @@ export const adminGalleries = {
       gallery: {
         id: string;
         title: string;
-        category: string;
+        categories: string[];
         slug: string;
         createdAt: string;
         updatedAt: string;
@@ -392,7 +392,7 @@ export const adminGalleries = {
     data: {
       title?: string;
       description?: string;
-      category?: string;
+      categories?: string[];
       slug?: string;
       featuredIn?: string[];
       images?: Array<{ key: string; alt?: string }>;
@@ -516,7 +516,7 @@ export interface VideoPreviewInfo {
   title?: string;
   youtubeUrl?: string;
   galleryId: string;
-  category: string;
+  categories: string[];
   gallerySlug: string;
 }
 
@@ -634,7 +634,7 @@ type FeaturedResult = {
   galleries: Array<{
     id: string;
     title: string;
-    category: string;
+    categories: string[];
     slug: string;
     coverImage: string | null;
     href: string;
@@ -664,10 +664,12 @@ export const publicGalleries = {
       galleries: Array<{
         id: string;
         title: string;
-        category: string;
+        categories: string[];
         slug: string;
         coverImage: string | null;
+        coverVideo: string | null;
         imageCount: number;
+        videoCount: number;
         description: string;
         createdAt: string;
       }>;
@@ -679,9 +681,18 @@ export const publicGalleries = {
         id: string;
         title: string;
         description?: string;
-        category: string;
+        categories: string[];
         slug: string;
         images: Array<{ key: string; alt?: string }>;
+        videos?: Array<{
+          key: string;
+          alt?: string;
+          previewKey?: string;
+          previewStart?: number;
+          previewDuration?: number;
+          title?: string;
+          youtubeUrl?: string;
+        }>;
         heroImage?: string;
         createdAt: string;
         kanbanCounts?: { todo: number; inProgress: number; done: number };

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { publicGalleries } from '@/lib/api';
 import { cn, getImageUrl } from '@/lib/utils';
 
-export function RecentWorkCarousel({ className, showHeader = true, showCta = true }: { className?: string; showHeader?: boolean; showCta?: boolean }) {
+export function RecentWorkCarousel({ className, showHeader = true, showCta = true, background = 'light' }: { className?: string; showHeader?: boolean; showCta?: boolean; background?: 'white' | 'light' | 'dark' }) {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -31,7 +31,7 @@ export function RecentWorkCarousel({ className, showHeader = true, showCta = tru
   const strip = [...paddedImages, ...paddedImages];
 
   return (
-    <Section size="md" background="light" className={cn('pt-4 md:pt-6', className)}>
+    <Section size="md" background={background} className={cn('pt-4 md:pt-6', className)}>
       <style>{`
         @keyframes carousel-scroll {
           from { transform: translateX(0); }

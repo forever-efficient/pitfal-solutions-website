@@ -5,23 +5,29 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { adminGalleries, ApiError } from '@/lib/api';
 import { useToast } from '@/components/admin/Toast';
-import { PORTFOLIO_CATEGORIES } from '@/lib/constants';
+import { PORTFOLIO_CATEGORIES, PORTFOLIO_ROW_SLUGS } from '@/lib/constants';
 
 export default function NewGalleryPage() {
     const router = useRouter();
     const { showError } = useToast();
     const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<{ title: string; categories: string[]; slug: string }>({
         title: '',
-        category: 'brands',
+        categories: [],
         slug: '',
     });
     const [passwordEnabled, setPasswordEnabled] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
     const [allowDownloads, setAllowDownloads] = useState(false);
 
+    const noCategorySelected = form.categories.length === 0;
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+        if (noCategorySelected) {
+            showError('Select at least one category');
+            return;
+        }
         setLoading(true);
 
         try {
@@ -74,40 +80,53 @@ export default function NewGalleryPage() {
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Category
-                        </label>
-                        <select
-                            value={form.category}
-                            onChange={(e) => setForm({ ...form, category: e.target.value })}
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500 bg-white"
-                        >
-                            {Object.entries(PORTFOLIO_CATEGORIES).map(([key, info]) => (
-                                <option key={key} value={key}>
-                                    {info.title}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Slug (URL path)
+                    </label>
+                    <input
+                        type="text"
+                        value={form.slug}
+                        onChange={(e) => setForm({ ...form, slug: e.target.value })}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
+                        placeholder="e.g. smith-wedding"
+                        required
+                    />
+                    <p className="mt-1 text-xs text-neutral-500">
+                        Unique, URL-friendly (letters, numbers, hyphens).
+                    </p>
+                </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Slug (URL path)
-                        </label>
-                        <input
-                            type="text"
-                            value={form.slug}
-                            onChange={(e) => setForm({ ...form, slug: e.target.value })}
-                            className="w-full px-3 py-2 border border-neutral-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500"
-                            placeholder="e.g. smith-wedding"
-                            required
-                        />
-                        <p className="mt-1 text-xs text-neutral-500">
-                            Unique, URL-friendly (letters, numbers, hyphens).
-                        </p>
+                <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Categories <span className="text-neutral-500 font-normal">(select one or more)</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {PORTFOLIO_ROW_SLUGS.map((key) => {
+                            const info = PORTFOLIO_CATEGORIES[key];
+                            return (
+                                <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={form.categories.includes(key)}
+                                        onChange={(e) => {
+                                            const next = e.target.checked
+                                                ? [...form.categories, key]
+                                                : form.categories.filter((k) => k !== key);
+                                            setForm({ ...form, categories: next });
+                                        }}
+                                        className="rounded"
+                                    />
+                                    {info.title}
+                                </label>
+                            );
+                        })}
                     </div>
+                    {noCategorySelected && (
+                        <p className="mt-2 text-xs text-red-600">
+                            At least one category is required.
+                        </p>
+                    )}
                 </div>
 
                 <div className="border-t border-neutral-200 pt-4">
@@ -146,7 +165,7 @@ export default function NewGalleryPage() {
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || noCategorySelected}
                     className="w-full bg-neutral-900 text-white py-2 px-4 rounded-lg font-medium hover:bg-neutral-800 disabled:opacity-50 transition-colors"
                 >
                     {loading ? 'Creating...' : 'Create Gallery'}

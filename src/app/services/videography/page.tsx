@@ -17,16 +17,16 @@ export default function VideographyPage() {
   return (
     <>
       {/* Hero */}
-      <Section size="lg" className="pt-32 bg-neutral-50">
+      <Section size="lg" background="dark" className="pt-32">
         <Container>
           <div className="max-w-3xl">
-            <p className="text-primary-700 font-medium text-sm tracking-widest uppercase mb-3">
+            <p className="text-primary-400 font-medium text-sm tracking-widest uppercase mb-3">
               Services
             </p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6 font-display">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 font-display">
               {service.title}
             </h1>
-            <p className="text-xl text-neutral-600">
+            <p className="text-xl text-neutral-300">
               {service.description}
             </p>
           </div>
@@ -37,7 +37,7 @@ export default function VideographyPage() {
       <Section size="md" background="white">
         <Container>
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <VideoCarousel fallback={<div className="aspect-video bg-neutral-200 rounded-2xl" />} />
+            <VideoCarousel fallback={<div className="aspect-[16/9] bg-neutral-200 rounded-2xl" />} />
 
             {/* Content */}
             <div>
@@ -64,16 +64,16 @@ export default function VideographyPage() {
       </Section>
 
       {/* Pricing placeholder */}
-      <Section size="md" background="white">
+      <Section size="md" background="dark">
         <Container size="sm">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-neutral-900 mb-4 font-display">
+            <h2 className="text-3xl font-bold text-white mb-4 font-display">
               Pricing
             </h2>
-            <p className="text-neutral-600 mb-2">
+            <p className="text-neutral-300 mb-2">
               Every video project is scoped uniquely based on your needs.
             </p>
-            <p className="text-neutral-500 text-sm mb-8">
+            <p className="text-neutral-400 text-sm mb-8">
               Detailed pricing coming soon — reach out for a custom quote.
             </p>
           </div>

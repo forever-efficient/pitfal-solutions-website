@@ -120,7 +120,7 @@ export function GalleryVideoPanel({ galleryId, videos, onUpdate }: GalleryVideoP
           >
             <div className="flex gap-4 items-start">
               {/* Preview thumbnail */}
-              <div className="w-40 shrink-0 aspect-video bg-neutral-900 rounded-lg overflow-hidden">
+              <div className="w-40 shrink-0 aspect-[16/9] bg-neutral-900 rounded-lg overflow-hidden">
                 {video.previewKey ? (
                   <video
                     src={getImageUrl(video.previewKey)}

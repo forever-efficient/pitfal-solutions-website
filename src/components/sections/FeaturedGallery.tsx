@@ -15,6 +15,10 @@ interface FeaturedItem {
   slug: string;
   coverImage: string | null;
   previewVideo?: string | null;
+  // URL target when a real gallery is matched — derived from the gallery's
+  // first `categories[]` entry via the API `href`. Falls back to the category
+  // landing page when no real gallery is matched.
+  href?: string;
 }
 
 const STATIC_FALLBACKS: FeaturedItem[] = [
@@ -67,6 +71,7 @@ export function FeaturedGallery() {
               slug: match.slug,
               coverImage: match.coverImage,
               previewVideo: !match.coverImage ? (videoByGallery.get(match.id) || null) : null,
+              href: match.href,
             };
           }
           return fallback;
@@ -88,6 +93,7 @@ export function FeaturedGallery() {
               slug: match.slug,
               coverImage: match.coverImage,
               previewVideo: !match.coverImage ? (videoByGallery.get(match.id) || null) : null,
+              href: match.href,
             };
           }
           return {
@@ -140,7 +146,7 @@ export function FeaturedGallery() {
               {featuredWork.map((item) => (
                 <Link
                   key={item.id}
-                  href={item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`}
+                  href={item.href || (item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`)}
                   className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                 >
                   {item.coverImage ? (
@@ -188,7 +194,7 @@ export function FeaturedGallery() {
                 return (
                   <Link
                     key={item.id}
-                    href={item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`}
+                    href={item.href || (item.slug ? `/portfolio/${item.category}/${item.slug}/` : `/portfolio/${item.category}`)}
                     className="group relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-200 shadow-lg hover:shadow-xl transition-shadow duration-300"
                   >
                     {item.previewVideo ? (
