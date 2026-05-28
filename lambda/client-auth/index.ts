@@ -211,6 +211,7 @@ async function handleCheck(event: APIGatewayProxyEvent, ctx: LogContext, request
           galleryId: payload.galleryId,
           galleryTitle: payload.galleryTitle,
           passwordRequired: !payload.noPassword,
+          token: tokenValue,
         },
         200,
         requestOrigin

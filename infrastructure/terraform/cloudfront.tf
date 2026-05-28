@@ -142,7 +142,7 @@ resource "aws_cloudfront_origin_request_policy" "api" {
   headers_config {
     header_behavior = "whitelist"
     headers {
-      items = ["Content-Type", "Origin", "Accept", "X-Requested-With"]
+      items = ["Authorization", "Content-Type", "Origin", "Accept", "X-Requested-With"]
     }
   }
   query_strings_config {

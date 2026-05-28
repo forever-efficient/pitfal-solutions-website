@@ -2089,6 +2089,8 @@ async function handleVideosAssign(
     return badRequest('previewKey is required. Generate a preview before assigning.', requestOrigin);
   }
 
+  log('INFO', 'Video assign request', ctx, { videoKey, galleryId });
+
   // Validate gallery exists
   const gallery = await getItem<GalleryRecord>({
     TableName: GALLERIES_TABLE!,

@@ -250,6 +250,9 @@ export function ClientGalleryView({
               {rawCount > 0 && `, ${rawCount} raw ${rawCount === 1 ? 'file' : 'files'}`}
               {gallery.videos && gallery.videos.length > 0 && `, ${gallery.videos.length} ${gallery.videos.length === 1 ? 'video' : 'videos'}`}
             </span>
+            {!allowDownloads && requiresPassword && (
+              <span className="text-sm text-neutral-500">Downloads not enabled.</span>
+            )}
             {allowDownloads && gallery.images.length > 0 && !gallery.heroImage && (
               <BulkDownloadButton
                 label="Download All"

@@ -361,7 +361,7 @@ resource "aws_lambda_function" "admin" {
   runtime          = var.lambda_runtime
   role             = aws_iam_role.admin_lambda.arn
   memory_size      = var.lambda_memory_size
-  timeout          = var.lambda_timeout
+  timeout          = 120 # increased from 30s — large video CopyObject/multipart needs headroom
 
   reserved_concurrent_executions = var.lambda_reserved_concurrency
 

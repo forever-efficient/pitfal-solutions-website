@@ -136,7 +136,11 @@ export function GalleryEditor({ gallery, galleryId }: GalleryEditorProps) {
             checked={passwordEnabled}
             onChange={(e) => {
               setPasswordEnabled(e.target.checked);
-              if (!e.target.checked) setPasswordInput('');
+              if (!e.target.checked) {
+                setPasswordInput('');
+              } else {
+                setAllowDownloads(true);
+              }
             }}
             className="rounded"
           />

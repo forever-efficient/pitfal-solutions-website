@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectsCommand, HeadObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectsCommand, HeadObjectCommand, CopyObjectCommand, ListObjectsV2Command, CreateMultipartUploadCommand, UploadPartCopyCommand, CompleteMultipartUploadCommand, AbortMultipartUploadCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({});
@@ -59,12 +59,62 @@ export async function deleteS3Objects(bucket: string, keys: string[]): Promise<v
   }));
 }
 
+const MULTIPART_THRESHOLD = 100 * 1024 * 1024; // 100 MB
+const PART_SIZE = 100 * 1024 * 1024; // 100 MB per part
+
 export async function copyS3Object(bucket: string, sourceKey: string, destKey: string): Promise<void> {
-  await s3Client.send(new CopyObjectCommand({
+  const head = await s3Client.send(new HeadObjectCommand({ Bucket: bucket, Key: sourceKey }));
+  const size = head.ContentLength ?? 0;
+
+  if (size < MULTIPART_THRESHOLD) {
+    await s3Client.send(new CopyObjectCommand({
+      Bucket: bucket,
+      CopySource: `${bucket}/${sourceKey}`,
+      Key: destKey,
+    }));
+    return;
+  }
+
+  // Parallel multipart copy for large objects — avoids Lambda timeout on CopyObject
+  const { UploadId } = await s3Client.send(new CreateMultipartUploadCommand({
     Bucket: bucket,
-    CopySource: `${bucket}/${sourceKey}`,
     Key: destKey,
+    ContentType: head.ContentType,
   }));
+  if (!UploadId) throw new Error('Failed to initiate multipart upload');
+
+  try {
+    const partCount = Math.ceil(size / PART_SIZE);
+    const parts = await Promise.all(
+      Array.from({ length: partCount }, async (_, i) => {
+        const start = i * PART_SIZE;
+        const end = Math.min(start + PART_SIZE - 1, size - 1);
+        const result = await s3Client.send(new UploadPartCopyCommand({
+          Bucket: bucket,
+          Key: destKey,
+          UploadId,
+          PartNumber: i + 1,
+          CopySource: `${bucket}/${sourceKey}`,
+          CopySourceRange: `bytes=${start}-${end}`,
+        }));
+        return { PartNumber: i + 1, ETag: result.CopyPartResult?.ETag! };
+      })
+    );
+
+    await s3Client.send(new CompleteMultipartUploadCommand({
+      Bucket: bucket,
+      Key: destKey,
+      UploadId,
+      MultipartUpload: { Parts: parts },
+    }));
+  } catch (err) {
+    await s3Client.send(new AbortMultipartUploadCommand({
+      Bucket: bucket,
+      Key: destKey,
+      UploadId,
+    })).catch(() => {});
+    throw err;
+  }
 }
 
 export async function listS3Objects(bucket: string, prefix: string): Promise<Array<{ key: string; size: number; lastModified: Date }>> {

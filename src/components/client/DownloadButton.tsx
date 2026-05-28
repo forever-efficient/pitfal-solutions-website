@@ -16,6 +16,7 @@ interface DownloadButtonProps {
 export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOnly }: DownloadButtonProps) {
   const [loading, setLoading] = useState<'full' | 'web' | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [dlError, setDlError] = useState<string | null>(null);
 
   async function handleDownload(size: 'full' | 'web') {
     setLoading(size);
@@ -33,9 +34,16 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOn
         try {
           await navigator.share({ files: [file] });
         } catch (err) {
-          // User cancelled share sheet — not an error
           if (err instanceof Error && err.name === 'AbortError') return;
-          throw err;
+          // Share API failed (e.g. gesture context expired) — fall back to blob URL
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 100);
         }
       } else {
         // Desktop: anchor element with download attribute
@@ -47,8 +55,10 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOn
         a.click();
         document.body.removeChild(a);
       }
-    } catch {
-      // Silently fail - download URL generation failed
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Download failed — please try again';
+      setDlError(msg);
+      setTimeout(() => setDlError(null), 5000);
     } finally {
       setLoading(null);
       setShowMenu(false);
@@ -77,6 +87,9 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOn
             <DownloadIcon className="w-4 h-4" />
           )}
         </button>
+        {dlError && (
+          <p className="absolute top-full left-1/2 -translate-x-1/2 mt-1 text-xs text-red-600 bg-white rounded shadow px-2 py-1 whitespace-nowrap z-50">{dlError}</p>
+        )}
         {showMenu && !rawOnly && (
           <div
             className="absolute bottom-full right-0 mb-2 bg-white rounded-lg shadow-xl border border-neutral-200 overflow-hidden min-w-[160px] z-50"
@@ -108,6 +121,7 @@ export function DownloadButton({ galleryId, imageKey, variant = 'default', rawOn
   return (
     <div className="mt-3 space-y-2">
       <p className="text-xs text-neutral-500 font-medium uppercase tracking-wide">Download</p>
+      {dlError && <p className="text-xs text-red-600">{dlError}</p>}
       <div className="flex gap-2">
         <button
           onClick={() => handleDownload('full')}

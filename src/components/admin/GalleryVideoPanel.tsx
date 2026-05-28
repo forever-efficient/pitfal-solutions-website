@@ -33,6 +33,10 @@ export function GalleryVideoPanel({ galleryId, videos, onUpdate }: GalleryVideoP
   const [regenState, setRegenState] = useState<RegenState>({ status: 'idle' });
   const [startTime, setStartTime] = useState(0);
   const [duration, setDuration] = useState(5);
+  const [editOpen, setEditOpen] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editYoutubeUrl, setEditYoutubeUrl] = useState('');
+  const [saving, setSaving] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cleanup polling on unmount
@@ -51,6 +55,35 @@ export function GalleryVideoPanel({ galleryId, videos, onUpdate }: GalleryVideoP
       showError('Failed to remove video');
     } finally {
       setRemoving(null);
+    }
+  }
+
+  function toggleEdit(video: GalleryVideo) {
+    if (editOpen === video.key) {
+      setEditOpen(null);
+    } else {
+      setEditOpen(video.key);
+      setEditTitle(video.title || '');
+      setEditYoutubeUrl(video.youtubeUrl || '');
+    }
+  }
+
+  async function handleSaveEdit(videoKey: string) {
+    setSaving(true);
+    try {
+      const updatedVideos = videos.map(v =>
+        v.key === videoKey
+          ? { ...v, title: editTitle.trim() || undefined, youtubeUrl: editYoutubeUrl.trim() || undefined }
+          : v
+      );
+      await adminGalleries.update(galleryId, { videos: updatedVideos });
+      showSuccess('Video updated');
+      setEditOpen(null);
+      onUpdate();
+    } catch {
+      showError('Failed to update video');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -168,6 +201,19 @@ export function GalleryVideoPanel({ galleryId, videos, onUpdate }: GalleryVideoP
               {/* Actions */}
               <div className="flex items-center gap-1 shrink-0">
                 <button
+                  onClick={() => toggleEdit(video)}
+                  className={`p-2 rounded-lg transition-colors ${
+                    editOpen === video.key
+                      ? 'text-primary-700 bg-primary-50'
+                      : 'text-neutral-400 hover:text-primary-600 hover:bg-primary-50'
+                  }`}
+                  title="Edit title / YouTube URL"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button
                   onClick={() => toggleRegen(video.key)}
                   className={`p-2 rounded-lg transition-colors ${
                     regenOpen === video.key
@@ -199,6 +245,60 @@ export function GalleryVideoPanel({ galleryId, videos, onUpdate }: GalleryVideoP
                 </button>
               </div>
             </div>
+
+            {/* Edit Title / YouTube URL Panel */}
+            {editOpen === video.key && (
+              <div className="mt-3 pt-3 border-t border-neutral-100">
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">Display title</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      placeholder={video.key.split('/').pop()}
+                      disabled={saving}
+                      className="w-full px-2 py-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">YouTube URL</label>
+                    <input
+                      type="url"
+                      value={editYoutubeUrl}
+                      onChange={e => setEditYoutubeUrl(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      disabled={saving}
+                      className="w-full px-2 py-1.5 border border-neutral-300 rounded text-sm disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={() => handleSaveEdit(video.key)}
+                    disabled={saving}
+                    className="px-3 py-1.5 bg-primary-700 text-white rounded text-sm font-medium hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving ? (
+                      <span className="flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Saving...
+                      </span>
+                    ) : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setEditOpen(null)}
+                    disabled={saving}
+                    className="px-3 py-1.5 text-neutral-600 rounded text-sm font-medium hover:bg-neutral-100 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Regenerate Preview Panel */}
             {regenOpen === video.key && (
