@@ -59,6 +59,7 @@ export interface BulkDownloadResult {
 const ADMIN_TOKEN_KEY = 'pitfal_admin_token';
 const CLIENT_TOKEN_KEY = 'pitfal_client_token';
 
+// Admin token: sessionStorage (clears when browser closes — intentional for admin security)
 function getStoredToken(key: string): string | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -73,9 +74,30 @@ function storeToken(key: string, token: string | null): void {
   try {
     if (token) sessionStorage.setItem(key, token);
     else sessionStorage.removeItem(key);
+  } catch {}
+}
+
+// Client gallery token: localStorage so it survives tab closes, page reloads, and
+// links opened from SMS/iMessage on mobile Safari where sessionStorage is unreliable.
+function getStoredClientToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(CLIENT_TOKEN_KEY) ?? sessionStorage.getItem(CLIENT_TOKEN_KEY);
   } catch {
-    // sessionStorage unavailable (e.g. private browsing in some browsers)
+    return null;
   }
+}
+
+function storeClientToken(token: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      localStorage.setItem(CLIENT_TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(CLIENT_TOKEN_KEY);
+      sessionStorage.removeItem(CLIENT_TOKEN_KEY);
+    }
+  } catch {}
 }
 
 export class ApiError extends Error {
@@ -110,7 +132,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = path.startsWith('/api/admin')
     ? getStoredToken(ADMIN_TOKEN_KEY)
     : path.startsWith('/api/client')
-      ? getStoredToken(CLIENT_TOKEN_KEY)
+      ? getStoredClientToken()
       : null;
 
   const url = `${resolveApiBaseUrl()}${path}`;
@@ -122,6 +144,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     let res: Response;
     try {
       res = await fetch(url, {
+        credentials: 'include',
         ...options,
         headers: {
           'Content-Type': 'application/json',
@@ -181,14 +204,14 @@ export const clientAuth = {
       method: 'POST',
       body: JSON.stringify({ galleryId, password }),
     });
-    if (data.token) storeToken(CLIENT_TOKEN_KEY, data.token);
+    if (data.token) storeClientToken(data.token);
     return data;
   },
 
   check: async (galleryId?: string) => {
     const endpoint = `/api/client/auth${galleryId ? `?galleryId=${encodeURIComponent(galleryId)}` : ''}`;
     const data = await request<{ authenticated: boolean; galleryId?: string; galleryTitle?: string; token?: string; passwordRequired?: boolean }>(endpoint);
-    if (data.token) storeToken(CLIENT_TOKEN_KEY, data.token);
+    if (data.token) storeClientToken(data.token);
     return data;
   },
 
@@ -196,7 +219,7 @@ export const clientAuth = {
     const data = await request<{ authenticated: boolean }>('/api/client/auth', {
       method: 'DELETE',
     });
-    storeToken(CLIENT_TOKEN_KEY, null);
+    storeClientToken(null);
     return data;
   },
 };

@@ -1068,7 +1068,7 @@ async function handleGalleryNotify(
   if (!gallery) return notFound('Gallery not found', requestOrigin);
 
   const siteUrl = process.env.SITE_URL || requestOrigin || 'https://pitfal.solutions';
-  const galleryUrl = `${siteUrl}/client/${galleryId}`;
+  const galleryUrl = `${siteUrl}/client/?id=${galleryId}`;
   const expirationDays = String(body.expirationDays || 30);
 
   await sendTemplatedEmail({

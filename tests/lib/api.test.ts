@@ -29,11 +29,24 @@ function mockFetchJson<T>(payload: ApiSuccess<T> | ApiFailure, status = 200, ok 
   });
 }
 
+// jsdom provides a stub localStorage without functional methods — replace it with a real in-memory store
+let localStore: Record<string, string> = {};
+const localStorageMock: Storage = {
+  getItem: (key) => localStore[key] ?? null,
+  setItem: (key, value) => { localStore[key] = String(value); },
+  removeItem: (key) => { delete localStore[key]; },
+  clear: () => { localStore = {}; },
+  get length() { return Object.keys(localStore).length; },
+  key: (i) => Object.keys(localStore)[i] ?? null,
+};
+
 describe('lib/api', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn() as unknown as typeof fetch;
     sessionStorage.clear();
+    localStore = {};
+    vi.stubGlobal('localStorage', localStorageMock);
   });
 
   it('uses empty base URL for non-localhost (deployed) environments', async () => {
@@ -73,7 +86,8 @@ describe('lib/api', () => {
     });
 
     await clientAuth.login('g1', 'secret');
-    expect(sessionStorage.getItem('pitfal_client_token')).toBe('client-token');
+    // Client token now stored in localStorage (survives page reload + mobile Safari share suspensions)
+    expect(localStorage.getItem('pitfal_client_token')).toBe('client-token');
 
     mockFetchJson({
       success: true,
@@ -86,6 +100,7 @@ describe('lib/api', () => {
     await clientAuth.check();
 
     expect(global.fetch).toHaveBeenLastCalledWith('/api/client/auth', {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -111,6 +126,7 @@ describe('lib/api', () => {
     await adminGalleries.list();
 
     expect(global.fetch).toHaveBeenLastCalledWith('/api/admin/galleries', {
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -120,12 +136,13 @@ describe('lib/api', () => {
   });
 
   it('clears stored token on logout for both auth flows', async () => {
-    sessionStorage.setItem('pitfal_client_token', 'client-token');
+    // Client token lives in localStorage; admin token stays in sessionStorage
+    localStorage.setItem('pitfal_client_token', 'client-token');
     sessionStorage.setItem('pitfal_admin_token', 'admin-token');
 
     mockFetchJson({ success: true, data: { authenticated: false } });
     await clientAuth.logout();
-    expect(sessionStorage.getItem('pitfal_client_token')).toBeNull();
+    expect(localStorage.getItem('pitfal_client_token')).toBeNull();
 
     mockFetchJson({ success: true, data: { authenticated: false } });
     await adminAuth.logout();
